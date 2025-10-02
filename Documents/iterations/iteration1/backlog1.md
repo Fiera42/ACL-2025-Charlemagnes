@@ -6,11 +6,7 @@
 
 ## Cas d'utilisation (CU)
 ### CU1 : Gestion des agendas
-- **Affichage du calendrier** : Création de l'interface utilisateur pour afficher le calendrier (vue fixe pour l'instant, mensuelle).
-- **Créer un agenda** : Permet à l'utilisateur de créer un nouvel agenda (par ligne de commande + ~~formulaire ?~~).
-- **Supprimer un agenda** : Permet à l'utilisateur de supprimer un agenda existant (et les rendez-vous associés).
-- **Modifier un agenda** : Permet à l'utilisateur de modifier les détails d'un agenda (nom, description).
-- **Visualiser un nombre quelconque d'agendas** : Permet à l'utilisateur de voir une liste de ses agendas.
+- **Affichage mensuelle du calendrier** : Création de l'interface utilisateur pour afficher le calendrier.
 - **Ajouter des rendez-vous** : Permet à l'utilisateur d'ajouter des rendez-vous à un agenda (par ligne de commande + ~~formulaire ?~~).
 - **Supprimer des rendez-vous** : Permet à l'utilisateur de supprimer des rendez-vous d'un agenda.
 - **Modifier des rendez-vous** : Permet à l'utilisateur de modifier les détails d'un rendez-vous (titre, plage horaire, description).
@@ -22,3 +18,4 @@
 - Créer la structure de base du projet.
 - Initialiser des routes fonctionnelles.
 - Rédiger la documentation initiale (README, description du projet et backlog de l'itération 1).
+
