@@ -1,0 +1,6 @@
+Le diagramme de classe est éditer sur draw.io, le fichier est disponible ici :
+
+https://drive.google.com/file/d/1EUPEuVw0gceCapJsKB3jm_p5bIamM-Fw/view?usp=drivesdk
+
+-> ne pas oublier de sauvegarder les modifications sur le drive
+-> ne pas oublier d'exporter vos diagrammes en .png pour les rendus
