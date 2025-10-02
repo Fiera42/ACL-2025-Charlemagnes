@@ -2,6 +2,7 @@
 ## About
 Projet d'intégration en M1 de l'équipe "les charlemagnes" :
 - COLLIN Alex
+- GEORGES Valerian
 - GESNEL Kerrian
 - NAIGEON Adrien
 - TOUSSAINT Jarod
