@@ -1,11 +1,11 @@
 # acl-2025-charlemagnes
 ## About
 Projet d'intégration en M1 de l'équipe "les charlemagnes" :
-- COLLIN Alex
-- GEORGES Valerian
-- GESNEL Kerrian
-- NAIGEON Adrien
-- TOUSSAINT Jarod
+- COLLIN Alex (SkyPurl)
+- GEORGES Valerian (GamersOD)
+- GESNEL Kerrian (KerrianG)
+- NAIGEON Adrien (Fiera42)
+- TOUSSAINT Jarod (Jarodlp)
 
 ## Getting Started
 
