@@ -22,37 +22,38 @@ export async function initDatabase(): Promise<void> {
 
     // Create tables
     await connection.execute(`
-      CREATE TABLE IF NOT EXISTS users (
-        id VARCHAR(36) PRIMARY KEY,
-        username VARCHAR(255) NOT NULL UNIQUE,
-        email VARCHAR(255) NOT NULL UNIQUE,
-        password VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     `);
 
     await connection.execute(`
-      CREATE TABLE IF NOT EXISTS calendars (
+      ALTER TABLE calendars 
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS updated_by VARCHAR(36),
+      ADD FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+    `);
+
+    await connection.execute(`
+      ALTER TABLE appointments 
+      ADD COLUMN IF NOT EXISTS owner_id VARCHAR(36) NOT NULL,
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS updated_by VARCHAR(36),
+      ADD FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+      ADD FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+    `);
+
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS shares (
         id VARCHAR(36) PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        description TEXT,
-        color VARCHAR(7) NOT NULL,
         owner_id VARCHAR(36) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
-      )
-    `);
-
-    await connection.execute(`
-      CREATE TABLE IF NOT EXISTS appointments (
-        id VARCHAR(36) PRIMARY KEY,
         calendar_id VARCHAR(36) NOT NULL,
-        title VARCHAR(255) NOT NULL,
-        description TEXT,
-        start_date DATETIME NOT NULL,
-        end_date DATETIME NOT NULL,
+        user_share_id VARCHAR(36) NOT NULL,
+        type_share TINYINT NOT NULL,
+        link_share VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (calendar_id) REFERENCES calendars(id) ON DELETE CASCADE
+        FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (calendar_id) REFERENCES calendars(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_share_id) REFERENCES users(id) ON DELETE CASCADE
       )
     `);
 

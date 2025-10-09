@@ -5,7 +5,9 @@ export class Calendar {
         public description: string,
         public color: string,
         public ownerId: string,
-        public createdAt: Date = new Date()
+        public createdAt: Date = new Date(),
+        public updatedAt: Date = new Date(),
+        public updatedBy: string | null = null
     ) {}
 
     static create(name: string, description: string, color: string, ownerId: string): Calendar {

@@ -4,7 +4,8 @@ export class User {
         public username: string,
         public email: string,
         public password: string,
-        public createdAt: Date = new Date()
+        public createdAt: Date = new Date(),
+        public updatedAt: Date = new Date()
     ) {}
 
     static create(username: string, email: string, password: string): User {
