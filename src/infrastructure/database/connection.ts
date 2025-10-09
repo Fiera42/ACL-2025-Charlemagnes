@@ -2,6 +2,8 @@ import { pool, initDatabase } from '../config/database';
 
 export async function connectDatabase(): Promise<void> {
     try {
+        console.log('🔌 Connexion à la base de données...\n');
+
         // Test de connexion
         const connection = await pool.getConnection();
         console.log('✓ Connexion MySQL établie');
@@ -9,7 +11,8 @@ export async function connectDatabase(): Promise<void> {
 
         // Initialisation des tables
         await initDatabase();
-        console.log('✓ Base de données prête');
+        console.log('✓ Base de données initialisée');
+
     } catch (error) {
         console.error('✗ Erreur de connexion MySQL:', error);
         process.exit(1);
