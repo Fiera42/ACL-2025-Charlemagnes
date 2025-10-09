@@ -3,11 +3,11 @@ const path = require('path');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const mysqlAdmin = require('node-mysql-admin');
-const { authenticateToken } = require('./src/middleware/auth');
+const { authenticateToken } = require('./src/adapters/http/middleware/auth');
 
 
-const authRoutes = require('./src/routes/auth');
-const calendarRoutes = require('./src/routes/calendar');
+const authRoutes = require('./src/adapters/http/routes/auth');
+const calendarRoutes = require('./src/adapters/http/routes/calendar');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
