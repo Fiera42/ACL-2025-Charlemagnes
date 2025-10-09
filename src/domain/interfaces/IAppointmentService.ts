@@ -1,5 +1,4 @@
 import { Appointment } from "../entities/Appointment";
-import { Calendar } from "../entities/Calendar";
 import { CalendarServiceResponse } from "../entities/CalendarServiceResponse";
 import { RecurrentAppointment } from "../entities/ReccurentAppointment";
 import { RecursionRule } from "../entities/RecursionRule";
@@ -12,7 +11,7 @@ export interface IAppointmentService {
     description: string,
     startDate: Date,
     endDate: Date
-  ): Appointment;
+  ): Promise<Appointment>;
 
   createRecurrentAppointment(
     ownerId: string,
@@ -22,41 +21,46 @@ export interface IAppointmentService {
     startDate: Date,
     endDate: Date,
     recursionRule: RecursionRule
-  ): RecurrentAppointment;
+  ): Promise<RecurrentAppointment>;
 
   deleteAppointment(
     ownerId: string,
-    calendarId: string,
     appointmentId: string
-  ): CalendarServiceResponse;
+  ): Promise<CalendarServiceResponse>;
 
-  editAppointment(
+  updateAppointment(
     ownerId: string,
-    calendarId: string,
     appointmentId: string,
-    params: { [key: string]: any }
-  ): CalendarServiceResponse;
+    appointment: Partial<Appointment>
+  ): Promise<CalendarServiceResponse>;
+
+  updateRecurrentAppointment(
+    ownerId: string,
+    appointmentId: string,
+    appointment: Partial<RecurrentAppointment>
+  ): Promise<CalendarServiceResponse>;
 
   shareAppointment(
     ownerId: string,
-    calendarId: string,
     appointmentId: string,
     sharedToId: string
-  ): CalendarServiceResponse;
+  ): Promise<CalendarServiceResponse>;
 
   unShareAppointment(
     ownerId: string,
-    calendarId: string,
     appointmentId: string,
     sharedToId: string
-  ): CalendarServiceResponse;
+  ): Promise<CalendarServiceResponse>;
 
-  getConflicts(
+  getAppointmentById(id: string): Promise<Appointment | null>;
+
+  getAppointmentsByCalendarId(calendarId: string): Promise<Appointment[]>;
+
+  getConflictsOfUser(
     ownerId: string
-  ): { appointmentA: Appointment; appointmentB: Appointment }[];
+  ): Promise<{ appointmentA: Appointment; appointmentB: Appointment }[]>;
 
-  getConflicts(
-    ownerId: string,
+  getConflictsOfCalendar(
     calendarId: string
-  ): { appointmentA: Appointment; appointmentB: Appointment }[];
+  ): Promise<{ appointmentA: Appointment; appointmentB: Appointment }[]>;
 }

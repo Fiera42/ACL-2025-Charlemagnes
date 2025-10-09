@@ -2,23 +2,33 @@ import { Calendar } from "../entities/Calendar";
 import { CalendarServiceResponse } from "../entities/CalendarServiceResponse";
 
 export interface ICalendarService {
-  createCalendar(ownerId: string, name: string, description: string): Calendar;
+  createCalendar(
+    ownerId: string,
+    name: string,
+    description: string
+  ): Promise<Calendar | null>;
 
-  removeCalendar(ownerId: string, calendarId: string): CalendarServiceResponse;
+  removeCalendar(ownerId: string, calendarId: string): Promise<CalendarServiceResponse>;
 
-  getCalendar(ownerId: string, calendarId: string): Calendar;
+  updateCalendar(
+    ownerId: string,
+    calendarId: string,
+    calendar: Partial<Calendar>
+  ): Promise<CalendarServiceResponse>;
 
-  getCalendarsByFilter(filter: (calendar: Calendar) => boolean): Calendar[];
+  getCalendarById(id: string): Promise<Calendar | null>;
+
+  getCalendarsByOwnerId(ownerId: string): Promise<Calendar[]>;
 
   shareCalendar(
     ownerId: string,
     calendarId: string,
     sharedToId: string
-  ): CalendarServiceResponse;
+  ): Promise<CalendarServiceResponse>;
 
   unShareCalendar(
     ownerId: string,
     calendarId: string,
     sharedToId: string
-  ): CalendarServiceResponse;
+  ): Promise<CalendarServiceResponse>;
 }
