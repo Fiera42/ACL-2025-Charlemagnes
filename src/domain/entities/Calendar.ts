@@ -3,12 +3,13 @@ export class Calendar {
         public id: string | null,
         public name: string,
         public description: string,
+        public color: string,
         public ownerId: string,
         public createdAt: Date = new Date()
     ) {}
 
-    static create(name: string, description: string, ownerId: string): Calendar {
-        return new Calendar(null, name, description, ownerId);
+    static create(name: string, description: string, color: string, ownerId: string): Calendar {
+        return new Calendar(null, name, description, color, ownerId);
     }
 
     isValid(): boolean {
