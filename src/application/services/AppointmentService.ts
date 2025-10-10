@@ -23,6 +23,14 @@ export class AppointmentService implements IAppointmentService {
         endDate: Date
     ): Promise<Appointment> {
         return new Promise<Appointment>(async (resolve, reject) => {
+            if(Object.prototype.toString.call(startDate) !== '[object Date]' || isNaN(startDate.getTime())) {
+                reject(new Error(`StartDate (${startDate}) is not valid`));
+                return;
+            }
+            if(Object.prototype.toString.call(endDate) !== '[object Date]' || isNaN(endDate.getTime())) {
+                reject(new Error(`EndDate (${endDate}) is not valid`));
+                return;
+            }
             if (Sanitizer.doesStringContainSpecialChar(ownerId)) {
                 reject(new Error(`OwnerID (${ownerId}) contains special char`));
                 return;
@@ -34,6 +42,12 @@ export class AppointmentService implements IAppointmentService {
             title = encode(title, {mode: 'extensive'});
             description = encode(description, {mode: 'extensive'});
 
+            if(endDate < startDate) {
+                let temp = endDate;
+                endDate = startDate;
+                startDate = temp;
+            }
+
             let appointment = Appointment.create(calendarId, title, description, startDate, endDate, ownerId);
 
             this.calendarDB.createAppointment(appointment)
@@ -43,7 +57,7 @@ export class AppointmentService implements IAppointmentService {
                 .catch((reason: any) => {
                     reject(reason);
                 })
-        })
+        });
     }
 
     createRecurrentAppointment(
@@ -62,7 +76,44 @@ export class AppointmentService implements IAppointmentService {
         ownerId: string,
         appointmentId: string
     ): Promise<CalendarServiceResponse> {
-        throw new Error("Method not implemented.");
+        return new Promise<CalendarServiceResponse>(async (resolve, reject) => {
+            if (Sanitizer.doesStringContainSpecialChar(ownerId)) {
+                reject(new Error(`OwnerID (${ownerId}) contains special char`));
+                return;
+            }
+            if (Sanitizer.doesStringContainSpecialChar(appointmentId)) {
+                reject(new Error(`AppointmentId (${appointmentId}) contains special char`));
+                return;
+            }
+
+            const appointment = await this.calendarDB.findAppointmentById(appointmentId)
+                .catch((reason) => {
+                    reject(reason);
+                });
+
+            if(appointment === undefined) return; // We already rejected in the catch
+            if(appointment === null) {
+                resolve(CalendarServiceResponse.RESOURCE_NOT_EXIST);
+                return;
+            }
+            if(ownerId !== appointment.ownerId) {
+                resolve(CalendarServiceResponse.FORBIDDEN);
+                return;
+            }
+
+            const deleteResult = await this.calendarDB.deleteAppointment(appointmentId)
+                .catch((reason) => {
+                    reject(reason);
+                });
+            if(deleteResult === undefined) return; // We already rejected in the catch
+
+            if(deleteResult) {
+                resolve(CalendarServiceResponse.SUCCESS)
+            }
+            else {
+                resolve(CalendarServiceResponse.FAILED)
+            }
+        });
     }
 
     updateAppointment(
