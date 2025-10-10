@@ -36,3 +36,6 @@ coverage/
 
 # Ignore specific files or modules used in your project
 ngmodule/
+
+# Webstorm
+.idea
