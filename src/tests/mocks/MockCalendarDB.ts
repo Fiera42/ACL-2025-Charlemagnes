@@ -9,14 +9,16 @@ export class MockCalendarDB implements ICalendarDB {
     maxAppointmentId: string = "0";
 
     incrementID(input: string): string {
-        var count = input.match(/^\d?/);
+        var count = input.match(/([0-8]|9)9*$/);
 
         if (count === null) {
             input = "0";
             return input;
         }
 
-        input = Number(count[0]) + 1 + input.substring(1, input.length);
+        var index = count?.index as number;
+
+        input = input.substring(0, index) + (Number(count[1]) + 1) + input.substring(index + 1, input.length)
         return input;
     }
 

@@ -232,26 +232,3 @@ test("deleteAppointment (not exist)", async () => {
 
     mockDB.reset();
 })
-
-test("fromage", async () => {
-    await mockDB.createCalendar(
-        Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
-    );
-    await mockDB.createCalendar(
-        Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
-    );
-    await mockDB.createCalendar(
-        Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
-    );
-    await mockDB.createCalendar(
-        Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
-    );
-    await mockDB.createCalendar(
-        Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
-    );
-    await mockDB.createCalendar(
-        Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
-    );
-
-    console.log(await mockDB.findCalendarsByOwnerId(BASE_APPOINTMENT.ownerId));
-})
