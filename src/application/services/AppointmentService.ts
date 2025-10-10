@@ -4,6 +4,8 @@ import {RecurrentAppointment} from "../../domain/entities/ReccurentAppointment";
 import {RecursionRule} from "../../domain/entities/RecursionRule";
 import {IAppointmentService} from "../../domain/interfaces/IAppointmentService";
 import {ICalendarDB} from "../../domain/interfaces/ICalendarDB";
+import {Sanitizer} from "./utils/Sanitizer";
+import {encode} from "html-entities";
 
 export class AppointmentService implements IAppointmentService {
     calendarDB: ICalendarDB;
@@ -20,7 +22,28 @@ export class AppointmentService implements IAppointmentService {
         startDate: Date,
         endDate: Date
     ): Promise<Appointment> {
-        throw new Error("Method not implemented.");
+        return new Promise<Appointment>(async (resolve, reject) => {
+            if (Sanitizer.doesStringContainSpecialChar(ownerId)) {
+                reject(new Error(`OwnerID (${ownerId}) contains special char`));
+                return;
+            }
+            if (Sanitizer.doesStringContainSpecialChar(calendarId)) {
+                reject(new Error(`CalendarId (${calendarId}) contains special char`));
+                return;
+            }
+            title = encode(title, {mode: 'extensive'});
+            description = encode(description, {mode: 'extensive'});
+
+            let appointment = Appointment.create(calendarId, title, description, startDate, endDate, ownerId);
+
+            this.calendarDB.createAppointment(appointment)
+                .then((appointment: Appointment) => {
+                    resolve(appointment);
+                })
+                .catch((reason: any) => {
+                    reject(reason);
+                })
+        })
     }
 
     createRecurrentAppointment(

@@ -129,4 +129,11 @@ export class MockCalendarDB implements ICalendarDB {
             } else resolve(false);
         });
     }
+
+    reset() {
+        this.calendars = {};
+        this.appointments = {};
+        this.maxCalendarId = "0";
+        this.maxAppointmentId = "0";
+    }
 }

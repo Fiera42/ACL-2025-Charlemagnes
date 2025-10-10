@@ -7,13 +7,8 @@ import test from "node:test";
 const mockDB = new MockCalendarDB();
 const appointmentService = new AppointmentService(mockDB);
 
-mockDB.createCalendar(
-    new Calendar("CAL_1", "testCalendar", "A testing calendar", "blue", "ME_42")
-);
-
 const BASE_APPOINTMENT = {
-    ownerId: "ME_42",
-    calendarId: "CAL_1",
+    ownerId: "ME42",
     title: "new appointment",
     description: "a new appointment",
     startDate: new Date(1),
@@ -21,26 +16,38 @@ const BASE_APPOINTMENT = {
 };
 
 test("createAppointment", async () => {
+    let bdResult = await mockDB.createCalendar(
+        Calendar.create("testCalendar", "A testing calendar", "blue", "ME42")
+    );
+
     const appointment = await appointmentService.createAppointment(
         BASE_APPOINTMENT.ownerId,
-        BASE_APPOINTMENT.calendarId,
+        bdResult.id as string,
         BASE_APPOINTMENT.title,
         BASE_APPOINTMENT.description,
         BASE_APPOINTMENT.startDate,
         BASE_APPOINTMENT.endDate
-    );
+    ).catch((reason) => {
+        throw new Error(reason);
+    });
 
     assert.deepStrictEqual(
-        {...appointment, id: undefined},
-        {...BASE_APPOINTMENT, id: undefined}
+        {...appointment},
+        {
+            ...BASE_APPOINTMENT,
+            ...appointment
+        },
     );
 
     assert.ok(appointment.id);
     const other = mockDB.appointments[appointment.id];
     assert.ok(other);
     assert.deepStrictEqual(
-        {...other, id: undefined},
-        {...BASE_APPOINTMENT, id: undefined}
+        {...other},
+        {
+            ...BASE_APPOINTMENT,
+            ...other
+        }
     );
     assert.strictEqual(appointment.id, other.id);
 });
