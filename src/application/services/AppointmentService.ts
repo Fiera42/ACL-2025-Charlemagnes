@@ -179,7 +179,27 @@ export class AppointmentService implements IAppointmentService {
     }
 
     getAppointmentsByCalendarId(calendarId: string): Promise<Appointment[]> {
-        throw new Error("Method not implemented.");
+        return new Promise<Appointment[]>(async (resolve, reject) => {
+            if (Sanitizer.doesStringContainSpecialChar(calendarId)) {
+                reject(new Error(`CalendarId (${calendarId}) contains special char`));
+                return;
+            }
+
+            const appointments = await this.calendarDB.findAppointmentsByCalendarId(calendarId)
+                .catch((reason) => {
+                    reject(reason);
+                });
+
+            if(appointments === undefined) return; // We already rejected in the catch
+
+            // We sanitized at creation, so we have to sanitize when getting it back
+            appointments.forEach((appointment) => {
+                appointment.title = decode(appointment.title);
+                appointment.description = decode(appointment.description);
+            })
+
+            resolve(appointments);
+        });
     }
 
     getConflictsOfUser(
