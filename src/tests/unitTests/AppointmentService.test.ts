@@ -17,6 +17,9 @@ const BASE_APPOINTMENT = {
     endDate: new Date('2025-02-08'),
 };
 
+const SQL_INJECT_STRING = "' DROP TABLE *;";
+const SQL_INJECT_SANITIZED_STRING = "&apos; DROP TABLE &midast;&semi;";
+
 test("createAppointment", async () => {
     let bdResult = await mockDB.createCalendar(
         Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
@@ -34,7 +37,7 @@ test("createAppointment", async () => {
     });
 
     assert.ok(appointment.id);
-    const bdAppointment = mockDB.appointments[appointment.id];
+    const bdAppointment = await mockDB.findAppointmentById(appointment.id);
     assert.ok(bdAppointment);
 
     assert.deepStrictEqual(
@@ -55,7 +58,7 @@ test("createAppointment", async () => {
     mockDB.reset();
 });
 test("createAppointment (calendar not in DB)", async () => {
-    let bdResult = await mockDB.createCalendar(
+    await mockDB.createCalendar(
         Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
     );
 
@@ -109,7 +112,7 @@ test("createAppointment (inverted date)", async () => {
     });
 
     assert.ok(appointment.id);
-    const bdAppointment = mockDB.appointments[appointment.id];
+    const bdAppointment = await mockDB.findAppointmentById(appointment.id);
     assert.ok(bdAppointment);
 
     assert.deepStrictEqual(
@@ -183,6 +186,79 @@ test("createAppointment (invalid date)", async () => {
 
     mockDB.reset();
 });
+test("createAppointment (sanitize check)", async () => {
+    const bdResult = await mockDB.createCalendar(
+        Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
+    );
+    const corruptedBdResult = await mockDB.createCalendar(
+        Calendar.create("testCalendar", "A testing calendar", "blue", SQL_INJECT_STRING)
+    );
+
+    mockDB.calendars[SQL_INJECT_STRING] = {...bdResult, isValid: bdResult.isValid};
+
+    await assert.rejects(
+        appointmentService.createAppointment(
+            SQL_INJECT_STRING,
+            corruptedBdResult.id as string,
+            BASE_APPOINTMENT.title,
+            BASE_APPOINTMENT.description,
+            BASE_APPOINTMENT.startDate,
+            BASE_APPOINTMENT.endDate
+        ),
+        "OwnerID is not checked for safety"
+    );
+
+    await assert.rejects(
+        appointmentService.createAppointment(
+            BASE_APPOINTMENT.ownerId,
+            SQL_INJECT_STRING,
+            BASE_APPOINTMENT.title,
+            BASE_APPOINTMENT.description,
+            BASE_APPOINTMENT.startDate,
+            BASE_APPOINTMENT.endDate
+        ),
+        "CalendarID is not checked for safety"
+    );
+
+    const appointment = await appointmentService.createAppointment(
+        BASE_APPOINTMENT.ownerId,
+        bdResult.id as string,
+        SQL_INJECT_STRING,
+        SQL_INJECT_STRING,
+        BASE_APPOINTMENT.startDate,
+        BASE_APPOINTMENT.endDate
+    ).catch((reason) => {
+        throw new Error(reason);
+    });
+
+    assert.ok(appointment.id);
+    const dbAppointment = await mockDB.findAppointmentById(appointment.id);
+    assert.ok(dbAppointment);
+
+    assert.deepStrictEqual(
+        {...appointment},
+        {
+            ...appointment,
+            ...BASE_APPOINTMENT,
+            title: SQL_INJECT_STRING,
+            description: SQL_INJECT_STRING,
+        },
+        "Appointment returned by the API must NOT be sanitized"
+    );
+
+    assert.deepStrictEqual(
+        {...dbAppointment},
+        {
+            ...dbAppointment,
+            ...appointment,
+            title: SQL_INJECT_SANITIZED_STRING,
+            description: SQL_INJECT_SANITIZED_STRING,
+        },
+        "Appointment sent to DB must be sanitized"
+    );
+
+    mockDB.reset();
+});
 
 test("deleteAppointment", async () => {
     const bdCalendar = await mockDB.createCalendar(
@@ -229,6 +305,54 @@ test("deleteAppointment (not exist)", async () => {
 
     assert.deepStrictEqual(deletionResult, CalendarServiceResponse.RESOURCE_NOT_EXIST, "The appointment does not exist, refuse the deletion");
     assert.deepStrictEqual(mockDB.appointments[bdAppointment.id as string], bdAppointment);
+
+    mockDB.reset();
+})
+
+test("getAppointment by ID", async () => {
+    const dbCalendar = await mockDB.createCalendar(
+        Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
+    );
+    const dbAppointment = await mockDB.createAppointment(
+        Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+    )
+
+    const getResult = await appointmentService.getAppointmentById(dbAppointment.id as string)
+        .catch((reason: any) => {throw new Error(reason)})
+
+    assert.deepStrictEqual(getResult, dbAppointment);
+    assert.deepStrictEqual(mockDB.appointments[dbAppointment.id as string], dbAppointment);
+
+    mockDB.reset();
+})
+test("getAppointment by ID (appointment not exist)", async () => {
+    const dbCalendar = await mockDB.createCalendar(
+        Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
+    );
+    const dbAppointment = await mockDB.createAppointment(
+        Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+    )
+
+    const getResult = await appointmentService.getAppointmentById("42")
+        .catch((reason: any) => {throw new Error(reason)})
+
+    assert.deepStrictEqual(getResult, null);
+    assert.deepStrictEqual(mockDB.appointments[dbAppointment.id as string], dbAppointment);
+
+    mockDB.reset();
+})
+test("getAppointment by ID (sanitize check)", async () => {
+    const dbCalendar = await mockDB.createCalendar(
+        Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
+    );
+    const dbAppointment = await mockDB.createAppointment(
+        Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+    )
+
+    await assert.rejects(
+        appointmentService.getAppointmentById(SQL_INJECT_STRING),
+        "AppointmentID is not checked for safety"
+    );
 
     mockDB.reset();
 })

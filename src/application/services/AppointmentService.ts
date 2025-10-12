@@ -5,7 +5,7 @@ import {RecursionRule} from "../../domain/entities/RecursionRule";
 import {IAppointmentService} from "../../domain/interfaces/IAppointmentService";
 import {ICalendarDB} from "../../domain/interfaces/ICalendarDB";
 import {Sanitizer} from "./utils/Sanitizer";
-import {encode} from "html-entities";
+import {decode, encode} from "html-entities";
 
 export class AppointmentService implements IAppointmentService {
     calendarDB: ICalendarDB;
@@ -39,6 +39,7 @@ export class AppointmentService implements IAppointmentService {
                 reject(new Error(`CalendarId (${calendarId}) contains special char`));
                 return;
             }
+
             title = encode(title, {mode: 'extensive'});
             description = encode(description, {mode: 'extensive'});
 
@@ -48,10 +49,13 @@ export class AppointmentService implements IAppointmentService {
                 startDate = temp;
             }
 
-            let appointment = Appointment.create(calendarId, title, description, startDate, endDate, ownerId);
+            const appointment = Appointment.create(calendarId, title, description, startDate, endDate, ownerId);
 
             this.calendarDB.createAppointment(appointment)
                 .then((appointment: Appointment) => {
+                    // We sanitized at creation, so we have to sanitize when getting it back
+                    appointment.title = decode(appointment.title);
+                    appointment.description = decode(appointment.description);
                     resolve(appointment);
                 })
                 .catch((reason: any) => {
@@ -148,8 +152,30 @@ export class AppointmentService implements IAppointmentService {
         throw new Error("Method not implemented.");
     }
 
-    getAppointmentById(id: string): Promise<Appointment | null> {
-        throw new Error("Method not implemented.");
+    getAppointmentById(appointmentId: string): Promise<Appointment | null> {
+        return new Promise<Appointment | null>(async (resolve, reject) => {
+            if (Sanitizer.doesStringContainSpecialChar(appointmentId)) {
+                reject(new Error(`AppointmentId (${appointmentId}) contains special char`));
+                return;
+            }
+
+            const appointment = await this.calendarDB.findAppointmentById(appointmentId)
+                .catch((reason) => {
+                    reject(reason);
+                });
+
+            if(appointment === undefined) return; // We already rejected in the catch
+            if(appointment === null) {
+                resolve(null);
+                return;
+            }
+
+            // We sanitized at creation, so we have to sanitize when getting it back
+            appointment.title = decode(appointment.title);
+            appointment.description = decode(appointment.description);
+
+            resolve(appointment);
+        });
     }
 
     getAppointmentsByCalendarId(calendarId: string): Promise<Appointment[]> {

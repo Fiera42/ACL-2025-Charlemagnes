@@ -26,19 +26,19 @@ export class MockCalendarDB implements ICalendarDB {
         return new Promise<Calendar>((resolve, reject) => {
             this.maxCalendarId = this.incrementID(this.maxCalendarId);
 
-            let copy = {...calendar, isValid: calendar.isValid};
+            let copy = structuredClone(calendar);
             copy.id = this.maxCalendarId;
 
             this.calendars[copy.id] = copy;
 
-            resolve(copy);
+            resolve(structuredClone(copy));
             return;
         });
     }
 
     findCalendarById(id: string): Promise<Calendar | null> {
         return new Promise<Calendar | null>((resolve, reject) => {
-            if (id in this.calendars) resolve(this.calendars[id]);
+            if (id in this.calendars) resolve(structuredClone(this.calendars[id]));
             else resolve(null);
         });
     }
@@ -47,6 +47,7 @@ export class MockCalendarDB implements ICalendarDB {
         return new Promise<Calendar[]>((resolve, reject) => {
             resolve(
                 Object.values(this.calendars).filter((calendar) => calendar.ownerId === ownerId)
+                    .map((calendar) => structuredClone(calendar))
             );
         });
     }
@@ -55,7 +56,7 @@ export class MockCalendarDB implements ICalendarDB {
         return new Promise<Calendar>((resolve, reject) => {
             if (id in this.calendars) {
                 Object.assign(this.calendars[id], calendar);
-                resolve(this.calendars[id]);
+                resolve(structuredClone(this.calendars[id]));
             } else reject(new Error(`Calendar of id ${id} does not exist`));
         });
     }
@@ -88,18 +89,18 @@ export class MockCalendarDB implements ICalendarDB {
             }
             this.maxAppointmentId = this.incrementID(this.maxAppointmentId);
 
-            let copy = {...appointment, isValid: appointment.isValid};
+            let copy = structuredClone(appointment);
             copy.id = this.maxAppointmentId;
 
             this.appointments[copy.id] = copy;
 
-            resolve(copy);
+            resolve(structuredClone(copy));
         });
     }
 
     findAppointmentById(id: string): Promise<Appointment | null> {
         return new Promise<Appointment | null>((resolve, reject) => {
-            if (id in this.appointments) resolve(this.appointments[id]);
+            if (id in this.appointments) resolve(structuredClone(this.appointments[id]));
             else resolve(null);
         });
     }
@@ -109,7 +110,7 @@ export class MockCalendarDB implements ICalendarDB {
             resolve(
                 Object.values(this.appointments).filter(
                     (appointment) => appointment.calendarId === calendarId
-                )
+                ).map((appointment) => structuredClone(appointment))
             );
         });
     }
@@ -118,7 +119,7 @@ export class MockCalendarDB implements ICalendarDB {
         return new Promise<Appointment>((resolve, reject) => {
             if (id in this.appointments) {
                 Object.assign(this.appointments[id], appointment);
-                resolve(this.appointments[id]);
+                resolve(structuredClone(this.appointments[id]));
             } else reject(new Error(`Appointment of id ${id} does not exist`));
         });
     }
