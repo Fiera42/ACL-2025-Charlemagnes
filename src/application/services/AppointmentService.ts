@@ -23,11 +23,11 @@ export class AppointmentService implements IAppointmentService {
         endDate: Date
     ): Promise<Appointment> {
         return new Promise<Appointment>(async (resolve, reject) => {
-            if(Object.prototype.toString.call(startDate) !== '[object Date]' || isNaN(startDate.getTime())) {
+            if (Object.prototype.toString.call(startDate) !== '[object Date]' || isNaN(startDate.getTime())) {
                 reject(new Error(`StartDate (${startDate}) is not valid`));
                 return;
             }
-            if(Object.prototype.toString.call(endDate) !== '[object Date]' || isNaN(endDate.getTime())) {
+            if (Object.prototype.toString.call(endDate) !== '[object Date]' || isNaN(endDate.getTime())) {
                 reject(new Error(`EndDate (${endDate}) is not valid`));
                 return;
             }
@@ -40,10 +40,25 @@ export class AppointmentService implements IAppointmentService {
                 return;
             }
 
+            const calendar = await this.calendarDB.findCalendarById(calendarId)
+                .catch((reason) => {
+                    reject(reason);
+                });
+
+            if (calendar === undefined) return; // We already rejected in the catch
+            if (calendar === null) {
+                reject(new Error(`CalendarId (${calendarId}) does not exist`));
+                return;
+            }
+            if (ownerId !== calendar.ownerId) {
+                reject(new Error(`User of id (${ownerId}) does not own calendar of id (${calendarId})`));
+                return;
+            }
+
             title = encode(title, {mode: 'extensive'});
             description = encode(description, {mode: 'extensive'});
 
-            if(endDate < startDate) {
+            if (endDate < startDate) {
                 let temp = endDate;
                 endDate = startDate;
                 startDate = temp;
@@ -95,12 +110,12 @@ export class AppointmentService implements IAppointmentService {
                     reject(reason);
                 });
 
-            if(appointment === undefined) return; // We already rejected in the catch
-            if(appointment === null) {
+            if (appointment === undefined) return; // We already rejected in the catch
+            if (appointment === null) {
                 resolve(CalendarServiceResponse.RESOURCE_NOT_EXIST);
                 return;
             }
-            if(ownerId !== appointment.ownerId) {
+            if (ownerId !== appointment.ownerId) {
                 resolve(CalendarServiceResponse.FORBIDDEN);
                 return;
             }
@@ -109,12 +124,11 @@ export class AppointmentService implements IAppointmentService {
                 .catch((reason) => {
                     reject(reason);
                 });
-            if(deleteResult === undefined) return; // We already rejected in the catch
+            if (deleteResult === undefined) return; // We already rejected in the catch
 
-            if(deleteResult) {
+            if (deleteResult) {
                 resolve(CalendarServiceResponse.SUCCESS)
-            }
-            else {
+            } else {
                 resolve(CalendarServiceResponse.FAILED)
             }
         });
@@ -164,8 +178,8 @@ export class AppointmentService implements IAppointmentService {
                     reject(reason);
                 });
 
-            if(appointment === undefined) return; // We already rejected in the catch
-            if(appointment === null) {
+            if (appointment === undefined) return; // We already rejected in the catch
+            if (appointment === null) {
                 resolve(null);
                 return;
             }
@@ -190,7 +204,7 @@ export class AppointmentService implements IAppointmentService {
                     reject(reason);
                 });
 
-            if(appointments === undefined) return; // We already rejected in the catch
+            if (appointments === undefined) return; // We already rejected in the catch
 
             // We sanitized at creation, so we have to sanitize when getting it back
             appointments.forEach((appointment) => {

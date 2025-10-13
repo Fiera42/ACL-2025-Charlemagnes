@@ -5,8 +5,9 @@ export interface ICalendarService {
   createCalendar(
     ownerId: string,
     name: string,
-    description: string
-  ): Promise<Calendar | null>;
+    description: string,
+    color: string,
+  ): Promise<Calendar>;
 
   removeCalendar(ownerId: string, calendarId: string): Promise<CalendarServiceResponse>;
 

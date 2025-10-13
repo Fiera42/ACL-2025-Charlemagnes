@@ -9,21 +9,21 @@ export class MockCalendarDB implements ICalendarDB {
     maxAppointmentId: string = "0";
 
     incrementID(input: string): string {
-        var count = input.match(/([0-8]|9)9*$/);
+        const count = input.match(/([0-8]|9)9*$/);
 
         if (count === null) {
             input = "0";
             return input;
         }
 
-        var index = count?.index as number;
+        const index = count?.index as number;
 
         input = input.substring(0, index) + (Number(count[1]) + 1) + input.substring(index + 1, input.length)
         return input;
     }
 
     createCalendar(calendar: Calendar): Promise<Calendar> {
-        return new Promise<Calendar>((resolve, reject) => {
+        return new Promise<Calendar>((resolve) => {
             this.maxCalendarId = this.incrementID(this.maxCalendarId);
 
             let copy = structuredClone(calendar);
@@ -37,14 +37,14 @@ export class MockCalendarDB implements ICalendarDB {
     }
 
     findCalendarById(id: string): Promise<Calendar | null> {
-        return new Promise<Calendar | null>((resolve, reject) => {
+        return new Promise<Calendar | null>((resolve) => {
             if (id in this.calendars) resolve(structuredClone(this.calendars[id]));
             else resolve(null);
         });
     }
 
     findCalendarsByOwnerId(ownerId: string): Promise<Calendar[]> {
-        return new Promise<Calendar[]>((resolve, reject) => {
+        return new Promise<Calendar[]>((resolve) => {
             resolve(
                 Object.values(this.calendars).filter((calendar) => calendar.ownerId === ownerId)
                     .map((calendar) => structuredClone(calendar))
@@ -62,7 +62,7 @@ export class MockCalendarDB implements ICalendarDB {
     }
 
     deleteCalendar(id: string): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
+        return new Promise<boolean>((resolve) => {
             if (id in this.calendars) {
                 delete this.calendars[id];
                 resolve(true);
@@ -99,14 +99,14 @@ export class MockCalendarDB implements ICalendarDB {
     }
 
     findAppointmentById(id: string): Promise<Appointment | null> {
-        return new Promise<Appointment | null>((resolve, reject) => {
+        return new Promise<Appointment | null>((resolve) => {
             if (id in this.appointments) resolve(structuredClone(this.appointments[id]));
             else resolve(null);
         });
     }
 
     findAppointmentsByCalendarId(calendarId: string): Promise<Appointment[]> {
-        return new Promise<Appointment[]>((resolve, reject) => {
+        return new Promise<Appointment[]>((resolve) => {
             resolve(
                 Object.values(this.appointments).filter(
                     (appointment) => appointment.calendarId === calendarId
@@ -125,7 +125,7 @@ export class MockCalendarDB implements ICalendarDB {
     }
 
     deleteAppointment(id: string): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
+        return new Promise<boolean>((resolve) => {
             if (id in this.appointments) {
                 delete this.appointments[id];
                 resolve(true);

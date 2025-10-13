@@ -224,8 +224,8 @@ test.describe("createAppointment", () => {
         const appointment = await appointmentService.createAppointment(
             BASE_APPOINTMENT.ownerId,
             bdResult.id as string,
-            SQL_INJECT_STRING,
-            SQL_INJECT_STRING,
+            SQL_INJECT_STRING + " title",
+            SQL_INJECT_STRING + " description",
             BASE_APPOINTMENT.startDate,
             BASE_APPOINTMENT.endDate
         ).catch((reason) => {
@@ -241,8 +241,8 @@ test.describe("createAppointment", () => {
             {
                 ...appointment,
                 ...BASE_APPOINTMENT,
-                title: SQL_INJECT_STRING,
-                description: SQL_INJECT_STRING,
+                title: SQL_INJECT_STRING + " title",
+                description: SQL_INJECT_STRING + " description",
             },
             "Appointment returned by the API must NOT be sanitized"
         );
@@ -252,10 +252,22 @@ test.describe("createAppointment", () => {
             {
                 ...dbAppointment,
                 ...appointment,
-                title: SQL_INJECT_SANITIZED_STRING,
-                description: SQL_INJECT_SANITIZED_STRING,
+                title: SQL_INJECT_SANITIZED_STRING + " title",
+                description: SQL_INJECT_SANITIZED_STRING + " description",
             },
             "Appointment sent to DB must be sanitized"
+        );
+
+        mockDB.reset();
+    });
+    test("createAppointment (wrong owner)", async () => {
+        const dbCalendar = await mockDB.createCalendar(
+            Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
+        );
+
+        await assert.rejects(
+            appointmentService.createAppointment("WRONG", dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate),
+            "Should check if ownerID is the same as the ownerID of the calendar"
         );
 
         mockDB.reset();
@@ -361,7 +373,13 @@ test.describe("getAppointment by ID", () => {
             Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
         );
         const corruptedBdResult = await mockDB.createAppointment(
-            Appointment.create(bdResult.id as string, SQL_INJECT_SANITIZED_STRING, SQL_INJECT_SANITIZED_STRING, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+            Appointment.create(bdResult.id as string,
+                SQL_INJECT_SANITIZED_STRING + " title",
+                SQL_INJECT_SANITIZED_STRING + " description",
+                BASE_APPOINTMENT.startDate,
+                BASE_APPOINTMENT.endDate,
+                BASE_APPOINTMENT.ownerId,
+            ),
         );
 
         mockDB.calendars[SQL_INJECT_STRING] = {...bdResult, isValid: bdResult.isValid};
@@ -378,8 +396,8 @@ test.describe("getAppointment by ID", () => {
 
         assert.deepStrictEqual(getResult, {
             ...corruptedBdResult,
-            title: SQL_INJECT_STRING,
-            description: SQL_INJECT_STRING,
+            title: SQL_INJECT_STRING + " title",
+            description: SQL_INJECT_STRING + " description",
         }, "Appointment returned by the API must NOT be sanitized");
 
         mockDB.reset();
