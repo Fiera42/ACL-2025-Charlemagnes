@@ -9,7 +9,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import CalendarWeekView from '../components/CalendarWeekView.vue'
+import CalendarWeekView from './components/CalendarWeekView.vue'
 
 const currentView = ref('Week')
 const events = ref([
