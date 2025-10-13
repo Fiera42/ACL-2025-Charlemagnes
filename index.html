@@ -1,15 +1,86 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Calendar</title>
+    <meta charset="UTF-8">
+    <title>Calendrier par mois</title>
 </head>
-<body class="antialiased bg-stone-50">
 
-<div id="app"></div>
+<link rel="stylesheet" href="src/client/index.css">
+<body>
 
+<h1>Calendrier par mois</h1>
 
-<script type="module" src="src/client/main.js"></script>
+<select id="moisSelect">
+    <option value="janvier">Janvier</option>
+    <option value="fevrier">Février</option>
+    <option value="mars">Mars</option>
+    <option value="avril">Avril</option>
+    <option value="mai">Mai</option>
+    <option value="juin">Juin</option>
+    <option value="juillet">Juillet</option>
+    <option value="aout">Août</option>
+    <option value="septembre">Septembre</option>
+    <option value="octobre">Octobre</option>
+    <option value="novembre">Novembre</option>
+    <option value="decembre">Décembre</option>
+</select>
+
+<table id="mois">
+    <tr id="premiereSemaine">
+        <td id="case1">1</td>
+        <td id="case2">2</td>
+        <td id="case3">3</td>
+        <td id="case4">4</td>
+        <td id="case5">5</td>
+        <td id="case6">6</td>
+        <td id="case7">7</td>
+    </tr>
+    <tr id="deuxiemeSemaine">
+        <td id="case8">8</td>
+        <td id="case9">9</td>
+        <td id="case10">10</td>
+        <td id="case11">11</td>
+        <td id="case12">12</td>
+        <td id="case13">13</td>
+        <td id="case14">14</td>
+    </tr>
+    <tr id="troisiemeSemaine">
+        <td id="case15">15</td>
+        <td id="case16">16</td>
+        <td id="case17">17</td>
+        <td id="case18">18</td>
+        <td id="case19">19</td>
+        <td id="case20">20</td>
+        <td id="case21">21</td>
+    </tr>
+    <tr id="quatriemeSemaine">
+        <td id="case22">22</td>
+        <td id="case23">23</td>
+        <td id="case24">24</td>
+        <td id="case25">25</td>
+        <td id="case26">26</td>
+        <td id="case27">27</td>
+        <td id="case28">28</td>
+    </tr>
+    <tr id="cinquiemeSemaine">
+        <td id="case29">29</td>
+        <td id="case30">30</td>
+        <td id="case31">31</td>
+        <td id="case32"></td>
+        <td id="case33"></td>
+        <td id="case34"></td>
+        <td id="case35"></td>
+    </tr>
+</table>
+
+<div id="popup" class="popup">
+    <div class="popup-content">
+        <span id="closePopup" class="close"></span>
+        <h2 id="popupTitle"></h2>
+        <p id="popupText"></p>
+    </div>
+</div>
+
+<script src="src/client/index.js"></script>
 </body>
 </html>
