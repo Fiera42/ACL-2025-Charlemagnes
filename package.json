@@ -10,9 +10,8 @@
     "preview": "vite preview",
     "start": "tsx server.ts",
     "dev": "tsx watch server.ts",
-    "build": "tsc",
     "serve": "node dist/server.js",
-    "test": "tsc && node --test \"**/*.test.js\""
+    "test": "node --import tsx --test \"**/*.test.js\""
   },
   "dependencies": {
     "@types/better-sqlite3": "^7.6.13",

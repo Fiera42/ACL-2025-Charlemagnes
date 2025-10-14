@@ -739,7 +739,7 @@ test.describe("getAppointment by ID", () => {
         assert.deepStrictEqual(mockDB.appointments[dbAppointment.id as string], dbAppointment);
 
         mockDB.reset();
-    })
+    });
     test("getAppointment by ID (appointment not exist)", async () => {
         const dbCalendar = await mockDB.createCalendar(
             Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
@@ -757,7 +757,7 @@ test.describe("getAppointment by ID", () => {
         assert.deepStrictEqual(mockDB.appointments[dbAppointment.id as string], dbAppointment);
 
         mockDB.reset();
-    })
+    });
     test("getAppointment by ID (sanitize check)", async () => {
         const dbResult = await mockDB.createCalendar(
             Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
@@ -791,8 +791,8 @@ test.describe("getAppointment by ID", () => {
         }, "Appointment returned by the API must NOT be sanitized");
 
         mockDB.reset();
-    })
-})
+    });
+});
 
 test.describe("getAppointments by calendar ID", () => {
     test("getAppointments by calendar ID", async () => {

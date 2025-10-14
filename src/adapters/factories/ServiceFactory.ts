@@ -14,6 +14,8 @@ export class ServiceFactory {
     private static authDB: IAuthDB;
     private static calendarDB: ICalendarDB;
     private static shareDB: IShareDB;
+    private static appointmentService: IAppointmentService;
+    private static calendarService: ICalendarService;
 
     private static initializeDatabases(): void {
         if (!this.authDB) {
@@ -27,14 +29,18 @@ export class ServiceFactory {
         }
     }
 
-    static createAppointmentService(): IAppointmentService {
-        this.initializeDatabases();
-        return new AppointmentService(this.calendarDB);
+    private static initializeAppointmentService(): void {
+        if(!this.appointmentService) {
+            this.initializeDatabases();
+            this.appointmentService = new AppointmentService(this.calendarDB);
+        }
     }
 
-    static createCalendarService(): ICalendarService {
-        this.initializeDatabases();
-        return new CalendarService(this.calendarDB, this.authDB);
+    private static initializeCalendarService(): void {
+        if(!this.calendarService) {
+            this.initializeDatabases();
+            this.calendarService = new CalendarService(this.calendarDB, this.authDB);
+        }
     }
 
     static getAuthDB(): IAuthDB {
@@ -50,5 +56,15 @@ export class ServiceFactory {
     static getShareDB(): IShareDB {
         this.initializeDatabases();
         return this.shareDB;
+    }
+
+    static getCalendarService(): ICalendarService {
+        this.initializeCalendarService();
+        return this.calendarService;
+    }
+
+    static getAppointmentService(): IAppointmentService {
+        this.initializeAppointmentService();
+        return this.appointmentService;
     }
 }

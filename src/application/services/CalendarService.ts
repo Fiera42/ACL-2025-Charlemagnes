@@ -5,7 +5,6 @@ import {ICalendarService} from "../../domain/interfaces/ICalendarService";
 import {Sanitizer} from "./utils/Sanitizer";
 import {decode, encode} from "html-entities";
 import {IAuthDB} from "../../domain/interfaces/IAuthDB";
-import calendar from "../../adapters/http/routes/calendar";
 import {Appointment} from "../../domain/entities/Appointment";
 
 export class CalendarService implements ICalendarService {
@@ -152,8 +151,31 @@ export class CalendarService implements ICalendarService {
         });
     }
 
-    getCalendarById(id: string): Promise<Calendar | null> {
-        throw new Error("Method not implemented.");
+    getCalendarById(calendarId: string): Promise<Calendar | null> {
+        return new Promise<Calendar | null>(async (resolve, reject) => {
+            if (Sanitizer.doesStringContainSpecialChar(calendarId)) {
+                reject(new Error(`CalendarId (${calendarId}) contains special char`));
+                return;
+            }
+
+            const calendar = await this.calendarDB.findCalendarById(calendarId)
+                .catch((reason) => {
+                    reject(reason);
+                });
+
+            if (calendar === undefined) return; // We already rejected in the catch
+            if (calendar === null) {
+                resolve(null);
+                return;
+            }
+
+            // We sanitized at creation, so we have to sanitize when getting it back
+            calendar.name = decode(calendar.name);
+            calendar.description = decode(calendar.description);
+            calendar.color = decode(calendar.color);
+
+            resolve(calendar);
+        });
     }
 
     getCalendarsByOwnerId(ownerId: string): Promise<Calendar[]> {
