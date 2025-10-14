@@ -5,6 +5,17 @@ const popupTitle = document.getElementById("popupTitle");
 const popupText = document.getElementById("popupText");
 const closePopup = document.getElementById("closePopup");
 
+const popupAdd = document.getElementById("popupAdd");
+const popupTitleAdd = document.getElementById("popupTitleAdd");
+const popupTextAdd = document.getElementById("popupTextAdd");
+const closePopupAdd = document.getElementById("closePopupAdd");
+const ButtonAdd = document.getElementById("buttonAdd");
+
+const popupModif = document.getElementById("popupModif");
+const popupTitleModif = document.getElementById("popupTitleModif");
+const popupTextModif = document.getElementById("popupTextModif");
+const closePopupModif = document.getElementById("closePopupModif");
+
 /**
  * Met à jour le calendrier en fonction du mois sélectionné.
  */
@@ -70,6 +81,11 @@ function ajouterEcouteursCases() {
     });
 }
 
+function ajouterEcouteursBouton(){
+    ButtonAdd.addEventListener("click", () => {popupAdd.style.display = "flex";
+                                               popup.style.display = "none";});
+}
+
 closePopup.addEventListener("click", () => {
     popup.style.display = "none";
 });
@@ -78,6 +94,19 @@ popup.addEventListener("click", (e) => {
     if (e.target === popup) popup.style.display = "none";
 });
 
+closePopupAdd.addEventListener("click", () => {
+    popupAdd.style.display = "none";
+});
+
+popupAdd.addEventListener("click", (e) => {
+    if (e.target === popupAdd){
+        popup.style.display = "flex";
+        popupAdd.style.display ="none";
+    }
+});
+
+
 selectMois.addEventListener("change", majCalendrier);
 ajouterEcouteursCases();
+ajouterEcouteursBouton();
 majCalendrier();
