@@ -22,13 +22,13 @@ const SQL_INJECT_SANITIZED_STRING = "&apos; DROP TABLE &midast;&semi;";
 
 test.describe("createAppointment", () => {
     test("createAppointment", async () => {
-        let bdResult = await mockDB.createCalendar(
+        let dbResult = await mockDB.createCalendar(
             Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
         );
 
         const appointment = await appointmentService.createAppointment(
             BASE_APPOINTMENT.ownerId,
-            bdResult.id as string,
+            dbResult.id as string,
             BASE_APPOINTMENT.title,
             BASE_APPOINTMENT.description,
             BASE_APPOINTMENT.startDate,
@@ -38,8 +38,8 @@ test.describe("createAppointment", () => {
         });
 
         assert.ok(appointment.id);
-        const bdAppointment = await mockDB.findAppointmentById(appointment.id);
-        assert.ok(bdAppointment);
+        const dbAppointment = await mockDB.findAppointmentById(appointment.id);
+        assert.ok(dbAppointment);
 
         assert.deepStrictEqual(
             {...appointment},
@@ -49,9 +49,9 @@ test.describe("createAppointment", () => {
             },
         );
         assert.deepStrictEqual(
-            {...bdAppointment},
+            {...dbAppointment},
             {
-                ...bdAppointment,
+                ...dbAppointment,
                 ...appointment
             }
         );
@@ -78,14 +78,14 @@ test.describe("createAppointment", () => {
         mockDB.reset();
     });
     test("createAppointment (wrong owner id)", async () => {
-        let bdResult = await mockDB.createCalendar(
+        let dbResult = await mockDB.createCalendar(
             Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
         );
 
         await assert.rejects(
             appointmentService.createAppointment(
                 "42",
-                bdResult.id as string,
+                dbResult.id as string,
                 BASE_APPOINTMENT.title,
                 BASE_APPOINTMENT.description,
                 BASE_APPOINTMENT.startDate,
@@ -97,13 +97,13 @@ test.describe("createAppointment", () => {
         mockDB.reset();
     });
     test("createAppointment (inverted date)", async () => {
-        let bdResult = await mockDB.createCalendar(
+        let dbResult = await mockDB.createCalendar(
             Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
         );
 
         const appointment = await appointmentService.createAppointment(
             BASE_APPOINTMENT.ownerId,
-            bdResult.id as string,
+            dbResult.id as string,
             BASE_APPOINTMENT.title,
             BASE_APPOINTMENT.description,
             BASE_APPOINTMENT.endDate,
@@ -113,8 +113,8 @@ test.describe("createAppointment", () => {
         });
 
         assert.ok(appointment.id);
-        const bdAppointment = await mockDB.findAppointmentById(appointment.id);
-        assert.ok(bdAppointment);
+        const dbAppointment = await mockDB.findAppointmentById(appointment.id);
+        assert.ok(dbAppointment);
 
         assert.deepStrictEqual(
             {...appointment},
@@ -125,9 +125,9 @@ test.describe("createAppointment", () => {
             "when endDate > startDate, swap them silently"
         );
         assert.deepStrictEqual(
-            {...bdAppointment},
+            {...dbAppointment},
             {
-                ...bdAppointment,
+                ...dbAppointment,
                 ...appointment,
             },
             "when endDate > startDate, swap them silently"
@@ -136,14 +136,14 @@ test.describe("createAppointment", () => {
         mockDB.reset();
     });
     test("createAppointment (invalid date)", async () => {
-        let bdResult = await mockDB.createCalendar(
+        let dbResult = await mockDB.createCalendar(
             Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
         );
 
         await assert.rejects(
             appointmentService.createAppointment(
                 BASE_APPOINTMENT.ownerId,
-                bdResult.id as string,
+                dbResult.id as string,
                 BASE_APPOINTMENT.title,
                 BASE_APPOINTMENT.description,
                 null as unknown as Date,
@@ -154,7 +154,7 @@ test.describe("createAppointment", () => {
         await assert.rejects(
             appointmentService.createAppointment(
                 BASE_APPOINTMENT.ownerId,
-                bdResult.id as string,
+                dbResult.id as string,
                 BASE_APPOINTMENT.title,
                 BASE_APPOINTMENT.description,
                 BASE_APPOINTMENT.startDate,
@@ -165,7 +165,7 @@ test.describe("createAppointment", () => {
         await assert.rejects(
             appointmentService.createAppointment(
                 BASE_APPOINTMENT.ownerId,
-                bdResult.id as string,
+                dbResult.id as string,
                 BASE_APPOINTMENT.title,
                 BASE_APPOINTMENT.description,
                 new Date("This is not a date"),
@@ -176,7 +176,7 @@ test.describe("createAppointment", () => {
         await assert.rejects(
             appointmentService.createAppointment(
                 BASE_APPOINTMENT.ownerId,
-                bdResult.id as string,
+                dbResult.id as string,
                 BASE_APPOINTMENT.title,
                 BASE_APPOINTMENT.description,
                 BASE_APPOINTMENT.startDate,
@@ -188,19 +188,19 @@ test.describe("createAppointment", () => {
         mockDB.reset();
     });
     test("createAppointment (sanitize check)", async () => {
-        const bdResult = await mockDB.createCalendar(
+        const dbResult = await mockDB.createCalendar(
             Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
         );
-        const corruptedBdResult = await mockDB.createCalendar(
+        const corruptedDbResult = await mockDB.createCalendar(
             Calendar.create("testCalendar", "A testing calendar", "blue", SQL_INJECT_STRING)
         );
 
-        mockDB.calendars[SQL_INJECT_STRING] = {...bdResult, isValid: bdResult.isValid};
+        mockDB.calendars[SQL_INJECT_STRING] = {...dbResult, isValid: dbResult.isValid};
 
         await assert.rejects(
             appointmentService.createAppointment(
                 SQL_INJECT_STRING,
-                corruptedBdResult.id as string,
+                corruptedDbResult.id as string,
                 BASE_APPOINTMENT.title,
                 BASE_APPOINTMENT.description,
                 BASE_APPOINTMENT.startDate,
@@ -223,7 +223,7 @@ test.describe("createAppointment", () => {
 
         const appointment = await appointmentService.createAppointment(
             BASE_APPOINTMENT.ownerId,
-            bdResult.id as string,
+            dbResult.id as string,
             SQL_INJECT_STRING + " title",
             SQL_INJECT_STRING + " description",
             BASE_APPOINTMENT.startDate,
@@ -276,47 +276,47 @@ test.describe("createAppointment", () => {
 
 test.describe("deleteAppointment", () => {
     test("deleteAppointment", async () => {
-        const bdCalendar = await mockDB.createCalendar(
+        const dbCalendar = await mockDB.createCalendar(
             Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
         );
-        const bdAppointment = await mockDB.createAppointment(
-            Appointment.create(bdCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+        const dbAppointment = await mockDB.createAppointment(
+            Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
         )
 
-        const deletionResult = await appointmentService.deleteAppointment(BASE_APPOINTMENT.ownerId, bdAppointment.id as string)
+        const deletionResult = await appointmentService.deleteAppointment(BASE_APPOINTMENT.ownerId, dbAppointment.id as string)
             .catch((reason: any) => {
                 throw new Error(reason)
             })
 
         assert.deepStrictEqual(deletionResult, CalendarServiceResponse.SUCCESS);
-        assert.deepStrictEqual(mockDB.appointments[bdAppointment.id as string], undefined);
+        assert.deepStrictEqual(mockDB.appointments[dbAppointment.id as string], undefined);
 
         mockDB.reset();
-    })
+    });
     test("deleteAppointment (wrong owner)", async () => {
-        const bdCalendar = await mockDB.createCalendar(
+        const dbCalendar = await mockDB.createCalendar(
             Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
         );
-        const bdAppointment = await mockDB.createAppointment(
-            Appointment.create(bdCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+        const dbAppointment = await mockDB.createAppointment(
+            Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
         )
 
-        const deletionResult = await appointmentService.deleteAppointment("42", bdAppointment.id as string)
+        const deletionResult = await appointmentService.deleteAppointment("42", dbAppointment.id as string)
             .catch((reason: any) => {
                 throw new Error(reason)
             })
 
         assert.deepStrictEqual(deletionResult, CalendarServiceResponse.FORBIDDEN, "If the user does not own the appointment, refuse the deletion");
-        assert.deepStrictEqual(mockDB.appointments[bdAppointment.id as string], bdAppointment);
+        assert.deepStrictEqual(mockDB.appointments[dbAppointment.id as string], dbAppointment);
 
         mockDB.reset();
-    })
+    });
     test("deleteAppointment (not exist)", async () => {
-        const bdCalendar = await mockDB.createCalendar(
+        const dbCalendar = await mockDB.createCalendar(
             Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
         );
-        const bdAppointment = await mockDB.createAppointment(
-            Appointment.create(bdCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+        const dbAppointment = await mockDB.createAppointment(
+            Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
         )
 
         const deletionResult = await appointmentService.deleteAppointment(BASE_APPOINTMENT.ownerId, "42")
@@ -325,10 +325,400 @@ test.describe("deleteAppointment", () => {
             })
 
         assert.deepStrictEqual(deletionResult, CalendarServiceResponse.RESOURCE_NOT_EXIST, "The appointment does not exist, refuse the deletion");
-        assert.deepStrictEqual(mockDB.appointments[bdAppointment.id as string], bdAppointment);
+        assert.deepStrictEqual(mockDB.appointments[dbAppointment.id as string], dbAppointment);
 
         mockDB.reset();
-    })
+    });
+    test("deleteAppointment (sanitize)", async () => {
+        const dbCalendar = await mockDB.createCalendar(
+            Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
+        );
+        const dbAppointment = await mockDB.createAppointment(
+            Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+        )
+
+        mockDB.appointments[SQL_INJECT_STRING] = dbAppointment;
+
+        await assert.rejects(
+            appointmentService.deleteAppointment(SQL_INJECT_STRING, dbAppointment.id as string),
+            "OwnerID is not checked for safety"
+        );
+
+        await assert.rejects(
+            appointmentService.deleteAppointment(BASE_APPOINTMENT.ownerId, SQL_INJECT_STRING),
+            "AppointmentID is not checked for safety"
+        );
+
+        assert.deepStrictEqual(mockDB.appointments[dbAppointment.id as string], dbAppointment);
+        assert.deepStrictEqual(mockDB.appointments[SQL_INJECT_STRING], dbAppointment);
+
+        mockDB.reset();
+    });
+})
+
+test.describe("updateAppointment", () => {
+    test("updateAppointment", async () => {
+        const dbCalendar = await mockDB.createCalendar(
+            Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
+        );
+
+        const dbCalendar2 = await mockDB.createCalendar(
+            Calendar.create("testCalendar2", "A testing calendar2", "red", BASE_APPOINTMENT.ownerId + "2")
+        );
+
+        const appointment = await mockDB.createAppointment(
+            Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+        )
+
+        const partialAppointment: Partial<Appointment> = {
+            id: appointment.id as string,
+            ownerId: appointment.ownerId as string,
+            calendarId: dbCalendar2.id as string,
+            title: "Modified title",
+            description: "Modified description",
+            startDate: new Date('2025-02-08'),
+            endDate: new Date('2026-03-09'),
+        }
+
+        const updateResult = await appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, appointment.id as string, partialAppointment)
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, CalendarServiceResponse.SUCCESS);
+
+        const dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
+        assert.ok(dbAppointment);
+
+        assert.deepStrictEqual(
+            {...dbAppointment},
+            {
+                ...dbAppointment,
+                ...partialAppointment,
+            }
+        );
+
+        mockDB.reset();
+    });
+    test("updateAppointment (wrong owner id)", async () => {
+        const dbCalendar = await mockDB.createCalendar(
+            Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
+        );
+
+        const appointment = await mockDB.createAppointment(
+            Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+        )
+
+        let updateResult = await appointmentService.updateAppointment("42", appointment.id as string, {title: "Modified title"})
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, CalendarServiceResponse.FORBIDDEN, "If the user does not own the appointment, refuse the update");
+        assert.deepStrictEqual(mockDB.appointments[appointment.id as string], appointment, "If the user does not own the appointment, refuse the update");
+
+        mockDB.reset();
+    });
+    test("updateAppointment (immutable owner id)", async () => {
+        const dbCalendar = await mockDB.createCalendar(
+            Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
+        );
+
+        const appointment = await mockDB.createAppointment(
+            Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+        )
+
+        let updateResult = await appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, appointment.id as string, {title: "Modified title", ownerId: "42"})
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, CalendarServiceResponse.FORBIDDEN, "Refuse to modify the ownerID: it is immutable");
+        assert.deepStrictEqual(mockDB.appointments[appointment.id as string], appointment, "Refuse to modify the ownerID: it is immutable");
+
+        mockDB.reset();
+    });
+    test("updateAppointment (wrong appointment id)", async () => {
+        const dbCalendar = await mockDB.createCalendar(
+            Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
+        );
+
+        const appointment = await mockDB.createAppointment(
+            Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+        )
+
+        let updateResult = await appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, "42", {title: "Modified title"})
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, CalendarServiceResponse.RESOURCE_NOT_EXIST, "Must check if the appointment exist");
+        assert.deepStrictEqual(mockDB.appointments[appointment.id as string], appointment, "Wtf why this changed");
+
+        mockDB.reset();
+    });
+    test("updateAppointment (immutable appointment id)", async () => {
+        const dbCalendar = await mockDB.createCalendar(
+            Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
+        );
+
+        const appointment = await mockDB.createAppointment(
+            Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+        )
+
+        let updateResult = await appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, appointment.id as string, {title: "Modified title", id: "42"})
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, CalendarServiceResponse.FORBIDDEN, "Refuse to modify the appointmentID: it is immutable");
+        assert.deepStrictEqual(mockDB.appointments[appointment.id as string], appointment, "Refuse to modify the appointmentID: it is immutable");
+
+        mockDB.reset();
+    });
+    test("updateAppointment (sanitize)", async () => {
+        const dbCalendar = await mockDB.createCalendar(
+            Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
+        );
+
+        const dbCalendar2 = await mockDB.createCalendar(
+            Calendar.create("testCalendar2", "A testing calendar2", "red", BASE_APPOINTMENT.ownerId + "2")
+        );
+
+        const appointment = await mockDB.createAppointment(
+            Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+        );
+
+        mockDB.appointments[SQL_INJECT_STRING] = {...appointment, ownerId: SQL_INJECT_STRING, isValid: appointment.isValid, id: SQL_INJECT_STRING};
+        mockDB.calendars[SQL_INJECT_STRING] = {...dbCalendar, id: SQL_INJECT_STRING, isValid: dbCalendar.isValid};
+
+        await assert.rejects(
+            appointmentService.updateAppointment(SQL_INJECT_STRING, appointment.id as string, {title: "This should not be in the result"}),
+            "OwnerID is not checked for safety"
+        );
+
+        await assert.rejects(
+            appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, SQL_INJECT_STRING as string, {title: "This should not be in the result"}),
+            "AppointmentID is not checked for safety"
+        );
+
+        await assert.rejects(
+            appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, appointment.id as string, {title: "This should not be in the result", calendarId: SQL_INJECT_STRING}),
+            "Partial.calendarId is not checked for safety"
+        );
+
+        assert.deepStrictEqual(mockDB.appointments[appointment.id as string], appointment);
+        assert.deepStrictEqual(mockDB.appointments[SQL_INJECT_STRING], {...appointment, ownerId: SQL_INJECT_STRING, isValid: appointment.isValid, id: SQL_INJECT_STRING});
+
+        const partialAppointment: Partial<Appointment> = {
+            id: appointment.id as string,
+            ownerId: appointment.ownerId as string,
+            calendarId: dbCalendar2.id as string,
+            title: SQL_INJECT_STRING + " title",
+            description: SQL_INJECT_STRING + " description",
+            startDate: new Date('2025-02-08'),
+            endDate: new Date('2026-03-09'),
+        }
+
+        const updateResult = await appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, appointment.id as string, partialAppointment)
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, CalendarServiceResponse.SUCCESS);
+
+        const dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
+        assert.ok(dbAppointment);
+
+        assert.deepStrictEqual(
+            {...dbAppointment},
+            {
+                ...dbAppointment,
+                ...partialAppointment,
+                title: SQL_INJECT_SANITIZED_STRING + " title",
+                description: SQL_INJECT_SANITIZED_STRING + " description",
+            },
+            "Title and description should be sanitized before being sent to DB"
+        );
+
+        mockDB.reset();
+    });
+    test("updateAppointment (calendar not exist)", async () => {
+        const dbCalendar = await mockDB.createCalendar(
+            Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
+        );
+
+        const appointment = await mockDB.createAppointment(
+            Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+        )
+
+        let updateResult = await appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, appointment.id as string, {title: "Modified title", calendarId: "42"})
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, CalendarServiceResponse.RESOURCE_NOT_EXIST, "Refuse to modify the appointment: calendar of id 42 odes not exist");
+        assert.deepStrictEqual(mockDB.appointments[appointment.id as string], appointment, "Refuse to modify the appointment: calendar of id 42 odes not exist");
+
+        mockDB.reset();
+    });
+    test("updateAppointment (inverted date)", async () => {
+        const dbCalendar = await mockDB.createCalendar(
+            Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
+        );
+
+        const dbCalendar2 = await mockDB.createCalendar(
+            Calendar.create("testCalendar2", "A testing calendar2", "red", BASE_APPOINTMENT.ownerId + "2")
+        );
+
+        const appointment = await mockDB.createAppointment(
+            Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+        )
+
+        const partialAppointment: Partial<Appointment> = {
+            id: appointment.id as string,
+            ownerId: appointment.ownerId as string,
+            calendarId: dbCalendar2.id as string,
+            title: "Modified title",
+            description: "Modified description",
+            startDate: new Date('2026-03-09'),
+            endDate: new Date('2025-02-08'),
+        }
+
+        let updateResult = await appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, appointment.id as string, partialAppointment)
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, CalendarServiceResponse.SUCCESS);
+
+        let dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
+        assert.ok(dbAppointment);
+
+        assert.deepStrictEqual(
+            {...dbAppointment},
+            {
+                ...dbAppointment,
+                ...partialAppointment,
+                startDate: partialAppointment.endDate,
+                endDate: partialAppointment.startDate,
+            },
+            "when endDate > startDate, swap them silently"
+        );
+
+        updateResult = await appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, appointment.id as string, {startDate: new Date('2027-04-10')})
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, CalendarServiceResponse.SUCCESS);
+
+        dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
+        assert.ok(dbAppointment);
+
+        assert.deepStrictEqual(
+            {...dbAppointment},
+            {
+                ...dbAppointment,
+                ...partialAppointment,
+                startDate: new Date('2026-03-09'),
+                endDate: new Date('2027-04-10'),
+            },
+            "when endDate > startDate, swap them silently. Even with only startDate as argument"
+        );
+
+        updateResult = await appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, appointment.id as string, {endDate: new Date('2025-02-08')})
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, CalendarServiceResponse.SUCCESS);
+
+        dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
+        assert.ok(dbAppointment);
+
+        assert.deepStrictEqual(
+            {...dbAppointment},
+            {
+                ...dbAppointment,
+                ...partialAppointment,
+                startDate: new Date('2025-02-08'),
+                endDate: new Date('2026-03-09'),
+            },
+            "when endDate > startDate, swap them silently. Even with only endDate as argument"
+        );
+
+        mockDB.reset();
+    });
+    test("updateAppointment (wrong date)", async () => {
+        const dbCalendar = await mockDB.createCalendar(
+            Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
+        );
+
+        const appointment = await mockDB.createAppointment(
+            Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+        )
+
+        await assert.rejects(
+            appointmentService.updateAppointment(appointment.ownerId as string, appointment.id as string, {startDate: null as unknown as Date}),
+            "StartDate does not check for null dates"
+        );
+        await assert.rejects(
+            appointmentService.updateAppointment(appointment.ownerId as string, appointment.id as string, {endDate: null as unknown as Date}),
+            "EndDate does not check for null dates"
+        );
+        await assert.rejects(
+            appointmentService.updateAppointment(appointment.ownerId as string, appointment.id as string, {startDate: new Date("ahahahah wrong startDate")}),
+            "StartDate does not check for invalid dates"
+        );
+        await assert.rejects(
+            appointmentService.updateAppointment(appointment.ownerId as string, appointment.id as string, {endDate: new Date("ahahahah wrong endDate")}),
+            "EndDate does not check for invalid dates"
+        );
+
+        assert.deepStrictEqual(mockDB.appointments[appointment.id as string], appointment, "Should not modify the appointment when using a wrong date");
+
+        mockDB.reset();
+    });
+    test("updateAppointment (ignore metaData)", async () => {
+        const dbCalendar = await mockDB.createCalendar(
+            Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
+        );
+
+        const appointment = await mockDB.createAppointment(
+            Appointment.create(dbCalendar.id as string, BASE_APPOINTMENT.title, BASE_APPOINTMENT.description, BASE_APPOINTMENT.startDate, BASE_APPOINTMENT.endDate, BASE_APPOINTMENT.ownerId)
+        )
+
+        const partialAppointment: any = {
+            createdAt: new Date('1800-06-20'),
+            updatedAt: new Date('1700-05-21'),
+            updatedBy: "Gromit",
+            fromage: "miam this should be ignored",
+            isValid() {
+                return "Banane";
+            },
+        }
+
+        const updateResult = await appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, appointment.id as string, partialAppointment)
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, CalendarServiceResponse.SUCCESS);
+
+        const dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
+        assert.ok(dbAppointment);
+
+        assert.deepStrictEqual(
+            {...dbAppointment},
+            {
+                ...appointment
+            },
+            "Fields 'createdAt', 'updatedAt' and 'updatedBy' should be ignored as well as other unknown fields"
+        );
+
+        mockDB.reset();
+    });
 })
 
 test.describe("getAppointment by ID", () => {
@@ -369,11 +759,11 @@ test.describe("getAppointment by ID", () => {
         mockDB.reset();
     })
     test("getAppointment by ID (sanitize check)", async () => {
-        const bdResult = await mockDB.createCalendar(
+        const dbResult = await mockDB.createCalendar(
             Calendar.create("testCalendar", "A testing calendar", "blue", BASE_APPOINTMENT.ownerId)
         );
-        const corruptedBdResult = await mockDB.createAppointment(
-            Appointment.create(bdResult.id as string,
+        const corruptedDbResult = await mockDB.createAppointment(
+            Appointment.create(dbResult.id as string,
                 SQL_INJECT_SANITIZED_STRING + " title",
                 SQL_INJECT_SANITIZED_STRING + " description",
                 BASE_APPOINTMENT.startDate,
@@ -382,20 +772,20 @@ test.describe("getAppointment by ID", () => {
             ),
         );
 
-        mockDB.calendars[SQL_INJECT_STRING] = {...bdResult, isValid: bdResult.isValid};
+        mockDB.calendars[SQL_INJECT_STRING] = {...dbResult, isValid: dbResult.isValid};
 
         await assert.rejects(
             appointmentService.getAppointmentById(SQL_INJECT_STRING),
             "AppointmentID is not checked for safety"
         );
 
-        const getResult = await appointmentService.getAppointmentById(corruptedBdResult.id as string)
+        const getResult = await appointmentService.getAppointmentById(corruptedDbResult.id as string)
             .catch((reason: any) => {
                 throw new Error(reason)
             });
 
         assert.deepStrictEqual(getResult, {
-            ...corruptedBdResult,
+            ...corruptedDbResult,
             title: SQL_INJECT_STRING + " title",
             description: SQL_INJECT_STRING + " description",
         }, "Appointment returned by the API must NOT be sanitized");

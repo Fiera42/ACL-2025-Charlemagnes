@@ -9,7 +9,7 @@ export interface ICalendarService {
     color: string,
   ): Promise<Calendar>;
 
-  removeCalendar(ownerId: string, calendarId: string): Promise<CalendarServiceResponse>;
+  deleteCalendar(ownerId: string, calendarId: string): Promise<CalendarServiceResponse>;
 
   updateCalendar(
     ownerId: string,

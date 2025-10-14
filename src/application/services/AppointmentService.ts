@@ -137,9 +137,87 @@ export class AppointmentService implements IAppointmentService {
     updateAppointment(
         ownerId: string,
         appointmentId: string,
-        appointment: Partial<Appointment>
+        partialAppointment: Partial<Appointment>
     ): Promise<CalendarServiceResponse> {
-        throw new Error("Method not implemented.");
+        return new Promise<CalendarServiceResponse>(async (resolve, reject) => {
+            if (Sanitizer.doesStringContainSpecialChar(ownerId)) {
+                reject(new Error(`OwnerID (${ownerId}) contains special char`));
+                return;
+            }
+            if (Sanitizer.doesStringContainSpecialChar(appointmentId)) {
+                reject(new Error(`AppointmentId (${appointmentId}) contains special char`));
+                return;
+            }
+            if (partialAppointment.calendarId && Sanitizer.doesStringContainSpecialChar(partialAppointment.calendarId)) {
+                reject(new Error(`The new calendarId (${partialAppointment.calendarId}) contains special char`));
+                return;
+            }
+            if ((partialAppointment.startDate || partialAppointment.startDate === null) && (Object.prototype.toString.call(partialAppointment.startDate) !== '[object Date]' || isNaN(partialAppointment.startDate.getTime()))) {
+                reject(new Error(`The new StartDate (${partialAppointment.startDate}) is not valid`));
+                return;
+            }
+            if ((partialAppointment.endDate || partialAppointment.endDate === null) && (Object.prototype.toString.call(partialAppointment.endDate) !== '[object Date]' || isNaN(partialAppointment.endDate.getTime()))) {
+                reject(new Error(`The new EndDate (${partialAppointment.endDate}) is not valid`));
+                return;
+            }
+
+            const appointment = await this.calendarDB.findAppointmentById(appointmentId)
+                .catch((reason) => {
+                    reject(reason);
+                });
+
+            if (appointment === undefined) return; // We already rejected in the catch
+            if (appointment === null) {
+                resolve(CalendarServiceResponse.RESOURCE_NOT_EXIST);
+                return;
+            }
+            if (ownerId !== appointment.ownerId
+                || (partialAppointment.ownerId && partialAppointment.ownerId !== appointment.ownerId)
+                || (partialAppointment.id && partialAppointment.id !== appointment.id)
+            ) {
+                resolve(CalendarServiceResponse.FORBIDDEN);
+                return;
+            }
+
+            if(partialAppointment.calendarId) {
+                const calendar = await this.calendarDB.findCalendarById(partialAppointment.calendarId)
+                    .catch((reason) => {
+                        reject(reason);
+                    });
+
+                if (calendar === undefined) return; // We already rejected in the catch
+                if (calendar === null) {
+                    resolve(CalendarServiceResponse.RESOURCE_NOT_EXIST);
+                    return;
+                }
+            }
+
+            const cleanedAppointment: Partial<Appointment> = {
+                ...(partialAppointment.title && {title: encode(partialAppointment.title, {mode: 'extensive'})}),
+                ...(partialAppointment.description && {description: encode(partialAppointment.description, {mode: 'extensive'})}),
+                ...(partialAppointment.calendarId && {calendarId: partialAppointment.calendarId}),
+                startDate: (partialAppointment.startDate) ? partialAppointment.startDate : appointment.startDate,
+                endDate: (partialAppointment.endDate) ? partialAppointment.endDate : appointment.endDate,
+            };
+
+            if ((cleanedAppointment.endDate as Date) < (cleanedAppointment.startDate as Date)) {
+                let temp = cleanedAppointment.endDate;
+                cleanedAppointment.endDate = cleanedAppointment.startDate;
+                cleanedAppointment.startDate = temp;
+            }
+
+            const updateResult = await this.calendarDB.updateAppointment(appointmentId, cleanedAppointment)
+                .catch((reason) => {
+                    reject(reason);
+                });
+            if (updateResult === undefined) return; // We already rejected in the catch
+
+            if (updateResult) {
+                resolve(CalendarServiceResponse.SUCCESS)
+            } else {
+                resolve(CalendarServiceResponse.FAILED)
+            }
+        });
     }
 
     updateRecurrentAppointment(
