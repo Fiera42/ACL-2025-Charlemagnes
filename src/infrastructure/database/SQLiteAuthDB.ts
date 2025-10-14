@@ -1,29 +1,33 @@
-import {IAuthDB} from '../../domain/interfaces/IAuthDB';
-import {User} from '../../domain/entities/User';
-import {pool} from '../config/database';
-import {v4 as uuidv4} from 'uuid';
-import {RowDataPacket, ResultSetHeader} from 'mysql2';
+import { IAuthDB } from '../../domain/interfaces/IAuthDB';
+import { User } from '../../domain/entities/User';
+import { Database } from 'better-sqlite3';
+import { v4 as uuidv4 } from 'uuid';
 
-export class AuthRepository implements IAuthDB {
+export class SQLiteAuthDB implements IAuthDB {
+    private db: Database;
+
+    constructor(db: Database) {
+        this.db = db;
+    }
+
     async createUser(user: User): Promise<User> {
         const id = uuidv4();
-        await pool.execute<ResultSetHeader>(
-            'INSERT INTO users (id, username, email, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
-            [id, user.username, user.email, user.password, user.createdAt, user.updatedAt]
-        );
+        const stmt = this.db.prepare(`
+            INSERT INTO users (id, username, email, password, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `);
+
+        stmt.run(id, user.username, user.email, user.password, user.createdAt.toISOString(), user.updatedAt.toISOString());
 
         return new User(id, user.username, user.email, user.password, user.createdAt, user.updatedAt);
     }
 
     async findUserByEmail(email: string): Promise<User | null> {
-        const [rows] = await pool.execute<RowDataPacket[]>(
-            'SELECT * FROM users WHERE email = ?',
-            [email]
-        );
+        const stmt = this.db.prepare('SELECT * FROM users WHERE email = ?');
+        const row = stmt.get(email) as any;
 
-        if (rows.length === 0) return null;
+        if (!row) return null;
 
-        const row = rows[0];
         return new User(
             row.id,
             row.username,
@@ -35,14 +39,11 @@ export class AuthRepository implements IAuthDB {
     }
 
     async findUserById(id: string): Promise<User | null> {
-        const [rows] = await pool.execute<RowDataPacket[]>(
-            'SELECT * FROM users WHERE id = ?',
-            [id]
-        );
+        const stmt = this.db.prepare('SELECT * FROM users WHERE id = ?');
+        const row = stmt.get(id) as any;
 
-        if (rows.length === 0) return null;
+        if (!row) return null;
 
-        const row = rows[0];
         return new User(
             row.id,
             row.username,
@@ -54,14 +55,11 @@ export class AuthRepository implements IAuthDB {
     }
 
     async findUserByUsername(username: string): Promise<User | null> {
-        const [rows] = await pool.execute<RowDataPacket[]>(
-            'SELECT * FROM users WHERE username = ?',
-            [username]
-        );
+        const stmt = this.db.prepare('SELECT * FROM users WHERE username = ?');
+        const row = stmt.get(username) as any;
 
-        if (rows.length === 0) return null;
+        if (!row) return null;
 
-        const row = rows[0];
         return new User(
             row.id,
             row.username,
@@ -89,15 +87,14 @@ export class AuthRepository implements IAuthDB {
             values.push(user.password);
         }
 
-        updates.push('updated_at = NOW()');
+        updates.push('updated_at = ?');
+        values.push(new Date().toISOString());
         values.push(id);
 
-        await pool.execute(
-            `UPDATE users
-             SET ${updates.join(', ')}
-             WHERE id = ?`,
-            values
-        );
+        const stmt = this.db.prepare(`
+            UPDATE users SET ${updates.join(', ')} WHERE id = ?
+        `);
+        stmt.run(...values);
 
         const updatedUser = await this.findUserById(id);
         if (!updatedUser) throw new Error('Utilisateur introuvable');
@@ -106,11 +103,8 @@ export class AuthRepository implements IAuthDB {
     }
 
     async deleteUser(id: string): Promise<boolean> {
-        const [result] = await pool.execute<ResultSetHeader>(
-            'DELETE FROM users WHERE id = ?',
-            [id]
-        );
-
-        return result.affectedRows > 0;
+        const stmt = this.db.prepare('DELETE FROM users WHERE id = ?');
+        const result = stmt.run(id);
+        return result.changes > 0;
     }
 }
