@@ -6,6 +6,7 @@ import {CalendarService} from "../../application/services/CalendarService";
 import {MockAuthDB} from "../mocks/MockAuthDB";
 import {User} from "../../domain/entities/User";
 import {Calendar} from "../../domain/entities/Calendar";
+import {Appointment} from "../../domain/entities/Appointment.ts";
 
 const mockCalendarDB = new MockCalendarDB();
 const mockAuthDB = new MockAuthDB();
@@ -450,6 +451,85 @@ test.describe("getCalendar by ID", () => {
             color: SQL_INJECT_STRING + " color"
         }, "Appointment returned by the API must NOT be sanitized");
         assert.deepStrictEqual(mockCalendarDB.calendars[dbCalendar.id as string], dbCalendar);
+
+        mockCalendarDB.reset();
+        mockAuthDB.reset();
+    });
+});
+
+test.describe("getCalendars by owner ID", () => {
+    test("getCalendars by owner ID", async () => {
+        const calendars = await Promise.all([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            .map(async (value) => {
+                return await mockCalendarDB.createCalendar(
+                    Calendar.create(BASE_CALENDAR.name + value, BASE_CALENDAR.description + ` for nb ${value}`, BASE_CALENDAR.color + ` is the color ${value}`, BASE_CALENDAR.ownerId)
+                );
+            }));
+
+        await mockCalendarDB.createCalendar(
+            Calendar.create("testCalendar", "A testing calendar", "blue", "42")
+        );
+
+        const getResults = await calendarService.getCalendarsByOwnerId(BASE_CALENDAR.ownerId)
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(getResults, calendars);
+
+        mockCalendarDB.reset();
+        mockAuthDB.reset();
+    });
+    test("getCalendars by owner ID (empty result)", async () => {
+        const calendars = await Promise.all([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            .map(async (value) => {
+                return await mockCalendarDB.createCalendar(
+                    Calendar.create(BASE_CALENDAR.name + value, BASE_CALENDAR.description + ` for nb ${value}`, BASE_CALENDAR.color + ` is the color ${value}`, BASE_CALENDAR.ownerId)
+                );
+            }));
+
+        await mockCalendarDB.createCalendar(
+            Calendar.create("testCalendar", "A testing calendar", "blue", "42")
+        );
+
+        const getResults = await calendarService.getCalendarsByOwnerId("12")
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(getResults, []);
+
+        mockCalendarDB.reset();
+        mockAuthDB.reset();
+    });
+    test("getCalendars by owner ID (sanitize check)", async () => {
+        const calendars = await Promise.all([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            .map(async (value) => {
+                return await mockCalendarDB.createCalendar(
+                    Calendar.create(SQL_INJECT_SANITIZED_STRING + " name", SQL_INJECT_SANITIZED_STRING + " description", SQL_INJECT_SANITIZED_STRING + " color", BASE_CALENDAR.ownerId)
+                );
+            }));
+
+        await mockCalendarDB.createCalendar(
+            Calendar.create("testCalendar", "A testing calendar", "blue", "42")
+        );
+
+        await assert.rejects(
+            calendarService.getCalendarsByOwnerId(SQL_INJECT_STRING),
+            "CalendarID is not checked for safety"
+        );
+
+        const getResults = await calendarService.getCalendarsByOwnerId(BASE_CALENDAR.ownerId)
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(getResults, calendars.map((calendar) => {
+            calendar.name = SQL_INJECT_STRING + " name";
+            calendar.description = SQL_INJECT_STRING + " description";
+            calendar.color = SQL_INJECT_STRING + " color";
+            return calendar;
+        }), "Appointments returned by the API must NOT be sanitized");
 
         mockCalendarDB.reset();
         mockAuthDB.reset();

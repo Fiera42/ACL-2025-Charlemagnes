@@ -179,7 +179,29 @@ export class CalendarService implements ICalendarService {
     }
 
     getCalendarsByOwnerId(ownerId: string): Promise<Calendar[]> {
-        throw new Error("Method not implemented.");
+        return new Promise<Calendar[]>(async (resolve, reject) => {
+            if (Sanitizer.doesStringContainSpecialChar(ownerId)) {
+                reject(new Error(`OwnerId (${ownerId}) contains special char`));
+                return;
+            }
+
+            const calendars = await this.calendarDB.findCalendarsByOwnerId(ownerId)
+                .catch((reason) => {
+                    reject(reason);
+                });
+
+            if (calendars === undefined) return; // We already rejected in the catch
+
+            // We sanitized at creation, so we have to sanitize when getting it back
+            calendars.forEach((calendar) => {
+                // We sanitized at creation, so we have to sanitize when getting it back
+                calendar.name = decode(calendar.name);
+                calendar.description = decode(calendar.description);
+                calendar.color = decode(calendar.color);
+            })
+
+            resolve(calendars);
+        });
     }
 
     shareCalendar(
