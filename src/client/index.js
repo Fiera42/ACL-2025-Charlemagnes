@@ -64,6 +64,10 @@ function majCalendrier() {
     });
 }
 
+// Mettre le mois actuel comme sélectionné par défaut
+const moisActuel = new Date().getMonth();
+selectMois.selectedIndex = moisActuel;
+
 /**
  * Ajoute des écouteurs d'événements aux cases du calendrier pour faire apparaître une pop-up
  */
