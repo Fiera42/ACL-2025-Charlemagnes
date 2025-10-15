@@ -89,11 +89,13 @@ router.post('/:calendarId/appointments', authenticateToken, async (req: Authenti
     try {
         const { title, description, startDate, endDate, recursionRule } = req.body;
         let appointment;
-        
+
         if (recursionRule) {
             appointment = await appointmentService.createRecurrentAppointment(
-                req.user!.userId,
-                req.params.calendarId,
+                //req.user!.userId,
+                "1",
+                //req.params.calendarId,
+                "1",
                 title,
                 description,
                 new Date(startDate),
@@ -102,15 +104,17 @@ router.post('/:calendarId/appointments', authenticateToken, async (req: Authenti
             );
         } else {
             appointment = await appointmentService.createAppointment(
-                req.user!.userId,
-                req.params.calendarId,
+                //req.user!.userId,
+                "1",
+                //req.params.calendarId,
+                "1",
                 title,
                 description,
                 new Date(startDate),
                 new Date(endDate)
             );
         }
-        
+
         res.status(201).json(appointment);
     } catch (error) {
         res.status(500).json({ error: 'Erreur lors de la création du rendez-vous' });
@@ -132,16 +136,51 @@ router.get('/appointments/:id', authenticateToken, async (req: AuthenticatedRequ
 
 router.put('/appointments/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const response = await appointmentService.updateAppointment(req.user!.userId, req.params.id, req.body);
-        res.json(response);
+        const { title, description, startDate, endDate, recursionRule } = req.body;
+        const appointmentId = req.params.id;
+
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        let updatedAppointment;
+
+        if (recursionRule) {
+            updatedAppointment = await appointmentService.updateRecurrentAppointment(
+                "1",
+                appointmentId,
+                {
+                    title,
+                    description,
+                    startDate: start,
+                    endDate: end,
+                    recursionRule
+                }
+            );
+        } else {
+            updatedAppointment = await appointmentService.updateAppointment(
+                "1",            // userId
+                appointmentId,
+                {
+                    title,
+                    description,
+                    startDate: start,
+                    endDate: end
+                }
+            );
+        }
+
+        res.json(updatedAppointment);
+
     } catch (error) {
+        console.error("Erreur PUT /appointments/:id :", error);
         res.status(500).json({ error: 'Erreur lors de la mise à jour du rendez-vous' });
     }
 });
 
 router.delete('/appointments/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const response = await appointmentService.deleteAppointment(req.user!.userId, req.params.id);
+        //const response = await appointmentService.deleteAppointment(req.user!.userId, req.params.id);
+        const response = await appointmentService.deleteAppointment("1", req.params.id);
         res.json(response);
     } catch (error) {
         res.status(500).json({ error: 'Erreur lors de la suppression du rendez-vous' });
