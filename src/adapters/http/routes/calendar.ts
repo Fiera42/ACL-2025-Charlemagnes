@@ -6,11 +6,8 @@ const router: Router = express.Router();
 const calendarService = ServiceFactory.getCalendarService();
 const appointmentService = ServiceFactory.getAppointmentService();
 
-router.get('/', authenticateToken, (req: AuthenticatedRequest, res: Response) => {
-    res.redirect('/index.html');
-});
-
-router.get('/calendars', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+// Routes pour les calendriers
+router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const calendars = await calendarService.getCalendarsByOwnerId(req.user!.userId);
         res.json({ calendars });
@@ -19,7 +16,7 @@ router.get('/calendars', authenticateToken, async (req: AuthenticatedRequest, re
     }
 });
 
-router.post('/calendars', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const { name, description, color } = req.body;
         const calendar = await calendarService.createCalendar(req.user!.userId, name, description, color);
@@ -29,7 +26,7 @@ router.post('/calendars', authenticateToken, async (req: AuthenticatedRequest, r
     }
 });
 
-router.get('/calendars/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const calendar = await calendarService.getCalendarById(req.params.id);
         if (!calendar) {
@@ -41,7 +38,7 @@ router.get('/calendars/:id', authenticateToken, async (req: AuthenticatedRequest
     }
 });
 
-router.put('/calendars/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.put('/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const response = await calendarService.updateCalendar(req.user!.userId, req.params.id, req.body);
         res.json(response);
@@ -50,7 +47,7 @@ router.put('/calendars/:id', authenticateToken, async (req: AuthenticatedRequest
     }
 });
 
-router.delete('/calendars/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.delete('/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const response = await calendarService.deleteCalendar(req.user!.userId, req.params.id);
         res.json(response);
@@ -59,7 +56,7 @@ router.delete('/calendars/:id', authenticateToken, async (req: AuthenticatedRequ
     }
 });
 
-router.post('/calendars/:id/share', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/:id/share', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const { sharedToId } = req.body;
         const response = await calendarService.shareCalendar(req.user!.userId, req.params.id, sharedToId);
@@ -69,7 +66,7 @@ router.post('/calendars/:id/share', authenticateToken, async (req: Authenticated
     }
 });
 
-router.delete('/calendars/:id/share/:sharedToId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.delete('/:id/share/:sharedToId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const response = await calendarService.unShareCalendar(req.user!.userId, req.params.id, req.params.sharedToId);
         res.json(response);
@@ -78,7 +75,8 @@ router.delete('/calendars/:id/share/:sharedToId', authenticateToken, async (req:
     }
 });
 
-router.get('/calendars/:calendarId/appointments', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+// Routes pour les rendez-vous d'un calendrier
+router.get('/:calendarId/appointments', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const appointments = await appointmentService.getAppointmentsByCalendarId(req.params.calendarId);
         res.json({ appointments });
@@ -87,7 +85,7 @@ router.get('/calendars/:calendarId/appointments', authenticateToken, async (req:
     }
 });
 
-router.post('/calendars/:calendarId/appointments', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/:calendarId/appointments', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const { title, description, startDate, endDate, recursionRule } = req.body;
         let appointment;
@@ -119,6 +117,7 @@ router.post('/calendars/:calendarId/appointments', authenticateToken, async (req
     }
 });
 
+// Routes pour les rendez-vous individuels
 router.get('/appointments/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const appointment = await appointmentService.getAppointmentById(req.params.id);
@@ -168,6 +167,7 @@ router.delete('/appointments/:id/share/:sharedToId', authenticateToken, async (r
     }
 });
 
+// Routes pour les conflits
 router.get('/conflicts/user', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const conflicts = await appointmentService.getConflictsOfUser(req.user!.userId);
@@ -177,7 +177,7 @@ router.get('/conflicts/user', authenticateToken, async (req: AuthenticatedReques
     }
 });
 
-router.get('/conflicts/calendar/:calendarId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/conflicts/:calendarId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const conflicts = await appointmentService.getConflictsOfCalendar(req.params.calendarId);
         res.json({ conflicts });
