@@ -1,0 +1,55 @@
+@startuml
+
+      entity User {
+        * id : INT
+        --
+        * username : VARCHAR(255)
+        * email : VARCHAR(255)
+        * password : VARCHAR(255)
+        * createdAt : DATETIME
+        * updatedAt : DATETIME
+      }
+
+      entity Calendar {
+        * id : INT
+        --
+        * name : VARCHAR(255)
+        * description : TEXT
+        * color : VARCHAR(20)
+        * ownerId : INT (FK)
+        * createdAt : DATETIME
+        * updatedAt : DATETIME
+        * updateBy : INT (FK)
+      }
+
+      entity Appointment {
+        * id : INT
+        --
+        * calendarId : INT (FK)
+        * title : VARCHAR(255)
+        * description : TEXT
+        * startDate : DATETIME
+        * endDate : DATETIME
+        * ownerId : INT (FK)
+        * createdAt : DATETIME
+        * updatedAt : DATETIME
+        * updateBy : INT (FK)
+      }
+
+      entity Partage {
+        * id : INT
+        --
+        * ownerId : INT (FK)
+        * calendarId : INT (FK)
+        * userShareId : INT (FK)
+        * typeShare : TINYINT // 0 : ics, 1 : link
+        * linkShare : VARCHAR(255)
+        * createdAt : DATETIME
+      }
+
+      User "1" --> "0..*" Partage : partage
+      Calendar "1" --> "0..*" Partage : partagé
+      User "1" --> "0..*" Calendar : possède
+      Calendar "1" --> "0..*" Appointment : contient
+
+    @enduml
