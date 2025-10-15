@@ -9,18 +9,13 @@ Projet d'intégration en M1 de l'équipe "les charlemagnes" :
 
 ## Getting Started
 
-### Installing
-
 Download dependencies with `npm install` (make sure that npm is up to date if you have any issue)
-
-### Executing program
 
 Run the server with `npm start`, the page will be available at `http://localhost:3000`
 
 ## Help
 
-## Routes
-
+### Routes
 
 Toutes les routes API sont préfixées par `/api`.
 
@@ -189,50 +184,11 @@ Authorization: Bearer <votre_token_jwt>
 
 Le token est obtenu lors de la connexion via `/api/auth/login`.
 
----
+## Version History
 
-## 📝 Codes d'Erreur
-
-| Code | Description |
-|------|-------------|
-| `200` | Succès |
-| `201` | Ressource créée avec succès |
-| `400` | Requête invalide |
-| `401` | Token manquant ou invalide |
-| `403` | Accès refusé |
-| `404` | Ressource non trouvée |
-| `500` | Erreur serveur |
-
----
-
-## 🚀 Installation et Démarrage
-
-```bash
-# Installation des dépendances
-npm install
-
-# Démarrer le serveur en mode développement
-npm start
-
-# Le serveur démarre sur http://localhost:3000
-```
-
----
-
-## 🏗️ Architecture
-
-L'application suit une architecture hexagonale avec :
-- **Domain** : Entités et interfaces métier
-- **Application** : Services et cas d'usage
-- **Infrastructure** : Implémentation des repositories (SQLite)
-- **Adapters** : Routes HTTP et middleware
-
----
-
-## 📦 Technologies
-
-- **Node.js** + **TypeScript**
-- **Express.js** pour les routes HTTP
-- **SQLite** pour la base de données
-- **JWT** pour l'authentification
-- **bcryptjs** pour le hashage des mots de passe
+* 0.1
+    * **Affichage mensuelle du calendrier** : Création de l'interface utilisateur pour afficher le calendrier.
+    * **Ajouter des rendez-vous** : Permet à l'utilisateur d'ajouter des rendez-vous à un agenda.
+    * **Supprimer des rendez-vous** : Permet à l'utilisateur de supprimer des rendez-vous d'un agenda.
+    * **Modifier des rendez-vous** : Permet à l'utilisateur de modifier les détails d'un rendez-vous (titre, plage horaire, description).
+    * Mise en place du serveur et de la base de données persistante
