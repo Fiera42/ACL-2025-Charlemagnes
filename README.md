@@ -9,35 +9,25 @@ Projet d'intégration en M1 de l'équipe "les charlemagnes" :
 
 ## Getting Started
 
-### Dependencies
-
-* Describe any prerequisites, libraries, OS version, etc., needed before installing program.
-* ex. Windows 10
-
 ### Installing
 
-* How/where to download your program
-* Any modifications needed to be made to files/folders
+Download dependencies with `npm install` (make sure that npm is up to date if you have any issue)
 
 ### Executing program
 
-* How to run the program
-* Step-by-step bullets
-```
-code blocks for commands
-```
+Run the server with `npm start`, the page will be available at `http://localhost:3000`
 
 ## Help
 
-Any advise for common problems or issues.
-```
-command to run if program contains helper info
-```
+### Routes
+
+TODO
 
 ## Version History
 
-* 0.2
-    * Various bug fixes and optimizations
-    * See [commit change]() or See [release history]()
 * 0.1
-    * Initial Release
+    * **Affichage mensuelle du calendrier** : Création de l'interface utilisateur pour afficher le calendrier.
+    * **Ajouter des rendez-vous** : Permet à l'utilisateur d'ajouter des rendez-vous à un agenda.
+    * **Supprimer des rendez-vous** : Permet à l'utilisateur de supprimer des rendez-vous d'un agenda.
+    * **Modifier des rendez-vous** : Permet à l'utilisateur de modifier les détails d'un rendez-vous (titre, plage horaire, description).
+    * Mise en place du serveur et de la base de données persistante
