@@ -67,31 +67,65 @@ async function bootstrap() {
 
     app.get('/test-insert', async (_req: Request, res: Response) => {
         try {
-            const testUserId = uuidv4();
+            const testUserId = '1';
             const hashedPassword = await bcrypt.hash('test123', 10);
 
             const insertStmt = db.prepare(`
                             INSERT INTO users (id, email, password, username)
                             VALUES (?, ?, ?, ?)
                         `);
-            insertStmt.run(testUserId, `test-${Date.now()}@example.com`, hashedPassword, `TestUser-${Date.now()}`);
+            insertStmt.run(testUserId, `test@example.com`, hashedPassword, `TestUser`);
 
             const user = db.prepare('SELECT id, email, username, created_at FROM users WHERE id = ?').get(testUserId);
 
+            const testCalendarId = '1';
             const insertStmtCalendar = db.prepare(`
                             INSERT INTO calendars (id, name, color, owner_id)
                             VALUES (?, ?, ?, ?)
                         `);
-            const testCalendarId = uuidv4();
             insertStmtCalendar.run(testCalendarId, 'Calendrier Test', '#FF5733', testUserId);
+
+            // Créer un rendez-vous pour aujourd'hui
+            const testAppointmentId = '1';
+            const now = new Date();
+            const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 10, 0, 0); // Aujourd'hui à 10h00
+            const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 11, 0, 0); // Aujourd'hui à 11h00
+
+            const insertStmtAppointment = db.prepare(`
+                INSERT INTO appointments (id, calendar_id, title, description, start_date, end_date, owner_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `);
+            insertStmtAppointment.run(
+                testAppointmentId,
+                testCalendarId,
+                'Rendez-vous Test',
+                'Rendez-vous créé automatiquement pour test',
+                startDate.toISOString(),
+                endDate.toISOString(),
+                testUserId
+            );
 
             console.log('\n✓ Utilisateur test créé :', user);
             console.log('✓ Calendrier test créé pour l\'utilisateur');
+            console.log('✓ Rendez-vous test créé pour aujourd\'hui (10h00 - 11h00)');
 
             res.json({
                 success: true,
                 user: user,
-                message: 'Utilisateur test créé et lu avec succès'
+                calendar: {
+                    id: testCalendarId,
+                    name: 'Calendrier Test',
+                    color: '#FF5733'
+                },
+                appointment: {
+                    id: testAppointmentId,
+                    title: 'Rendez-vous Test',
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString(),
+                    calendarId: testCalendarId,
+                    ownerId: testUserId
+                },
+                message: 'Utilisateur, calendrier et rendez-vous test créés avec succès'
             });
         } catch (error: any) {
             console.error('❌ Erreur insertion:', error);
