@@ -1,5 +1,7 @@
 import express, {Request, Response} from 'express';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import authRoutes from './src/adapters/http/routes/auth.js';
 import calendarRoutes from './src/adapters/http/routes/calendar.js';
 import {connectDatabase, closeDatabase} from './src/infrastructure/database/connection.js';
@@ -9,6 +11,9 @@ import bcrypt from 'bcryptjs';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 async function bootstrap() {
     const app = express();
     const PORT: number = parseInt(process.env.PORT || '3000', 10);
@@ -16,7 +21,13 @@ async function bootstrap() {
     app.use(express.json());
     app.use(express.urlencoded({extended: true}));
 
-    app.get('/', (_req: Request, res: Response) => res.redirect('/index.html'));
+    app.use(express.static(__dirname));
+    
+    // Servir index.html pour la route racine
+    app.get('/', (_req: Request, res: Response) => {
+        res.sendFile(path.join(__dirname, 'index.html'));
+    });
+
     app.use('/auth', authRoutes);
     app.use('/calendar', calendarRoutes);
 
@@ -107,6 +118,7 @@ async function bootstrap() {
     });
     // ⚠️ FIN DES ROUTES DE TEST
 
+    // Route 404 doit être en DERNIER
     app.use((_req: Request, res: Response) => {
         res.status(404).json({error: 'Route non trouvée'});
     });
