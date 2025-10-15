@@ -2,8 +2,7 @@ import express, {Request, Response} from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import authRoutes from './src/adapters/http/routes/auth.js';
-import calendarRoutes from './src/adapters/http/routes/calendar.js';
+import apiRoutes from './src/adapters/http/routes/api.js';
 import {connectDatabase, closeDatabase} from './src/infrastructure/database/connection.js';
 import {db} from './src/infrastructure/config/sqliteAdapter.js';
 import {v4 as uuidv4} from 'uuid';
@@ -28,8 +27,8 @@ async function bootstrap() {
         res.sendFile(path.join(__dirname, 'index.html'));
     });
 
-    app.use('/auth', authRoutes);
-    app.use('/calendar', calendarRoutes);
+    // Monter toutes les routes API sous /api
+    app.use('/api', apiRoutes);
 
     // ⚠️ SUPPRIMER AVANT RENDU - Routes de test
     app.get('/test-db', (_req: Request, res: Response) => {
@@ -135,6 +134,9 @@ async function bootstrap() {
 
     const server = app.listen(PORT, '0.0.0.0', () => {
         console.log(`\n✓ Serveur démarré sur le port ${PORT}`);
+        console.log(`\n📋 Routes API disponibles :`);
+        console.log(`   http://localhost:${PORT}/api/auth/*`);
+        console.log(`   http://localhost:${PORT}/api/calendar/*`);
         console.log(`\n📋 Routes de test disponibles :`);
         console.log(`   http://localhost:${PORT}/test-db      - Statistiques DB`);
         console.log(`   http://localhost:${PORT}/test-insert  - Créer utilisateur test`);
