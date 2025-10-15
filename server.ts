@@ -79,7 +79,15 @@ async function bootstrap() {
 
             const user = db.prepare('SELECT id, email, username, created_at FROM users WHERE id = ?').get(testUserId);
 
+            const insertStmtCalendar = db.prepare(`
+                            INSERT INTO calendars (id, name, color, owner_id)
+                            VALUES (?, ?, ?, ?)
+                        `);
+            const testCalendarId = uuidv4();
+            insertStmtCalendar.run(testCalendarId, 'Calendrier Test', '#FF5733', testUserId);
+
             console.log('\n✓ Utilisateur test créé :', user);
+            console.log('✓ Calendrier test créé pour l\'utilisateur');
 
             res.json({
                 success: true,
