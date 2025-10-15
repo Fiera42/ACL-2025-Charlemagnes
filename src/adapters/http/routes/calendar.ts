@@ -3,8 +3,8 @@ import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { ServiceFactory } from '../../factories/ServiceFactory';
 
 const router: Router = express.Router();
-const calendarService = ServiceFactory.createCalendarService();
-const appointmentService = ServiceFactory.createAppointmentService();
+const calendarService = ServiceFactory.getCalendarService();
+const appointmentService = ServiceFactory.getAppointmentService();
 
 router.get('/', authenticateToken, (req: AuthenticatedRequest, res: Response) => {
     res.redirect('/index.html');
