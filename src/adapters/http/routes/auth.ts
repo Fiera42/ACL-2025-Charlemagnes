@@ -2,9 +2,11 @@ import express, { Request, Response, Router } from 'express';
 
 const router: Router = express.Router();
 
+/**
 router.get('/', (req: Request, res: Response) => {
     res.redirect('/index.html');
 });
+    */
 
 router.post('/login', (req: Request, res: Response) => {
     // Logique de connexion
