@@ -16,6 +16,7 @@
     <div class="flex flex-col h-full">
       <!-- Header du sidebar -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-900">Rendez-vous à venir</h2>
         <button
             @click="$emit('close')"
             class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
