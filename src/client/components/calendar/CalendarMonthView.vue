@@ -1,30 +1,29 @@
 <template>
   <div class="bg-white rounded-lg shadow">
-    <!-- En-tête avec navigation -->
     <div class="flex items-center justify-between p-4 border-b">
-      <button @click="previousMonth" class="btn-secondary px-4 py-2 rounded">
+      <button @click="previousMonth"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
         ← Précédent
       </button>
       <h2 class="text-xl font-semibold">
         {{ currentMonthName }} {{ currentYear }}
       </h2>
-      <button @click="nextMonth" class="btn-secondary px-4 py-2 rounded">
+      <button @click="nextMonth"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
         Suivant →
       </button>
     </div>
 
-    <!-- Jours de la semaine -->
     <div class="grid grid-cols-7 gap-px bg-gray-200">
       <div
           v-for="day in daysOfWeek"
           :key="day"
-          class="bg-gray-50 p-2 text-center text-sm font-medium text-gray-700"
+          class="bg-gray-50 p-3.5 text-center text-sm font-medium text-gray-700"
       >
         {{ day }}
       </div>
     </div>
 
-    <!-- Grille du calendrier -->
     <div v-if="loading" class="p-8 text-center text-gray-500">
       Chargement...
     </div>
@@ -33,30 +32,26 @@
           v-for="day in calendarDays"
           :key="day.date"
           :class="[
-                  'bg-white p-2 min-h-[100px] cursor-pointer hover:bg-gray-50',
-                  !day.isCurrentMonth && 'opacity-40'
-                ]"
+            'bg-white p-2 min-h-[100px] cursor-pointer transition-all hover:bg-stone-100',
+            !day.isCurrentMonth && 'opacity-40'
+          ]"
           @click="$emit('newEvent', day.date)"
       >
-        <div class="font-medium text-sm mb-1" :class="isToday(day.date) ? 'text-blue-600 font-bold' : 'text-gray-900'">
+        <div class="font-medium text-sm mb-1"
+             :class="isToday(day.date) ? 'text-indigo-600 font-bold' : 'text-gray-900'">
           {{ day.dayNumber }}
         </div>
 
-        <!-- Événements du jour -->
         <div class="space-y-1">
-          <div
+          <CalendarEvent
               v-for="event in getDayEvents(day.date)"
               :key="event.id"
-              :class="['text-xs p-1 rounded border-l-2 cursor-pointer', event.colorClass]"
+              :title="event.title"
+              :time="event.hour"
+              :color-class="event.colorClass"
+              :text-color="event.textColor"
               @click.stop="$emit('editEvent', event)"
-          >
-            <div :class="['font-medium truncate', event.textColor]">
-              {{ event.title }}
-            </div>
-            <div class="text-gray-600 text-[10px]">
-              {{ event.hour }}
-            </div>
-          </div>
+          />
         </div>
       </div>
     </div>
@@ -65,6 +60,7 @@
 
 <script setup>
 import {ref, computed} from 'vue';
+import CalendarEvent from './CalendarEvent.vue';
 
 const props = defineProps({
   events: {
@@ -151,4 +147,11 @@ const previousMonth = () => {
 const nextMonth = () => {
   currentDate.value = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() + 1);
 };
+
+defineExpose({
+  goToDate: (date) => {
+    currentDate.value = new Date(date);
+  }
+});
+
 </script>
