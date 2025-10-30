@@ -1,12 +1,11 @@
 import {MockCalendarDB} from "../mocks/MockCalendarDB";
 import assert from "node:assert";
 import test from "node:test";
-import {CalendarServiceResponse} from "../../domain/entities/CalendarServiceResponse";
+import {ServiceResponse} from "../../domain/entities/ServiceResponse.ts";
 import {CalendarService} from "../../application/services/CalendarService";
 import {MockAuthDB} from "../mocks/MockAuthDB";
 import {User} from "../../domain/entities/User";
 import {Calendar} from "../../domain/entities/Calendar";
-import {Appointment} from "../../domain/entities/Appointment.ts";
 
 const mockCalendarDB = new MockCalendarDB();
 const mockAuthDB = new MockAuthDB();
@@ -21,7 +20,6 @@ const BASE_CALENDAR = {
 
 const SQL_INJECT_STRING = "' DROP TABLE *;";
 const SQL_INJECT_SANITIZED_STRING = "&apos; DROP TABLE &midast;&semi;";
-
 
 test.describe("createCalendar", () => {
     test("createCalendar", async () => {
@@ -139,7 +137,7 @@ test.describe("deleteCalendar", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(deletionResult, CalendarServiceResponse.SUCCESS);
+        assert.deepStrictEqual(deletionResult, ServiceResponse.SUCCESS);
         assert.deepStrictEqual(mockCalendarDB.calendars[dbCalendar.id as string], undefined);
 
         mockCalendarDB.reset();
@@ -155,7 +153,7 @@ test.describe("deleteCalendar", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(deletionResult, CalendarServiceResponse.FORBIDDEN, "If the user does not own the calendar, refuse the deletion");
+        assert.deepStrictEqual(deletionResult, ServiceResponse.FORBIDDEN, "If the user does not own the calendar, refuse the deletion");
         assert.deepStrictEqual(mockCalendarDB.calendars[dbCalendar.id as string], dbCalendar);
 
         mockCalendarDB.reset();
@@ -171,7 +169,7 @@ test.describe("deleteCalendar", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(deletionResult, CalendarServiceResponse.RESOURCE_NOT_EXIST, "The calendar does not exist, refuse the deletion");
+        assert.deepStrictEqual(deletionResult, ServiceResponse.RESOURCE_NOT_EXIST, "The calendar does not exist, refuse the deletion");
         assert.deepStrictEqual(mockCalendarDB.calendars[dbCalendar.id as string], dbCalendar);
 
         mockCalendarDB.reset();
@@ -221,7 +219,7 @@ test.describe("updateCalendar", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.SUCCESS);
+        assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
 
         const dbCalendar = await mockCalendarDB.findCalendarById(calendar.id as string);
         assert.ok(dbCalendar);
@@ -247,7 +245,7 @@ test.describe("updateCalendar", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.FORBIDDEN, "If the user does not own the calendar, refuse the update");
+        assert.deepStrictEqual(updateResult, ServiceResponse.FORBIDDEN, "If the user does not own the calendar, refuse the update");
         assert.deepStrictEqual(mockCalendarDB.calendars[calendar.id as string], calendar, "If the user does not own the calendar, refuse the update");
 
         mockCalendarDB.reset();
@@ -263,7 +261,7 @@ test.describe("updateCalendar", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.FORBIDDEN, "Refuse to modify the ownerID: it is immutable");
+        assert.deepStrictEqual(updateResult, ServiceResponse.FORBIDDEN, "Refuse to modify the ownerID: it is immutable");
         assert.deepStrictEqual(mockCalendarDB.calendars[calendar.id as string], calendar, "Refuse to modify the ownerID: it is immutable");
 
         mockCalendarDB.reset();
@@ -279,7 +277,7 @@ test.describe("updateCalendar", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.RESOURCE_NOT_EXIST, "Must check if the calendar exist");
+        assert.deepStrictEqual(updateResult, ServiceResponse.RESOURCE_NOT_EXIST, "Must check if the calendar exist");
         assert.deepStrictEqual(mockCalendarDB.calendars[calendar.id as string], calendar, "Wtf why this changed");
 
         mockCalendarDB.reset();
@@ -295,7 +293,7 @@ test.describe("updateCalendar", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.FORBIDDEN, "Refuse to modify the ID: it is immutable");
+        assert.deepStrictEqual(updateResult, ServiceResponse.FORBIDDEN, "Refuse to modify the ID: it is immutable");
         assert.deepStrictEqual(mockCalendarDB.calendars[calendar.id as string], calendar, "Refuse to modify the ID: it is immutable");
 
         mockCalendarDB.reset();
@@ -334,7 +332,7 @@ test.describe("updateCalendar", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.SUCCESS);
+        assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
 
         const dbCalendar = await mockCalendarDB.findCalendarById(calendar.id as string);
         assert.ok(dbCalendar);
@@ -374,7 +372,7 @@ test.describe("updateCalendar", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.SUCCESS);
+        assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
 
         const dbCalendar = await mockCalendarDB.findCalendarById(calendar.id as string);
         assert.ok(dbCalendar);

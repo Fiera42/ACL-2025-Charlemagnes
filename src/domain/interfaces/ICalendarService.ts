@@ -1,5 +1,5 @@
 import { Calendar } from "../entities/Calendar";
-import { CalendarServiceResponse } from "../entities/CalendarServiceResponse";
+import { ServiceResponse } from "../entities/ServiceResponse.ts";
 
 export interface ICalendarService {
   createCalendar(
@@ -9,13 +9,13 @@ export interface ICalendarService {
     color: string,
   ): Promise<Calendar>;
 
-  deleteCalendar(ownerId: string, calendarId: string): Promise<CalendarServiceResponse>;
+  deleteCalendar(ownerId: string, calendarId: string): Promise<ServiceResponse>;
 
   updateCalendar(
     ownerId: string,
     calendarId: string,
     calendar: Partial<Calendar>
-  ): Promise<CalendarServiceResponse>;
+  ): Promise<ServiceResponse>;
 
   getCalendarById(id: string): Promise<Calendar | null>;
 
@@ -25,11 +25,11 @@ export interface ICalendarService {
     ownerId: string,
     calendarId: string,
     sharedToId: string
-  ): Promise<CalendarServiceResponse>;
+  ): Promise<ServiceResponse>;
 
   unShareCalendar(
     ownerId: string,
     calendarId: string,
     sharedToId: string
-  ): Promise<CalendarServiceResponse>;
+  ): Promise<ServiceResponse>;
 }
