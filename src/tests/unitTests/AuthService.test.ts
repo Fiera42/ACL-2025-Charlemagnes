@@ -4,6 +4,7 @@ import {AuthService} from "../../application/services/AuthService.ts";
 import {MockAuthDB} from "../mocks/MockAuthDB.ts";
 import bcrypt from "bcryptjs";
 import {ServiceResponse} from "../../domain/entities/ServiceResponse.ts";
+import {User} from "../../domain/entities/User.ts";
 
 const mockDB = new MockAuthDB();
 const authService = new AuthService(mockDB);
@@ -34,8 +35,8 @@ test.describe("createUser", () => {
         });
 
         assert.ok(user.id);
-        const bdUser = await mockDB.findUserById(user.id)
-        assert.ok(bdUser);
+        const dbUser = await mockDB.findUserById(user.id)
+        assert.ok(dbUser);
 
         assert.deepStrictEqual(
             {...user},
@@ -47,15 +48,15 @@ test.describe("createUser", () => {
             "Password in return value should be removed"
         );
         assert.deepStrictEqual(
-            {...bdUser, password: "",},
+            {...dbUser, password: "",},
             {
-                ...bdUser,
+                ...dbUser,
                 ...SANITIZED_BASE_USER,
                 password: "",
             }
         );
         assert.ok(
-            await bcrypt.compare(BASE_USER.password, bdUser.password),
+            await bcrypt.compare(BASE_USER.password, dbUser.password),
             "Password in database is not hashed"
             );
 
@@ -80,8 +81,8 @@ test.describe("createUser", () => {
         );
 
         assert.ok(user.id);
-        const bdUser = await mockDB.findUserById(user.id)
-        assert.ok(bdUser);
+        const dbUser = await mockDB.findUserById(user.id)
+        assert.ok(dbUser);
 
         assert.deepStrictEqual(
             {...user},
@@ -93,15 +94,15 @@ test.describe("createUser", () => {
             "Password in return value should be removed"
         );
         assert.deepStrictEqual(
-            {...bdUser, password: "",},
+            {...dbUser, password: "",},
             {
-                ...bdUser,
+                ...dbUser,
                 ...SANITIZED_BASE_USER,
                 password: "",
             }
         );
         assert.ok(
-            await bcrypt.compare(BASE_USER.password, bdUser.password),
+            await bcrypt.compare(BASE_USER.password, dbUser.password),
             "Password in database is not hashed"
         );
 
@@ -126,8 +127,8 @@ test.describe("createUser", () => {
         );
 
         assert.ok(user.id);
-        const bdUser = await mockDB.findUserById(user.id)
-        assert.ok(bdUser);
+        const dbUser = await mockDB.findUserById(user.id)
+        assert.ok(dbUser);
 
         assert.deepStrictEqual(
             {...user},
@@ -139,15 +140,15 @@ test.describe("createUser", () => {
             "Password in return value should be removed"
         );
         assert.deepStrictEqual(
-            {...bdUser, password: "",},
+            {...dbUser, password: "",},
             {
-                ...bdUser,
+                ...dbUser,
                 ...SANITIZED_BASE_USER,
                 password: "",
             }
         );
         assert.ok(
-            await bcrypt.compare(BASE_USER.password, bdUser.password),
+            await bcrypt.compare(BASE_USER.password, dbUser.password),
             "Password in database is not hashed"
         );
 
@@ -163,8 +164,8 @@ test.describe("createUser", () => {
         });
 
         assert.ok(user.id);
-        const bdUser = await mockDB.findUserById(user.id)
-        assert.ok(bdUser);
+        const dbUser = await mockDB.findUserById(user.id)
+        assert.ok(dbUser);
 
         assert.deepStrictEqual(
             {...user},
@@ -178,9 +179,9 @@ test.describe("createUser", () => {
             "User returned by the API must NOT be sanitized"
         );
         assert.deepStrictEqual(
-            {...bdUser, password: "",},
+            {...dbUser, password: "",},
             {
-                ...bdUser,
+                ...dbUser,
                 ...user,
                 username: SQL_INJECT_SANITIZED_STRING + " username",
                 email: SQL_INJECT_SANITIZED_STRING + " email",
@@ -189,7 +190,7 @@ test.describe("createUser", () => {
             "User sent to DB must be sanitized"
         );
         assert.ok(
-            await bcrypt.compare(BASE_USER.password, bdUser.password),
+            await bcrypt.compare(BASE_USER.password, dbUser.password),
             "Password in database is not hashed"
         );
 
@@ -208,15 +209,15 @@ test.describe("deleteUser", () => {
         });
 
         assert.ok(user.id);
-        let bdUser = await mockDB.findUserById(user.id);
-        assert.ok(bdUser);
+        let dbUser = await mockDB.findUserById(user.id);
+        assert.ok(dbUser);
 
         assert.deepStrictEqual(
             await authService.deleteUser(user.id),
             ServiceResponse.SUCCESS
         );
-        bdUser = await mockDB.findUserById(user.id);
-        assert.deepStrictEqual(bdUser, null, "User has not been deleted from DB");
+        dbUser = await mockDB.findUserById(user.id);
+        assert.deepStrictEqual(dbUser, null, "User has not been deleted from DB");
 
         mockDB.reset();
     });
@@ -230,8 +231,8 @@ test.describe("deleteUser", () => {
         });
 
         assert.ok(user.id);
-        const bdUser = await mockDB.findUserById(user.id);
-        assert.ok(bdUser);
+        const dbUser = await mockDB.findUserById(user.id);
+        assert.ok(dbUser);
 
         assert.deepStrictEqual(
             await authService.deleteUser("RND42"),
@@ -239,7 +240,7 @@ test.describe("deleteUser", () => {
         );
         assert.deepStrictEqual(
             await mockDB.findUserById(user.id),
-            bdUser,
+            dbUser,
             "WTF why this changed"
         );
 
@@ -255,8 +256,8 @@ test.describe("deleteUser", () => {
         });
 
         assert.ok(user.id);
-        const bdUser = await mockDB.findUserById(user.id);
-        assert.ok(bdUser);
+        const dbUser = await mockDB.findUserById(user.id);
+        assert.ok(dbUser);
 
         await assert.rejects(
             authService.deleteUser(SQL_INJECT_STRING),
@@ -265,7 +266,7 @@ test.describe("deleteUser", () => {
 
         assert.deepStrictEqual(
             await mockDB.findUserById(user.id),
-            bdUser,
+            dbUser,
             "WTF why this changed"
         );
 
@@ -284,8 +285,8 @@ test.describe("getUserByID", () => {
         });
 
         assert.ok(user.id);
-        const bdUser = await mockDB.findUserById(user.id);
-        assert.ok(bdUser);
+        const dbUser = await mockDB.findUserById(user.id);
+        assert.ok(dbUser);
 
         const findResult = await authService.findUserById(user.id);
 
@@ -307,8 +308,8 @@ test.describe("getUserByID", () => {
         });
 
         assert.ok(user.id);
-        const bdUser = await mockDB.findUserById(user.id);
-        assert.ok(bdUser);
+        const dbUser = await mockDB.findUserById(user.id);
+        assert.ok(dbUser);
 
         const findResult = await authService.findUserById("Hii42");
 
@@ -319,7 +320,7 @@ test.describe("getUserByID", () => {
 
         assert.deepStrictEqual(
             await mockDB.findUserById(user.id),
-            bdUser,
+            dbUser,
             "WTF why this changed"
         );
 
@@ -335,8 +336,8 @@ test.describe("getUserByID", () => {
         });
 
         assert.ok(user.id);
-        const bdUser = await mockDB.findUserById(user.id);
-        assert.ok(bdUser);
+        const dbUser = await mockDB.findUserById(user.id);
+        assert.ok(dbUser);
 
         await assert.rejects(
             authService.findUserById(SQL_INJECT_STRING),
@@ -345,7 +346,7 @@ test.describe("getUserByID", () => {
 
         assert.deepStrictEqual(
             await mockDB.findUserById(user.id),
-            bdUser,
+            dbUser,
             "WTF why this changed"
         );
 
@@ -364,8 +365,8 @@ test.describe("getUserByEmail", () => {
         });
 
         assert.ok(user.id);
-        const bdUser = await mockDB.findUserById(user.id);
-        assert.ok(bdUser);
+        const dbUser = await mockDB.findUserById(user.id);
+        assert.ok(dbUser);
 
         const findResult = await authService.findUserByEmail(BASE_USER.email);
 
@@ -387,8 +388,8 @@ test.describe("getUserByEmail", () => {
         });
 
         assert.ok(user.id);
-        const bdUser = await mockDB.findUserById(user.id);
-        assert.ok(bdUser);
+        const dbUser = await mockDB.findUserById(user.id);
+        assert.ok(dbUser);
 
         const findResult = await authService.findUserByEmail("another.mail@mail.com");
 
@@ -399,7 +400,7 @@ test.describe("getUserByEmail", () => {
 
         assert.deepStrictEqual(
             await mockDB.findUserById(user.id),
-            bdUser,
+            dbUser,
             "WTF why this changed"
         );
 
@@ -415,8 +416,8 @@ test.describe("getUserByEmail", () => {
         });
 
         assert.ok(user.id);
-        const bdUser = await mockDB.findUserById(user.id);
-        assert.ok(bdUser);
+        const dbUser = await mockDB.findUserById(user.id);
+        assert.ok(dbUser);
 
         const findResult = await authService.findUserByEmail(SQL_INJECT_STRING + " email");
 
@@ -441,8 +442,8 @@ test.describe("getUserByUsername", () => {
         });
 
         assert.ok(user.id);
-        const bdUser = await mockDB.findUserById(user.id);
-        assert.ok(bdUser);
+        const dbUser = await mockDB.findUserById(user.id);
+        assert.ok(dbUser);
 
         const findResult = await authService.findUserByUsername(BASE_USER.username);
 
@@ -464,8 +465,8 @@ test.describe("getUserByUsername", () => {
         });
 
         assert.ok(user.id);
-        const bdUser = await mockDB.findUserById(user.id);
-        assert.ok(bdUser);
+        const dbUser = await mockDB.findUserById(user.id);
+        assert.ok(dbUser);
 
         const findResult = await authService.findUserByUsername("aRandomName");
 
@@ -476,7 +477,7 @@ test.describe("getUserByUsername", () => {
 
         assert.deepStrictEqual(
             await mockDB.findUserById(user.id),
-            bdUser,
+            dbUser,
             "WTF why this changed"
         );
 
@@ -492,8 +493,8 @@ test.describe("getUserByUsername", () => {
         });
 
         assert.ok(user.id);
-        const bdUser = await mockDB.findUserById(user.id);
-        assert.ok(bdUser);
+        const dbUser = await mockDB.findUserById(user.id);
+        assert.ok(dbUser);
 
         const findResult = await authService.findUserByUsername(SQL_INJECT_STRING + " username");
 
@@ -501,6 +502,227 @@ test.describe("getUserByUsername", () => {
             findResult,
             user,
             "This test have the same requirements as 'createUser'. If 'createUser' tests fails, this fails too"
+        );
+
+        mockDB.reset();
+    });
+});
+
+test.describe("updateUser", () => {
+    test("updateUser", async () => {
+        const user = await authService.createUser(
+            BASE_USER.username,
+            BASE_USER.email,
+            BASE_USER.password,
+        ).catch((reason) => {
+            throw new Error(reason);
+        });
+
+        const partialUser: Partial<User> = {
+            id: user.id as string,
+            username: "changed username",
+            email: "changed email",
+            password: "changed password",
+        };
+
+        const updateResult = await authService.updateUser(user.id as string, partialUser)
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
+
+        const dbUser = await mockDB.findUserById(user.id as string);
+        assert.ok(dbUser);
+
+        assert.deepStrictEqual(
+            {...dbUser, password: "",},
+            {
+                ...dbUser,
+                ...partialUser,
+                password: "",
+            }
+        );
+        assert.ok(
+            await bcrypt.compare("changed password", dbUser.password),
+            "Password in database is not hashed"
+        );
+
+        mockDB.reset();
+    });
+    test("updateUser (not exist)", async () => {
+        const user = await authService.createUser(
+            BASE_USER.username,
+            BASE_USER.email,
+            BASE_USER.password,
+        ).catch((reason) => {
+            throw new Error(reason);
+        });
+
+        let updateResult = await authService.updateUser("42", {username: "This should not be here"})
+            .catch((reason: any) => {
+                throw new Error(reason)
+            });
+
+        assert.deepStrictEqual(updateResult, ServiceResponse.RESOURCE_NOT_EXIST);
+
+        let dbUser = await mockDB.findUserById(user.id as string);
+        assert.ok(dbUser);
+
+        assert.deepStrictEqual(
+            {...dbUser, password: "",},
+            {
+                ...dbUser,
+                ...SANITIZED_BASE_USER,
+                password: "",
+            }
+        );
+        assert.ok(
+            await bcrypt.compare(BASE_USER.password, dbUser.password),
+            "Password in database is not hashed"
+        );
+
+        updateResult = await authService.updateUser(user.id as string, {username: "new name"})
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
+
+        dbUser = await mockDB.findUserById(user.id as string);
+        assert.ok(dbUser);
+
+        assert.deepStrictEqual(
+            {...dbUser},
+            {
+                ...dbUser,
+                username: "new name",
+            },
+            "Should work even without ID in the partial"
+        );
+
+        mockDB.reset();
+    });
+    test("updateUser (immutable userId)", async () => {
+        const user = await authService.createUser(
+            BASE_USER.username,
+            BASE_USER.email,
+            BASE_USER.password,
+        ).catch((reason) => {
+            throw new Error(reason);
+        });
+
+        const updateResult = await authService.updateUser(user.id as string, {id: "42", username: "This should not be here"})
+            .catch((reason: any) => {
+                throw new Error(reason)
+            });
+
+        assert.deepStrictEqual(updateResult, ServiceResponse.FORBIDDEN, "Refuse to modify the ID: it is immutable");
+
+        const dbUser = await mockDB.findUserById(user.id as string);
+        assert.ok(dbUser);
+
+        assert.deepStrictEqual(
+            {...dbUser, password: "",},
+            {
+                ...dbUser,
+                ...SANITIZED_BASE_USER,
+                password: "",
+            },
+            "Refuse to modify the ID: it is immutable"
+        );
+        assert.ok(
+            await bcrypt.compare(BASE_USER.password, dbUser.password),
+            "Password in database is not hashed"
+        );
+
+        mockDB.reset();
+    });
+    test("updateUser (ignore metadata)", async () => {
+        const user = await authService.createUser(
+            BASE_USER.username,
+            BASE_USER.email,
+            BASE_USER.password,
+        ).catch((reason) => {
+            throw new Error(reason);
+        });
+
+        const partialUser: any = {
+            createdAt: new Date('2023-01-07'),
+            updatedAt: new Date('2024-02-08'),
+            fromage: "miam this should be ignored",
+            isValid() {
+                return "Banane";
+            },
+        };
+
+        const updateResult = await authService.updateUser(user.id as string, partialUser)
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
+
+        const dbUser = await mockDB.findUserById(user.id as string);
+        assert.ok(dbUser);
+
+        assert.deepStrictEqual(
+            {...dbUser, password: "",},
+            {
+                ...dbUser,
+                ...SANITIZED_BASE_USER,
+                password: "",
+            }
+        );
+        assert.ok(
+            await bcrypt.compare(BASE_USER.password, dbUser.password),
+            "Fields 'createdAt' and 'updatedAt' should be ignored as well as other unknown fields"
+        );
+
+        mockDB.reset();
+    });
+    test("updateUser (sanitize)", async () => {
+        const user = await authService.createUser(
+            BASE_USER.username,
+            BASE_USER.email,
+            BASE_USER.password,
+        ).catch((reason) => {
+            throw new Error(reason);
+        });
+
+        await assert.rejects(
+            authService.updateUser(SQL_INJECT_STRING, {username: "This should not be in the result"}),
+            "UserID is not checked for safety"
+        );
+
+        const partialUser: Partial<User> = {
+            username: SQL_INJECT_STRING + " username",
+            email: SQL_INJECT_STRING + " email",
+            password: SQL_INJECT_STRING + " password",
+        };
+
+        const updateResult = await authService.updateUser(user.id as string, partialUser)
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
+
+        const dbUser = await mockDB.findUserById(user.id as string);
+        assert.ok(dbUser);
+
+        assert.deepStrictEqual(
+            {...dbUser},
+            {
+                ...dbUser,
+                username: SQL_INJECT_SANITIZED_STRING + " username",
+                email: SQL_INJECT_SANITIZED_STRING + " email",
+            }
+        );
+
+        assert.ok(
+            await bcrypt.compare(SQL_INJECT_STRING + " password", dbUser.password),
+            "Password in database is not hashed"
         );
 
         mockDB.reset();

@@ -214,14 +214,14 @@ test.describe("updateCalendar", () => {
             ownerId: calendar.ownerId as string,
         };
 
-        const updateResult = await calendarService.updateCalendar(calendar.ownerId, calendar.id as string, partialCalendar)
+        let updateResult = await calendarService.updateCalendar(calendar.ownerId, calendar.id as string, partialCalendar)
             .catch((reason: any) => {
                 throw new Error(reason)
             })
 
         assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
 
-        const dbCalendar = await mockCalendarDB.findCalendarById(calendar.id as string);
+        let dbCalendar = await mockCalendarDB.findCalendarById(calendar.id as string);
         assert.ok(dbCalendar);
 
         assert.deepStrictEqual(
@@ -230,6 +230,25 @@ test.describe("updateCalendar", () => {
                 ...dbCalendar,
                 ...partialCalendar,
             }
+        );
+
+        updateResult = await calendarService.updateCalendar(calendar.ownerId, calendar.id as string, {name: "this should be new"})
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
+
+        dbCalendar = await mockCalendarDB.findCalendarById(calendar.id as string);
+        assert.ok(dbCalendar);
+
+        assert.deepStrictEqual(
+            {...dbCalendar},
+            {
+                ...dbCalendar,
+                name: "this should be new",
+            },
+            "Should be able to update even without an id in the partial"
         );
 
         mockCalendarDB.reset();
