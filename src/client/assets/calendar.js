@@ -78,5 +78,52 @@ import axios from 'axios';
                       console.error('Erreur lors de la suppression:', error.response?.data || error);
                       throw error;
                     }
+                  },
+
+                  //récupérer tout les agendas de l'utilisateur connecté
+                  async getCalendarsByOwnerId(){
+                    try {
+                      const jsonCalendars = await axios.get('/api/calendar');
+                      const extractedCalendars = jsonCalendars.data.calendars;
+                      return extractedCalendars;
+                    } catch(error) {
+                      console.error('Erreur lors de la recuperation des agendas 1 :', error.response.data || error);
+                      throw error;
+                    }
+                  },
+
+                  //creer un nouveau calendrier
+                  async createCalendar(calendar){
+                    try {
+                      await axios.post('/api/calendar',{name: calendar.name, description: calendar.description, color: calendar.color});
+                    } catch(error) {
+                      console.error('Erreur lors de la creation de l agenda 1 :', error.response.data || error);
+                      throw error;
+                    }
+                  },
+
+                  //supprimer un calendrier
+                  async deleteCalendar(calendarId){
+                    try {
+                      await axios.delete(`/api/calendar/${calendarId}`,{id:calendarId});
+                    } catch(error) {
+                      console.error('Erreur lors de la deletion de l agenda:', error.response.data || error);
+                      throw error;
+                    }
+                  },
+
+                  //obtenir les paramètres d'un seul calendrier
+                  async getCalendarById(){
+                  },
+
+                  //modifier les paramètres d'un seul calendrier
+                  async updateCalendar(calendar){
+                    try {
+                      await axios.put(`/api/calendar/${calendar.id}`,{name:calendar.name,description:calendar.description,color :calendar.color});
+                    } catch(error) {
+                      console.error('Erreur lors de l update de l agenda 1 :', error.response.data || error);
+                      throw error;
+                    }
                   }
+
                 };
