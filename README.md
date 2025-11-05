@@ -21,11 +21,14 @@ Toutes les routes API sont préfixées par `/api`.
 
 ### Routes d'Authentification (`/api/auth`)
 
-| Méthode | Route | Description | Body | Réponse |
-|---------|-------|-------------|------|---------|
-| `POST` | `/api/auth/register` | Inscription d'un nouvel utilisateur | `{ email, password, username }` | Utilisateur créé (201) |
-| `POST` | `/api/auth/login` | Connexion d'un utilisateur | `{ email, password }` | Token JWT + infos utilisateur (200) |
-| `GET` | `/api/auth/logout` | Déconnexion d'un utilisateur | - | Message de confirmation (200) |
+| Méthode  | Route | Description                            | Body                               | Réponse                       |
+|----------|-------|----------------------------------------|------------------------------------|-------------------------------|
+| `POST`   | `/api/auth/register` | Inscription d'un nouvel utilisateur    | `{ email, password, username }`    | Token JWT (201)               |
+| `POST`   | `/api/auth/login` | Connexion d'un utilisateur             | `{ email, password }`              | Token JWT (205)               |
+| `DELETE` | `/api/auth/logout` | Déconnexion d'un utilisateur           | `{ id }`                           | Message de confirmation (205) |
+| `GET`    | `/api/auth/user/:email` | Récupérer un utilisateur par son email | -                                  | Message de confirmation (200) |
+| `PUT`    | `/api/auth/user/:id` | Mettre à jour un utilisateur           | `{ email?, password?, username? }` | Message de confirmation (200) |
+| `DELETE` | `/api/auth/user/:id` | Supprimer un utilisateur               | -                                  | Message de confirmation (200) |
 
 **Exemple - Inscription :**
 ```json

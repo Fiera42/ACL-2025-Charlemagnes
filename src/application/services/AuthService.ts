@@ -5,7 +5,6 @@ import {decode, encode} from "html-entities";
 import bcrypt from "bcryptjs";
 import {ServiceResponse} from "../../domain/entities/ServiceResponse.ts";
 import {Sanitizer} from "./utils/Sanitizer.ts";
-import {Appointment} from "../../domain/entities/Appointment.ts";
 
 export class AuthService implements IAuthService {
     private authDB: IAuthDB;
@@ -205,6 +204,32 @@ export class AuthService implements IAuthService {
             } else {
                 resolve(ServiceResponse.FAILED)
             }
+        });
+    }
+
+    verifyPassword(user: User, password: string): Promise<boolean> {
+        return new Promise<boolean>(async (resolve, reject) => {
+            if(user.id === null) {
+                reject(new Error(`UserID is null`));
+                return;
+            }
+            if (Sanitizer.doesStringContainSpecialChar(user.id as string)) {
+                reject(new Error(`UserID (${user.id}) contains special char`));
+                return;
+            }
+
+            const dbUser = await this.authDB.findUserById(user.id as string)
+                .catch((reason) => {
+                    reject(reason);
+                });
+
+            if (dbUser === undefined) return; // We already rejected in the catch
+            if (dbUser === null) {
+                resolve(false);
+                return;
+            }
+
+            resolve(await bcrypt.compare(password, dbUser.password))
         });
     }
 }

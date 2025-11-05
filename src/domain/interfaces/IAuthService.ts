@@ -8,4 +8,5 @@ export interface IAuthService {
     findUserByUsername(username: string): Promise<User | null>;
     updateUser(id: string, user: Partial<User>): Promise<ServiceResponse>;
     deleteUser(id: string): Promise<ServiceResponse>;
+    verifyPassword(user: User, password: string): Promise<boolean>
 }
