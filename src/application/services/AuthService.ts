@@ -5,6 +5,7 @@ import {decode, encode} from "html-entities";
 import bcrypt from "bcryptjs";
 import {ServiceResponse} from "../../domain/entities/ServiceResponse.ts";
 import {Sanitizer} from "./utils/Sanitizer.ts";
+import {Appointment} from "../../domain/entities/Appointment.ts";
 
 export class AuthService implements IAuthService {
     private authDB: IAuthDB;
@@ -165,7 +166,45 @@ export class AuthService implements IAuthService {
         });
     }
 
-    updateUser(id: string, user: Partial<User>): Promise<ServiceResponse> {
-        throw new Error("Method not implemented.");
+    updateUser(userId: string, partialUser: Partial<User>): Promise<ServiceResponse> {
+        return new Promise<ServiceResponse>(async (resolve, reject) => {
+            if (Sanitizer.doesStringContainSpecialChar(userId)) {
+                reject(new Error(`UserID (${userId}) contains special char`));
+                return;
+            }
+
+            const user = await this.authDB.findUserById(userId)
+                .catch((reason) => {
+                    reject(reason);
+                });
+
+            if (user === undefined) return; // We already rejected in the catch
+            if (user === null) {
+                resolve(ServiceResponse.RESOURCE_NOT_EXIST);
+                return;
+            }
+            if (partialUser.id && partialUser.id !== user.id) {
+                resolve(ServiceResponse.FORBIDDEN);
+                return;
+            }
+
+            const cleanedUser: Partial<User> = {
+                ...(partialUser.username && {username: encode(partialUser.username, {mode: 'extensive'})}),
+                ...(partialUser.email && {email: encode(partialUser.email, {mode: 'extensive'})}),
+                ...(partialUser.password && {password: await bcrypt.hash(partialUser.password, await bcrypt.genSalt(10))}),
+            };
+
+            const updateResult = await this.authDB.updateUser(userId, cleanedUser)
+                .catch((reason) => {
+                    reject(reason);
+                });
+            if (updateResult === undefined) return; // We already rejected in the catch
+
+            if (updateResult) {
+                resolve(ServiceResponse.SUCCESS)
+            } else {
+                resolve(ServiceResponse.FAILED)
+            }
+        });
     }
 }

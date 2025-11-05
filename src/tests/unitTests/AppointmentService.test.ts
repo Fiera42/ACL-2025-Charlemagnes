@@ -380,14 +380,14 @@ test.describe("updateAppointment", () => {
             endDate: new Date('2026-03-09'),
         }
 
-        const updateResult = await appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, appointment.id as string, partialAppointment)
+        let updateResult = await appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, appointment.id as string, partialAppointment)
             .catch((reason: any) => {
                 throw new Error(reason)
             })
 
         assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
 
-        const dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
+        let dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
         assert.ok(dbAppointment);
 
         assert.deepStrictEqual(
@@ -396,6 +396,25 @@ test.describe("updateAppointment", () => {
                 ...dbAppointment,
                 ...partialAppointment,
             }
+        );
+
+        updateResult = await appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, appointment.id as string, {title: "This is a new title"})
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
+
+        dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
+        assert.ok(dbAppointment);
+
+        assert.deepStrictEqual(
+            {...dbAppointment},
+            {
+                ...dbAppointment,
+                title: "This is a new title",
+            },
+            "Should be able to update even without an id in the partial"
         );
 
         mockDB.reset();

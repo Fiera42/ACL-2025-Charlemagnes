@@ -18,7 +18,7 @@
       <div
           v-for="day in daysOfWeek"
           :key="day"
-          class="bg-gray-50 p-3.5 text-center text-sm font-medium text-gray-700"
+          class="bg-gray-50 p-3 text-center text-sm font-semibold text-gray-900"
       >
         {{ day }}
       </div>
@@ -30,28 +30,43 @@
     <div v-else class="grid grid-cols-7 gap-px bg-gray-200">
       <div
           v-for="day in calendarDays"
-          :key="day.date"
+          :key="`${day.date.getMonth()}-${day.day}`"
           :class="[
-            'bg-white p-2 min-h-[100px] cursor-pointer transition-all hover:bg-stone-100',
-            !day.isCurrentMonth && 'opacity-40'
-          ]"
+                  'bg-white min-h-[120px] p-2 cursor-pointer hover:bg-gray-50',
+                  !day.isCurrentMonth && 'bg-gray-50'
+                ]"
           @click="$emit('newEvent', day.date)"
       >
-        <div class="font-medium text-sm mb-1"
-             :class="isToday(day.date) ? 'text-indigo-600 font-bold' : 'text-gray-900'">
-          {{ day.dayNumber }}
+        <div class="flex items-center justify-between mb-2">
+                <span
+                    :class="[
+                      'text-sm font-semibold',
+                      !day.isCurrentMonth ? 'text-gray-400' : isToday(day.date) ? 'text-indigo-600' : 'text-gray-900'
+                    ]"
+                >
+                  {{ day.day }}
+                </span>
         </div>
-
         <div class="space-y-1">
-          <CalendarEvent
-              v-for="event in getDayEvents(day.date)"
+          <div
+              v-for="event in getDayEvents(day.date).slice(0, 3)"
               :key="event.id"
-              :title="event.title"
-              :time="event.hour"
-              :color-class="event.colorClass"
-              :text-color="event.textColor"
-              @click.stop="$emit('editEvent', event)"
-          />
+              :class="[
+                      'rounded p-1.5 border-l-2 cursor-pointer',
+                      event.colorClass
+                    ]"
+              @click.stop="$emit('showEvent', event)"
+          >
+            <p class="text-xs font-semibold text-gray-900 truncate">{{ event.title }}</p>
+            <p :class="['text-xs font-semibold', event.textColor]">{{ event.timeDisplay }}</p>
+          </div>
+          <button
+              v-if="getDayEvents(day.date).length > 3"
+              class="text-xs text-gray-600 hover:text-indigo-600 font-medium"
+              @click.stop="showMoreEvents(day.date)"
+          >
+            + {{ getDayEvents(day.date).length - 3 }} autres
+          </button>
         </div>
       </div>
     </div>
@@ -60,7 +75,6 @@
 
 <script setup>
 import {ref, computed} from 'vue';
-import CalendarEvent from './CalendarEvent.vue';
 
 const props = defineProps({
   events: {
@@ -73,7 +87,7 @@ const props = defineProps({
   }
 });
 
-defineEmits(['newEvent', 'editEvent']);
+const emit = defineEmits(['newEvent', 'showEvent']);
 
 const currentDate = ref(new Date());
 
@@ -101,38 +115,70 @@ const calendarDays = computed(() => {
 
   const prevMonthLastDay = new Date(year, month, 0).getDate();
   for (let i = startDay - 1; i >= 0; i--) {
-    days.push({
-      date: new Date(year, month - 1, prevMonthLastDay - i),
-      dayNumber: prevMonthLastDay - i,
-      isCurrentMonth: false
-    });
+    const date = new Date(year, month - 1, prevMonthLastDay - i);
+    days.push({date, day: prevMonthLastDay - i, isCurrentMonth: false});
   }
 
   for (let i = 1; i <= lastDay.getDate(); i++) {
-    days.push({
-      date: new Date(year, month, i),
-      dayNumber: i,
-      isCurrentMonth: true
-    });
+    const date = new Date(year, month, i);
+    days.push({date, day: i, isCurrentMonth: true});
   }
 
   const remainingDays = 42 - days.length;
   for (let i = 1; i <= remainingDays; i++) {
-    days.push({
-      date: new Date(year, month + 1, i),
-      dayNumber: i,
-      isCurrentMonth: false
-    });
+    const date = new Date(year, month + 1, i);
+    days.push({date, day: i, isCurrentMonth: false});
   }
 
   return days;
 });
 
 const getDayEvents = (date) => {
-  return props.events.filter(event => {
-    const eventDate = new Date(event.startDate);
-    return eventDate.toDateString() === date.toDateString();
-  });
+  const dayStart = new Date(date);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(date);
+  dayEnd.setHours(23, 59, 59, 999);
+
+  return props.events
+      .filter(event => {
+        const eventStart = new Date(event.startDate);
+        const eventEnd = new Date(event.endDate);
+        return eventStart < dayEnd && eventEnd > dayStart;
+      })
+      .map(event => {
+        const eventStart = new Date(event.startDate);
+        const eventEnd = new Date(event.endDate);
+
+        const continuesBefore = eventStart < dayStart;
+        const continuesAfter = eventEnd > dayEnd;
+
+        const displayStart = continuesBefore ? dayStart : eventStart;
+        const displayEnd = continuesAfter ? dayEnd : eventEnd;
+
+        let timeDisplay = '';
+        if (continuesBefore && continuesAfter) {
+          timeDisplay = 'Toute la journée';
+        } else if (continuesBefore) {
+          timeDisplay = `... → ${displayEnd.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`;
+        } else if (continuesAfter) {
+          timeDisplay = `${displayStart.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})} → ...`;
+        } else {
+          timeDisplay = `${displayStart.toLocaleTimeString('fr-FR', {
+            hour: '2-digit',
+            minute: '2-digit'
+          })} - ${displayEnd.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`;
+        }
+
+        return {
+          ...event,
+          timeDisplay
+        };
+      })
+      .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+};
+
+const showMoreEvents = (date) => {
+  emit('newEvent', date);
 };
 
 const isToday = (date) => {
@@ -153,5 +199,4 @@ defineExpose({
     currentDate.value = new Date(date);
   }
 });
-
 </script>
