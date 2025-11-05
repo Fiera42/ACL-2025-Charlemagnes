@@ -85,22 +85,29 @@ router.delete('/user/:id', authenticateToken, async (req: AuthenticatedRequest, 
 router.post('/login', async (req: Request, res: Response) => {
     try {
         const { id, password } = req.body;
-        const user = await authService.findUserById(id);
-        if(user !== null && await authService.verifyPassword(user, password)) {
-            const token = createAuthToken({userId: user.id as string, email: user.email})
-            res.status(205).json(token);
-        }
-        else if(user === null) {
-            res.status(404).json({ error: 'Utilisateur inconnu' });
-        }
-        else {
-            res.status(401).json({ error: 'Mot de passe incorrect' });
+
+        let user = await authService.findUserByUsername(id);
+        if (!user) {
+            user = await authService.findUserByEmail(id);
         }
 
+        if (user !== null && await authService.verifyPassword(user, password)) {
+            // ATTENDEZ la résolution de la Promise
+            const token = await createAuthToken({userId: user.id as string, email: user.email});
+
+            // Envoyez l'objet avec le token
+            res.status(200).json({ token });
+        } else if (user === null) {
+            res.status(404).json({ error: 'Utilisateur inconnu' });
+        } else {
+            res.status(401).json({ error: 'Mot de passe incorrect' });
+        }
     } catch (error) {
-        res.status(500).json({ error: "Erreur lors de la connexion" });
+        console.error('Erreur login:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
     }
 });
+
 
 router.post('/register', async (req: Request, res: Response) => {
     try {
