@@ -6,10 +6,12 @@ const router: Router = express.Router();
 const calendarService = ServiceFactory.getCalendarService();
 const appointmentService = ServiceFactory.getAppointmentService();
 
+const OwnerID = "1" ;//req.user!.userId
+
 // Routes pour les calendriers
 router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const calendars = await calendarService.getCalendarsByOwnerId(req.user!.userId);
+        const calendars = await calendarService.getCalendarsByOwnerId(OwnerID);
         res.json({ calendars });
     } catch (error) {
         res.status(500).json({ error: 'Erreur lors de la récupération des calendriers' });
@@ -19,7 +21,7 @@ router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Respon
 router.post('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const { name, description, color } = req.body;
-        const calendar = await calendarService.createCalendar(req.user!.userId, name, description, color);
+        const calendar = await calendarService.createCalendar(OwnerID, name, description, color);
         res.status(201).json(calendar);
     } catch (error) {
         res.status(500).json({ error: 'Erreur lors de la création du calendrier' });
@@ -40,7 +42,7 @@ router.get('/:id', authenticateToken, async (req: AuthenticatedRequest, res: Res
 
 router.put('/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const response = await calendarService.updateCalendar(req.user!.userId, req.params.id, req.body);
+        const response = await calendarService.updateCalendar(OwnerID, req.params.id, req.body);
         res.json(response);
     } catch (error) {
         res.status(500).json({ error: 'Erreur lors de la mise à jour du calendrier' });
@@ -49,7 +51,7 @@ router.put('/:id', authenticateToken, async (req: AuthenticatedRequest, res: Res
 
 router.delete('/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const response = await calendarService.deleteCalendar(req.user!.userId, req.params.id);
+        const response = await calendarService.deleteCalendar(OwnerID, req.params.id);
         res.json(response);
     } catch (error) {
         res.status(500).json({ error: 'Erreur lors de la suppression du calendrier' });

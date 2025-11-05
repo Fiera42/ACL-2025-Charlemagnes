@@ -44,6 +44,14 @@
         @save="saveAppointment"
     />
 
+    <CalendarCreationForm
+        v-if="showCalendarForm"
+        :calendar="props.editingCalendar"
+        @create="saveCalendar"
+        @close="closeCalendarForm"
+        @save="saveCalendar"
+    />
+
     <AppointmentDetail
         v-if="showDetail"
         :appointment="selectedAppointment"
@@ -63,6 +71,7 @@ import CalendarMonthView from '../components/calendar/CalendarMonthView.vue';
 import AppointmentForm from '../components/appointment/AppointmentForm.vue';
 import AppointmentDetail from '../components/appointment/AppointmentDetail.vue';
 import {calendarService} from '../assets/calendar.js';
+import CalendarCreationForm from '../components/calendar/CalendarCreationForm.vue';
 
 const props = defineProps({
   appointments: {
@@ -72,10 +81,18 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
+  },
+  showCalendarForm: {
+    type: Boolean,
+    default: false
+  },
+  editingCalendar: {
+    type: Array,
+    default: () => []
   }
 });
 
-const emit = defineEmits(['appointmentsUpdated']);
+const emit = defineEmits(['appointmentsUpdated','closeCalendarForm','calendarsUpdated']);
 
 const currentView = ref('day');
 const currentDate = ref(new Date());
@@ -166,6 +183,29 @@ const saveAppointment = async (appointment) => {
   } catch (error) {
     console.error('Erreur lors de la sauvegarde:', error);
     alert('Erreur lors de la sauvegarde du rendez-vous');
+  }
+};
+
+const closeCalendarForm = () => {
+  emit('closeCalendarForm');
+};
+
+const saveCalendar = async (calendar) => {
+  try {
+    if (calendar.id) {
+      await calendarService.updateCalendar(calendar);
+    } else {
+      await calendarService.createCalendar({
+        name: calendar.name,
+        description: calendar.description,
+        color: calendar.color
+      });
+    }
+    emit('calendarsUpdated');
+    closeCalendarForm();
+  } catch (error) {
+    console.log(error);
+    alert('Impossible de créer le calendrier');
   }
 };
 

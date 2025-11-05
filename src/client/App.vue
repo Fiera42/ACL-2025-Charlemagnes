@@ -10,9 +10,19 @@
       <AppSidebar
           :is-open="sidebarOpen"
           :appointments="appointments"
+          :appointmentsdisplayed="appointmentsdisplayed"
           :loading="loading"
+          :loadingCalendars="loadingCalendars"
+          :calendars="calendars"
+          :calendarsdisplayed="calendarsdisplayed"
+          @toggleappointmentsdisplay="viewAppointments"
+          @togglecalendarsdisplay="viewCalendars"
           @close="closeSidebar"
           @select-appointment="handleSelectAppointment"
+          @selectCalendar="handleSelectCalendar"
+          @CalendarForm="openCalendarForm"
+          @deleteCalendar="deleteCalendar"
+          @editCalendar="openCalendarForm"
       />
 
       <main
@@ -27,6 +37,11 @@
               :appointments="appointments"
               :loading="loading"
               @appointments-updated="loadAppointments"
+
+              :editingCalendar="editingCalendar"
+              :showCalendarForm="showCalendarForm"
+              @closeCalendarForm="closeCalendarForm"
+              @calendarsUpdated="loadCalendars"
           />
         </div>
       </main>
@@ -47,6 +62,14 @@ const loading = ref(false);
 const userName = ref('Utilisateur');
 const calendarViewRef = ref(null);
 
+const calendars = ref([]);
+const loadingCalendars = ref(false);
+const appointmentsdisplayed = ref(true);
+const calendarsdisplayed = ref(false);
+
+const showCalendarForm = ref(false);
+const editingCalendar = ref(null);
+
 const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value;
 };
@@ -54,6 +77,16 @@ const toggleSidebar = () => {
 const closeSidebar = () => {
   sidebarOpen.value = false;
 };
+
+const viewCalendars = () => {
+  calendarsdisplayed.value = true;
+  appointmentsdisplayed.value = false
+}
+
+const viewAppointments = () => {
+  appointmentsdisplayed.value = true;
+  calendarsdisplayed.value = false;
+}
 
 const loadAppointments = async () => {
   loading.value = true;
@@ -78,8 +111,46 @@ const handleSelectAppointment = (appointment) => {
   }
 };
 
+
+const openCalendarForm = (id, name, description, color) => {
+  editingCalendar.value = {id, name, description, color};
+  showCalendarForm.value = true;
+}
+
+const closeCalendarForm = () => {
+  showCalendarForm.value = false;
+  editingCalendar.value = null;
+}
+
+const handleSelectCalendar = async () => {
+}
+
+const deleteCalendar = async (calendarId) => {
+  if(calendars.value.length > 1){
+    try{
+      calendars.value = await calendarService.deleteCalendar(calendarId);
+    } catch (error) {
+      console.error('Erreur lors de la suppression du calendriers:', error);
+    } finally {
+      loadCalendars();
+    }
+  }
+}
+
+const loadCalendars = async () => {
+  loadingCalendars.value = true;
+  try{
+    calendars.value = await calendarService.getCalendarsByOwnerId();
+  } catch (error) {
+    console.error('Erreur lors du chargement des calendriers:', error);
+  } finally {
+    loadingCalendars.value = false;
+  }
+};
+
 onMounted(() => {
   loadAppointments();
+  loadCalendars();
 
   const storedUserName = localStorage.getItem('userName');
   if (storedUserName) {
