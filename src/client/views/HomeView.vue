@@ -2,8 +2,10 @@
   <div id="app" class="min-h-screen bg-stone-50 flex flex-col">
     <AppHeader
         :user-name="userName"
+        :reset-search-key="resetSearchKey"
         @toggle-sidebar="toggleSidebar"
         @logout="handleLogout"
+        @search="handleSearch"
     />
 
     <div class="flex flex-1 relative">
@@ -67,6 +69,7 @@ const calendars = ref([]);
 const loadingCalendars = ref(false);
 const appointmentsdisplayed = ref(true);
 const calendarsdisplayed = ref(false);
+const resetSearchKey = ref(0);
 const showCalendarForm = ref(false);
 const editingCalendar = ref(null);
 
@@ -119,6 +122,7 @@ const loadAppointments = async () => {
   loading.value = true;
   try {
     appointments.value = await calendarService.fetchAppointments();
+    resetSearchKey.value++; // Réinitialise la barre de recherche
   } catch (error) {
     console.error('Erreur lors du chargement des rendez-vous:', error);
     throw error;
@@ -147,6 +151,21 @@ const handleSelectAppointment = (appointment) => {
   }
 };
 
+const handleSearch = async (query) => {
+  loading.value = true;
+  try {
+    if (!query.trim()) {
+      await loadAppointments();
+    } else {
+      appointments.value = await calendarService.searchAppointments(query);
+    }
+  } catch (error) {
+    console.error('Erreur lors de la recherche :', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
 const openCalendarForm = (id, name, description, color) => {
   editingCalendar.value = {id, name, description, color};
   showCalendarForm.value = true;
@@ -164,6 +183,7 @@ const deleteCalendar = async (calendarId) => {
   if (calendars.value.length > 1) {
     try {
       calendars.value = await calendarService.deleteCalendar(calendarId);
+      resetSearchKey.value++; // Réinitialise la barre de recherche
     } catch (error) {
       console.error('Erreur lors de la suppression du calendrier:', error);
     } finally {
@@ -176,6 +196,7 @@ const loadCalendars = async () => {
   loadingCalendars.value = true;
   try {
     calendars.value = await calendarService.getCalendarsByOwnerId();
+    resetSearchKey.value++; // Réinitialise la barre de recherche
   } catch (error) {
     console.error('Erreur lors du chargement des calendriers:', error);
     throw error;
@@ -183,4 +204,14 @@ const loadCalendars = async () => {
     loadingCalendars.value = false;
   }
 };
+
+onMounted(() => {
+  loadAppointments();
+  loadCalendars();
+
+  const storedUserName = localStorage.getItem('userName');
+  if (storedUserName) {
+    userName.value = storedUserName;
+  }
+});
 </script>

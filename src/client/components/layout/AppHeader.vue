@@ -30,6 +30,35 @@
           </div>
         </div>
 
+        <div class="relative w-full max-w-md">
+          <!-- Loupe à gauche -->
+          <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 3a7.5 7.5 0 006.15 13.65z" />
+          </svg>
+
+          <!-- Champ -->
+          <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Rechercher un rendez-vous..."
+              class="w-full border border-gray-300 rounded-lg pl-9 pr-9 py-2 text-sm
+           focus:ring-0 focus:border-indigo-500 outline-none transition-colors"
+          />
+
+          <!-- Croix à droite -->
+          <button
+              v-if="searchQuery"
+              @click="clearSearch"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          >
+            ✕
+          </button>
+        </div>
+
         <!-- Profil + Déconnexion (collés à droite) -->
         <div class="flex items-center gap-2">
           <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
@@ -63,12 +92,39 @@
 </template>
 
 <script setup>
-defineProps({
+import { ref, watch } from 'vue';
+
+const props = defineProps({
   userName: {
     type: String,
     default: 'Utilisateur'
+  },
+  resetSearchKey: {  // Pour reset la barre de recherche
+    type: Number,
+    default: 0
   }
 });
 
-defineEmits(['toggleSidebar', 'logout']);
+const emit = defineEmits(['toggleSidebar', 'logout', 'search']);
+const searchQuery = ref('');
+
+// On émet l'événement de recherche avec un délai pour éviter trop d'appels successifs
+let debounceTimeout;
+watch(searchQuery, (newValue) => {
+  clearTimeout(debounceTimeout);
+  debounceTimeout = setTimeout(() => {
+    emit('search', newValue);
+  }, 500);
+});
+
+// Réinitialisation depuis App.vue
+watch(() => props.resetSearchKey, () => {
+  searchQuery.value = '';
+});
+
+// Bouton pour vider localement
+const clearSearch = () => {
+  searchQuery.value = '';
+  emit('search', ''); // notifie App.vue pour réafficher tout
+};
 </script>
