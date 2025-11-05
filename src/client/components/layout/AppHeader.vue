@@ -59,6 +59,50 @@
           </button>
         </div>
 
+        <!-- Bouton filtre -->
+        <div class="relative">
+          <button
+              @click="showFilters = !showFilters"
+              class="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-500"
+                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2l-6 7v6l-4-2v-4L3 6V4z"/>
+            </svg>
+            <span>Filtres</span>
+          </button>
+
+          <!-- Menu déroulant -->
+          <div
+              v-if="showFilters"
+              class="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50"
+          >
+            <h3 class="text-sm font-medium mb-2 text-gray-700">Date de début</h3>
+            <div class="flex items-center gap-2 mb-3">
+              <select v-model="startOperator" class="border rounded p-1 text-sm">
+                <option value=">">&gt;</option>
+                <option value="<">&lt;</option>
+              </select>
+              <input type="date" v-model="startDate" class="border rounded p-1 text-sm flex-1"/>
+            </div>
+
+            <h3 class="text-sm font-medium mb-2 text-gray-700">Date de fin</h3>
+            <div class="flex items-center gap-2 mb-3">
+              <select v-model="endOperator" class="border rounded p-1 text-sm">
+                <option value=">">&gt;</option>
+                <option value="<">&lt;</option>
+              </select>
+              <input type="date" v-model="endDate" class="border rounded p-1 text-sm flex-1"/>
+            </div>
+
+            <div class="flex justify-between mt-4">
+              <button @click="resetFilters" class="text-gray-500 text-sm hover:underline">Réinitialiser</button>
+              <button @click="applyFilters" class="bg-indigo-500 text-white text-sm px-3 py-1.5 rounded hover:bg-indigo-600">Appliquer</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Profil + Déconnexion (collés à droite) -->
         <div class="flex items-center gap-2">
           <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
@@ -105,8 +149,15 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['toggleSidebar', 'logout', 'search']);
+const emit = defineEmits(['toggleSidebar', 'logout', 'search', 'filters-changed']);
 const searchQuery = ref('');
+
+// Champs pour filtre
+const showFilters = ref(false);
+const startDate = ref('');
+const endDate = ref('');
+const startOperator = ref('>');
+const endOperator = ref('>');
 
 // On émet l'événement de recherche avec un délai pour éviter trop d'appels successifs
 let debounceTimeout;
@@ -127,4 +178,25 @@ const clearSearch = () => {
   searchQuery.value = '';
   emit('search', ''); // notifie App.vue pour réafficher tout
 };
+
+// Appliquer les filtres
+const applyFilters = () => {
+  showFilters.value = false;
+  emit('filters-changed', {
+    startDate: startDate.value,
+    startOperator: startOperator.value,
+    endDate: endDate.value,
+    endOperator: endOperator.value
+  });
+};
+
+// Réinitialiser les filtres
+const resetFilters = () => {
+  startDate.value = '';
+  endDate.value = '';
+  startOperator.value = '>';
+  endOperator.value = '>';
+  emit('filters-changed', {}); // envoie vide = plus de filtres
+};
+
 </script>

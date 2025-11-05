@@ -6,6 +6,7 @@
         @toggle-sidebar="toggleSidebar"
         @logout="handleLogout"
         @search="handleSearch"
+        @filters-changed="handleFilters"
     />
 
     <div class="flex flex-1 relative">
@@ -36,7 +37,7 @@
         <div class="p-6 lg:p-8 max-w-[1600px] mx-auto">
           <CalendarView
               ref="calendarViewRef"
-              :appointments="appointments"
+              :appointments="filteredAppointments"
               :loading="loading"
               @appointments-updated="loadAppointments"
               :editingCalendar="editingCalendar"
@@ -51,7 +52,7 @@
 </template>
 
 <script setup>
-import {ref, onMounted} from 'vue';
+import {ref, onMounted, computed} from 'vue';
 import axios from 'axios';
 import {useRouter} from 'vue-router';
 import AppHeader from '../components/layout/AppHeader.vue';
@@ -70,6 +71,7 @@ const loadingCalendars = ref(false);
 const appointmentsdisplayed = ref(true);
 const calendarsdisplayed = ref(false);
 const resetSearchKey = ref(0);
+const filters = ref({});
 const showCalendarForm = ref(false);
 const editingCalendar = ref(null);
 
@@ -123,6 +125,7 @@ const loadAppointments = async () => {
   try {
     appointments.value = await calendarService.fetchAppointments();
     resetSearchKey.value++; // Réinitialise la barre de recherche
+    filters.value = {}; // Réinitialise les filtres
   } catch (error) {
     console.error('Erreur lors du chargement des rendez-vous:', error);
     throw error;
@@ -166,6 +169,39 @@ const handleSearch = async (query) => {
   }
 };
 
+// Quand les filtres changent
+const handleFilters = (newFilters) => {
+  filters.value = newFilters
+}
+
+// calcule les rdv avec les filtres appliqué
+const filteredAppointments = computed(() => {
+  return appointments.value.filter((a) => {
+    let matchesFilter = true;
+
+    if (filters.value.startDate) {
+      const start = new Date(a.startDate); // <-- ici
+      const filterStart = new Date(filters.value.startDate);
+      matchesFilter =
+          filters.value.startOperator === '>'
+              ? start > filterStart
+              : start < filterStart;
+    }
+
+    if (matchesFilter && filters.value.endDate) {
+      const end = new Date(a.endDate); // <-- ici
+      const filterEnd = new Date(filters.value.endDate);
+      matchesFilter =
+          filters.value.endOperator === '>'
+              ? end > filterEnd
+              : end < filterEnd;
+    }
+
+    return matchesFilter;
+  });
+});
+
+
 const openCalendarForm = (id, name, description, color) => {
   editingCalendar.value = {id, name, description, color};
   showCalendarForm.value = true;
@@ -184,6 +220,7 @@ const deleteCalendar = async (calendarId) => {
     try {
       calendars.value = await calendarService.deleteCalendar(calendarId);
       resetSearchKey.value++; // Réinitialise la barre de recherche
+      filters.value = {}; // Réinitialise les filtres
     } catch (error) {
       console.error('Erreur lors de la suppression du calendrier:', error);
     } finally {
@@ -197,6 +234,7 @@ const loadCalendars = async () => {
   try {
     calendars.value = await calendarService.getCalendarsByOwnerId();
     resetSearchKey.value++; // Réinitialise la barre de recherche
+    filters.value = {}; // Réinitialise les filtres
   } catch (error) {
     console.error('Erreur lors du chargement des calendriers:', error);
     throw error;
