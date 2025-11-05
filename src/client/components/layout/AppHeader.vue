@@ -146,6 +146,10 @@ const props = defineProps({
   resetSearchKey: {  // Pour reset la barre de recherche
     type: Number,
     default: 0
+  },
+  resetFiltersKey: {  // Pour reset les filtres
+    type: Number,
+    default: 0
   }
 });
 
@@ -171,6 +175,14 @@ watch(searchQuery, (newValue) => {
 // Réinitialisation depuis App.vue
 watch(() => props.resetSearchKey, () => {
   searchQuery.value = '';
+});
+
+watch(() => props.resetFiltersKey, () => {
+  // quand App.vue réinitialise les filtres globalement
+  startDate.value = '';
+  endDate.value = '';
+  startOperator.value = '>';
+  endOperator.value = '>';
 });
 
 // Bouton pour vider localement
