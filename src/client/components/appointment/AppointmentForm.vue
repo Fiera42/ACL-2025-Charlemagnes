@@ -11,6 +11,14 @@
         <textarea v-model="form.description" rows="3" class="w-full px-4 py-2 border rounded-lg"></textarea>
       </div>
       <div class="mb-4">
+        <label class="block text-sm font-medium mb-1">Calendrier</label>
+        <select v-model="form.calendarId" required class="w-full px-4 py-2 border rounded-lg">
+          <option v-for="calendar in calendars" :value="calendar.id">
+            {{ calendar.name }}
+          </option>
+        </select>
+      </div>
+      <div class="mb-4">
         <label class="block text-sm font-medium mb-1">Date & heure de début</label>
         <input v-model="form.startDate" type="datetime-local" required class="w-full px-4 py-2 border rounded-lg" />
       </div>
@@ -28,7 +36,11 @@ import { ref } from 'vue';
 import BaseModal from '../common/BaseModal.vue';
 
 const props = defineProps({
-  appointment: Object
+  appointment: Object,
+  calendars: {
+    type: Array,
+    default: () => []
+  },
 });
 
 const emit = defineEmits(['close', 'save']);
@@ -36,6 +48,7 @@ const emit = defineEmits(['close', 'save']);
 const form = ref({
   title: props.appointment?.title || '',
   description: props.appointment?.description || '',
+  calendarId: props.appointment?.calendarId || '',
   startDate: props.appointment?.startDate || '',
   endDate: props.appointment?.endDate || ''
 });

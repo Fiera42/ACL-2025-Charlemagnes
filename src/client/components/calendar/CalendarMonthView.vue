@@ -52,13 +52,16 @@
               v-for="event in getDayEvents(day.date).slice(0, 3)"
               :key="event.id"
               :class="[
-                      'rounded p-1.5 border-l-2 cursor-pointer',
-                      event.colorClass
+                      'rounded p-1.5 border-l-2 cursor-pointer'
                     ]"
+              :style="{
+                  borderColor: event.color,
+                  backgroundColor: addAlpha(event.color, 0.3),
+                }"
               @click.stop="$emit('showEvent', event)"
           >
             <p class="text-xs font-semibold text-gray-900 truncate">{{ event.title }}</p>
-            <p :class="['text-xs font-semibold', event.textColor]">{{ event.timeDisplay }}</p>
+            <p :class="['text-xs font-semibold']">{{ event.timeDisplay }}</p>
           </div>
           <button
               v-if="getDayEvents(day.date).length > 3"
@@ -199,4 +202,9 @@ defineExpose({
     currentDate.value = new Date(date);
   }
 });
+
+function addAlpha(color, opacity) {
+  const _opacity = Math.round(Math.min(Math.max(opacity ?? 1, 0), 1) * 255);
+  return color + _opacity.toString(16).toUpperCase();
+}
 </script>

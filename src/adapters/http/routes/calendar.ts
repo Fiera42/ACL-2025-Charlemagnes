@@ -92,10 +92,8 @@ router.post('/:calendarId/appointments', authenticateToken, async (req: Authenti
 
         if (recursionRule) {
             appointment = await appointmentService.createRecurrentAppointment(
-                //req.user!.userId,
-                "1",
-                //req.params.calendarId,
-                "1",
+                req.user!.userId,
+                req.params.calendarId,
                 title,
                 description,
                 new Date(startDate),
@@ -104,10 +102,8 @@ router.post('/:calendarId/appointments', authenticateToken, async (req: Authenti
             );
         } else {
             appointment = await appointmentService.createAppointment(
-                //req.user!.userId,
-                "1",
-                //req.params.calendarId,
-                "1",
+                req.user!.userId,
+                req.params.calendarId,
                 title,
                 description,
                 new Date(startDate),
@@ -146,7 +142,7 @@ router.put('/appointments/:id', authenticateToken, async (req: AuthenticatedRequ
 
         if (recursionRule) {
             updatedAppointment = await appointmentService.updateRecurrentAppointment(
-                "1",
+                req.user!.userId,
                 appointmentId,
                 {
                     title,
@@ -158,7 +154,7 @@ router.put('/appointments/:id', authenticateToken, async (req: AuthenticatedRequ
             );
         } else {
             updatedAppointment = await appointmentService.updateAppointment(
-                "1",            // userId
+                req.user!.userId,
                 appointmentId,
                 {
                     title,
@@ -180,7 +176,7 @@ router.put('/appointments/:id', authenticateToken, async (req: AuthenticatedRequ
 router.delete('/appointments/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         //const response = await appointmentService.deleteAppointment(req.user!.userId, req.params.id);
-        const response = await appointmentService.deleteAppointment("1", req.params.id);
+        const response = await appointmentService.deleteAppointment(req.user!.userId, req.params.id);
         res.json(response);
     } catch (error) {
         res.status(500).json({ error: 'Erreur lors de la suppression du rendez-vous' });

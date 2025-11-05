@@ -120,10 +120,9 @@ router.post('/register', async (req: Request, res: Response) => {
     }
 });
 
-router.delete('/logout', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.delete('/logout/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const { id } = req.body;
-        if(id === req.user!.userId) {
+        if(req.params.id === req.user!.userId) {
             res.status(403);
             return;
         }

@@ -92,6 +92,7 @@
 import {ref} from 'vue';
 import {useRouter} from 'vue-router';
 import axios from 'axios';
+import {calendarService} from "../assets/calendar.js";
 
 const router = useRouter();
 
@@ -120,6 +121,11 @@ const handleRegister = async () => {
     if (response.status === 201 && response.data) {
       localStorage.setItem('token', response.data);
       localStorage.setItem('userName', formData.value.username);
+      await calendarService.createCalendar({
+        name: "Calendrier 1",
+        description: "Calendrier par défaut",
+        color: "#63a6a0"
+      })
       router.push('/');
     }
   } catch (err) {

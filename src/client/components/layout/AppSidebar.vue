@@ -15,7 +15,7 @@
   >
     <div class="flex flex-col h-full">
       <!-- Header du sidebar -->
-      <div class ="flex gap-5">
+      <div class="flex gap-5">
         <button
             class="py-2.5 pr-7 pl-5 bg-indigo-600 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
             @click="$emit('toggleappointmentsdisplay')"
@@ -30,8 +30,8 @@
           Calendriers
         </button>
       </div>
-      
-          <!-- Liste des rendez-vous -->
+
+      <!-- Liste des rendez-vous -->
       <div v-if="props.appointmentsdisplayed">
 
         <div class="flex items-center justify-between p-4 border-b border-gray-200">
@@ -41,21 +41,21 @@
               class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
         </div>
-        
+
         <div class="flex-1 overflow-y-auto p-4">
           <div v-if="loading" class="text-center text-gray-500 py-8">
             Chargement...
           </div>
           <div v-else-if="upcomingAppointments.length === 0" class="text-center text-gray-500 py-8">
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
-                class="mx-auto mb-3 text-gray-400">
+                 stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+                 class="mx-auto mb-3 text-gray-400">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
               <line x1="16" y1="2" x2="16" y2="6"></line>
               <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -79,7 +79,7 @@
               </p>
               <div class="flex items-center gap-2 text-xs text-gray-500">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                   <line x1="16" y1="2" x2="16" y2="6"></line>
                   <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -93,39 +93,39 @@
       </div>
       <div v-else-if="props.calendarsdisplayed">
 
-      <div class="flex items-center justify-between p-4 border-b border-gray-200">
-        <h2 class="text-lg font-semibold text-gray-900">Liste des calendriers</h2>
-        <button
-            @click="$emit('close')"
-            class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
+        <div class="flex items-center justify-between p-4 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-900">Liste des calendriers</h2>
+          <button
+              @click="$emit('close')"
+              class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
 
         <div class="flex-1 overflow-y-auto p-4">
           <button
-            class="py-2.5 pr-7 pl-5 bg-indigo-600 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
-            @click="$emit('CalendarForm')"
+              class="py-2.5 pr-7 pl-5 bg-indigo-600 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
+              @click="$emit('CalendarForm')"
           >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M10 5V15M15 10H5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
-          </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 5V15M15 10H5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
             Nouveau calendrier
           </button>
 
           <div v-if="loadingCalendars" class="text-center text-gray-500 py-8">
             Chargement...
           </div>
-          
+
           <div v-else-if="calendars.length === 0" class="text-center text-gray-500 py-8">
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
-                class="mx-auto mb-3 text-gray-400">
+                 stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+                 class="mx-auto mb-3 text-gray-400">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
               <line x1="16" y1="2" x2="16" y2="6"></line>
               <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -133,7 +133,7 @@
             </svg>
             <p class="text-sm">Aucun calendrier</p>
           </div>
-          
+
           <div v-else class="space-y-3">
             <div
                 v-for="calendar in props.calendars"
@@ -148,29 +148,34 @@
               <p v-if="calendar.description" class="text-xs text-gray-600 mb-2 line-clamp-2">
                 {{ calendar.description }}
               </p>
-              
+
+              <input
+                  type="checkbox"
+                  :checked="calendarService.visibleCalendars.has(calendar.id)"
+                  @change="$emit('calendarToggled', calendar.id, $event.target.checked)"
+              />
+
               <button
-                class="py-2.5 pr-7 pl-5 bg-red-500 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-red-600"
-                @click="$emit('deleteCalendar',calendar.id)"
+                  class="py-2.5 pr-7 pl-5 bg-red-500 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-red-600"
+                  @click="$emit('deleteCalendar',calendar.id)"
               >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M15 10H5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
-              </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M15 10H5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
                 Supprimer
               </button>
 
               <button
-                class="py-2.5 pr-7 pl-5 bg-indigo-600 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
-                @click="$emit('editCalendar',calendar.id,calendar.name,calendar.description,calendar.color)"
+                  class="py-2.5 pr-7 pl-5 bg-indigo-600 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
+                  @click="$emit('editCalendar',calendar.id,calendar.name,calendar.description,calendar.color)"
               >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 5V15M15 10H5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
-              </svg>
-              Modifier
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 5V15M15 10H5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+                Modifier
               </button>
 
-              
-              
+
               <!-- <div class="flex items-center gap-2 text-xs text-gray-500">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -185,13 +190,14 @@
           </div>
         </div>
       </div>
-      
+
     </div>
   </aside>
 </template>
 
 <script setup>
 import {computed} from 'vue';
+import {calendarService} from "../../assets/calendar.js";
 
 const props = defineProps({
   isOpen: {
@@ -224,7 +230,7 @@ const props = defineProps({
   }
 });
 
-defineEmits(['close','selectAppointment','toggleappointmentsdisplay','togglecalendarsdisplay','CalendarForm','editCalendar']);
+defineEmits(['close', 'selectAppointment', 'toggleappointmentsdisplay', 'togglecalendarsdisplay', 'CalendarForm', 'editCalendar']);
 
 const upcomingAppointments = computed(() => {
   const now = new Date();

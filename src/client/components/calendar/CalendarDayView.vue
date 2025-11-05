@@ -50,9 +50,12 @@
           >
             <div
                 :class="[
-                        'rounded p-2 border-l-4 cursor-pointer h-full overflow-hidden',
-                        event.colorClass
+                        'rounded p-2 border-l-4 cursor-pointer h-full overflow-hidden'
                       ]"
+                :style="{
+                  borderColor: event.color,
+                  backgroundColor: addAlpha(event.color, 0.3),
+                }"
                 @click.stop="$emit('showEvent', event)"
             >
               <div class="flex items-start justify-between gap-1">
@@ -63,7 +66,7 @@
                     title="Continue depuis le jour précédent"
                 >↑</span>
               </div>
-              <p :class="['text-xs font-semibold mt-1', event.textColor]">{{ event.timeDisplay }}</p>
+              <p :class="['text-xs font-semibold mt-1']">{{ event.timeDisplay }}</p>
               <span
                   v-if="event.continuesAfter"
                   class="text-xs text-gray-600 block mt-1"
@@ -228,4 +231,9 @@ defineExpose({
     scrollToWorkHours();
   }
 });
+
+function addAlpha(color, opacity) {
+  const _opacity = Math.round(Math.min(Math.max(opacity ?? 1, 0), 1) * 255);
+  return color + _opacity.toString(16).toUpperCase();
+}
 </script>

@@ -40,6 +40,7 @@
     <AppointmentForm
         v-if="showForm"
         :appointment="editingAppointment"
+        :calendars="calendars"
         @close="closeForm"
         @save="saveAppointment"
     />
@@ -74,6 +75,10 @@ import {calendarService} from '../assets/calendar.js';
 import CalendarCreationForm from '../components/calendar/CalendarCreationForm.vue';
 
 const props = defineProps({
+  calendars: {
+    type: Array,
+    default: () => []
+  },
   appointments: {
     type: Array,
     default: () => []
@@ -150,6 +155,7 @@ const openNewEventForm = (date, hour) => {
   editingAppointment.value = {
     title: '',
     description: '',
+    calendarId: props.calendars[0].id,
     startDate: startDate.toISOString().slice(0, 16),
     endDate: endDate.toISOString().slice(0, 16)
   };
@@ -200,6 +206,10 @@ const saveCalendar = async (calendar) => {
         description: calendar.description,
         color: calendar.color
       });
+
+      // Calendar is selected by default
+      localStorage.setItem(`isVisible_${calendar.id}`, "true");
+      calendarService.visibleCalendars.add(calendar.id);
     }
     emit('calendarsUpdated');
     closeCalendarForm();
@@ -224,6 +234,7 @@ const editAppointment = () => {
     id: selectedAppointment.value.id,
     title: selectedAppointment.value.title,
     description: selectedAppointment.value.description,
+    calendarId: selectedAppointment.value.calendarId,
     startDate: new Date(selectedAppointment.value.startDate).toISOString().slice(0, 16),
     endDate: new Date(selectedAppointment.value.endDate).toISOString().slice(0, 16)
   };

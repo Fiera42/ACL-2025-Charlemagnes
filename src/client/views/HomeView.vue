@@ -26,6 +26,7 @@
           @CalendarForm="openCalendarForm"
           @deleteCalendar="deleteCalendar"
           @editCalendar="openCalendarForm"
+          @calendarToggled="calendarToggled"
       />
 
       <main
@@ -38,6 +39,7 @@
           <CalendarView
               ref="calendarViewRef"
               :appointments="filteredAppointments"
+              :calendars="calendars"
               :loading="loading"
               @appointments-updated="loadAppointments"
               :editingCalendar="editingCalendar"
@@ -86,8 +88,16 @@ onMounted(async () => {
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
   try {
-    await loadAppointments();
+    // Load all calendars, make them visible by default
     await loadCalendars();
+    calendars.value.forEach((calendar) => {
+      const isVisible = localStorage.getItem(`isVisible_${calendar.id}`);
+      if(isVisible === null || isVisible.toLowerCase() === "true"){
+        calendarService.visibleCalendars.add(calendar.id);
+      }
+    });
+
+    await loadAppointments();
 
     const storedUserName = localStorage.getItem('userName');
     if (storedUserName) {
@@ -123,7 +133,15 @@ const viewAppointments = () => {
 const loadAppointments = async () => {
   loading.value = true;
   try {
-    appointments.value = await calendarService.fetchAppointments();
+    appointments.value = [];
+    calendars.value.forEach((calendar) => {
+      if(calendarService.visibleCalendars.has(calendar.id)) {
+        calendarService.fetchAppointments(calendar).then((result) => {
+          appointments.value.push(...result);
+        });
+      }
+    });
+
     resetSearchKey.value++; // Réinitialise la barre de recherche
     filters.value = {}; // Réinitialise les filtres
   } catch (error) {
@@ -136,7 +154,7 @@ const loadAppointments = async () => {
 
 const handleLogout = async () => {
   try {
-    await axios.delete('/api/auth/logout');
+    await axios.delete(`/api/auth/logout/${localStorage.getItem('userName')}`, {});
   } catch (error) {
     console.error('Erreur lors de la déconnexion:', error);
   } finally {
@@ -207,9 +225,11 @@ const openCalendarForm = (id, name, description, color) => {
   showCalendarForm.value = true;
 };
 
-const closeCalendarForm = () => {
+const closeCalendarForm = async () => {
   showCalendarForm.value = false;
   editingCalendar.value = null;
+  await loadCalendars();
+  await loadAppointments();
 };
 
 const handleSelectCalendar = async () => {
@@ -221,10 +241,15 @@ const deleteCalendar = async (calendarId) => {
       calendars.value = await calendarService.deleteCalendar(calendarId);
       resetSearchKey.value++; // Réinitialise la barre de recherche
       filters.value = {}; // Réinitialise les filtres
+
+      // Remove the calendar from visible ones
+      localStorage.removeItem(`isVisible_${calendarId}`);
+      calendarService.visibleCalendars.delete(calendarId);
     } catch (error) {
       console.error('Erreur lors de la suppression du calendrier:', error);
     } finally {
-      loadCalendars();
+      await loadCalendars();
+      await loadAppointments();
     }
   }
 };
@@ -243,13 +268,16 @@ const loadCalendars = async () => {
   }
 };
 
-onMounted(() => {
-  loadAppointments();
-  loadCalendars();
-
-  const storedUserName = localStorage.getItem('userName');
-  if (storedUserName) {
-    userName.value = storedUserName;
+const calendarToggled = async (calendarId, value) => {
+  localStorage.setItem(`isVisible_${calendarId}`, value);
+  if(value) {
+    calendarService.visibleCalendars.add(calendarId);
   }
-});
+  else {
+    calendarService.visibleCalendars.delete(calendarId);
+  }
+
+  await loadCalendars();
+  await loadAppointments();
+}
 </script>
