@@ -34,6 +34,7 @@ export async function initDatabase(): Promise<void> {
     CREATE TABLE IF NOT EXISTS calendars (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
+      description TEXT,
       color TEXT,
       owner_id TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

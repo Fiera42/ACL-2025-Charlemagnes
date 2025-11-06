@@ -15,8 +15,6 @@ out/
 
 # Vue specific
 *.local
-*.config.js
-*.config.cjs
 
 # Tailwind CSS
 tailwind.config.js

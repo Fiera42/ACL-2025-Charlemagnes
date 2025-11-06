@@ -4,7 +4,7 @@ import {AppointmentService} from "../../application/services/AppointmentService"
 import assert from "node:assert";
 import test from "node:test";
 import {Appointment} from "../../domain/entities/Appointment";
-import {CalendarServiceResponse} from "../../domain/entities/CalendarServiceResponse";
+import {ServiceResponse} from "../../domain/entities/ServiceResponse.ts";
 
 const mockDB = new MockCalendarDB();
 const appointmentService = new AppointmentService(mockDB);
@@ -288,7 +288,7 @@ test.describe("deleteAppointment", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(deletionResult, CalendarServiceResponse.SUCCESS);
+        assert.deepStrictEqual(deletionResult, ServiceResponse.SUCCESS);
         assert.deepStrictEqual(mockDB.appointments[dbAppointment.id as string], undefined);
 
         mockDB.reset();
@@ -306,7 +306,7 @@ test.describe("deleteAppointment", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(deletionResult, CalendarServiceResponse.FORBIDDEN, "If the user does not own the appointment, refuse the deletion");
+        assert.deepStrictEqual(deletionResult, ServiceResponse.FORBIDDEN, "If the user does not own the appointment, refuse the deletion");
         assert.deepStrictEqual(mockDB.appointments[dbAppointment.id as string], dbAppointment);
 
         mockDB.reset();
@@ -324,7 +324,7 @@ test.describe("deleteAppointment", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(deletionResult, CalendarServiceResponse.RESOURCE_NOT_EXIST, "The appointment does not exist, refuse the deletion");
+        assert.deepStrictEqual(deletionResult, ServiceResponse.RESOURCE_NOT_EXIST, "The appointment does not exist, refuse the deletion");
         assert.deepStrictEqual(mockDB.appointments[dbAppointment.id as string], dbAppointment);
 
         mockDB.reset();
@@ -380,14 +380,14 @@ test.describe("updateAppointment", () => {
             endDate: new Date('2026-03-09'),
         }
 
-        const updateResult = await appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, appointment.id as string, partialAppointment)
+        let updateResult = await appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, appointment.id as string, partialAppointment)
             .catch((reason: any) => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.SUCCESS);
+        assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
 
-        const dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
+        let dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
         assert.ok(dbAppointment);
 
         assert.deepStrictEqual(
@@ -396,6 +396,25 @@ test.describe("updateAppointment", () => {
                 ...dbAppointment,
                 ...partialAppointment,
             }
+        );
+
+        updateResult = await appointmentService.updateAppointment(BASE_APPOINTMENT.ownerId, appointment.id as string, {title: "This is a new title"})
+            .catch((reason: any) => {
+                throw new Error(reason)
+            })
+
+        assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
+
+        dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
+        assert.ok(dbAppointment);
+
+        assert.deepStrictEqual(
+            {...dbAppointment},
+            {
+                ...dbAppointment,
+                title: "This is a new title",
+            },
+            "Should be able to update even without an id in the partial"
         );
 
         mockDB.reset();
@@ -414,7 +433,7 @@ test.describe("updateAppointment", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.FORBIDDEN, "If the user does not own the appointment, refuse the update");
+        assert.deepStrictEqual(updateResult, ServiceResponse.FORBIDDEN, "If the user does not own the appointment, refuse the update");
         assert.deepStrictEqual(mockDB.appointments[appointment.id as string], appointment, "If the user does not own the appointment, refuse the update");
 
         mockDB.reset();
@@ -433,7 +452,7 @@ test.describe("updateAppointment", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.FORBIDDEN, "Refuse to modify the ownerID: it is immutable");
+        assert.deepStrictEqual(updateResult, ServiceResponse.FORBIDDEN, "Refuse to modify the ownerID: it is immutable");
         assert.deepStrictEqual(mockDB.appointments[appointment.id as string], appointment, "Refuse to modify the ownerID: it is immutable");
 
         mockDB.reset();
@@ -452,7 +471,7 @@ test.describe("updateAppointment", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.RESOURCE_NOT_EXIST, "Must check if the appointment exist");
+        assert.deepStrictEqual(updateResult, ServiceResponse.RESOURCE_NOT_EXIST, "Must check if the appointment exist");
         assert.deepStrictEqual(mockDB.appointments[appointment.id as string], appointment, "Wtf why this changed");
 
         mockDB.reset();
@@ -471,7 +490,7 @@ test.describe("updateAppointment", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.FORBIDDEN, "Refuse to modify the appointmentID: it is immutable");
+        assert.deepStrictEqual(updateResult, ServiceResponse.FORBIDDEN, "Refuse to modify the appointmentID: it is immutable");
         assert.deepStrictEqual(mockDB.appointments[appointment.id as string], appointment, "Refuse to modify the appointmentID: it is immutable");
 
         mockDB.reset();
@@ -525,7 +544,7 @@ test.describe("updateAppointment", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.SUCCESS);
+        assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
 
         const dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
         assert.ok(dbAppointment);
@@ -557,7 +576,7 @@ test.describe("updateAppointment", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.RESOURCE_NOT_EXIST, "Refuse to modify the appointment: calendar of id 42 odes not exist");
+        assert.deepStrictEqual(updateResult, ServiceResponse.RESOURCE_NOT_EXIST, "Refuse to modify the appointment: calendar of id 42 odes not exist");
         assert.deepStrictEqual(mockDB.appointments[appointment.id as string], appointment, "Refuse to modify the appointment: calendar of id 42 odes not exist");
 
         mockDB.reset();
@@ -590,7 +609,7 @@ test.describe("updateAppointment", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.SUCCESS);
+        assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
 
         let dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
         assert.ok(dbAppointment);
@@ -611,7 +630,7 @@ test.describe("updateAppointment", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.SUCCESS);
+        assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
 
         dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
         assert.ok(dbAppointment);
@@ -632,7 +651,7 @@ test.describe("updateAppointment", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.SUCCESS);
+        assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
 
         dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
         assert.ok(dbAppointment);
@@ -704,7 +723,7 @@ test.describe("updateAppointment", () => {
                 throw new Error(reason)
             })
 
-        assert.deepStrictEqual(updateResult, CalendarServiceResponse.SUCCESS);
+        assert.deepStrictEqual(updateResult, ServiceResponse.SUCCESS);
 
         const dbAppointment = await mockDB.findAppointmentById(appointment.id as string);
         assert.ok(dbAppointment);

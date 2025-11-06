@@ -9,13 +9,16 @@ import { SQLiteAuthDB } from '../../infrastructure/database/SQLiteAuthDB';
 import { SQLiteCalendarDB } from '../../infrastructure/database/SQLiteCalendarDB';
 import { SQLiteShareDB } from '../../infrastructure/database/SQLiteShareDB';
 import { db } from '../../infrastructure/config/sqliteAdapter';
+import {AuthService} from "../../application/services/AuthService.ts";
+import {IAuthService} from "../../domain/interfaces/IAuthService.ts";
 
 export class ServiceFactory {
     private static authDB: IAuthDB;
     private static calendarDB: ICalendarDB;
     private static shareDB: IShareDB;
-    private static appointmentService: IAppointmentService;
+    private static authService: AuthService;
     private static calendarService: ICalendarService;
+    private static appointmentService: IAppointmentService;
 
     private static initializeDatabases(): void {
         if (!this.authDB) {
@@ -43,6 +46,13 @@ export class ServiceFactory {
         }
     }
 
+    private static initializeAuthService(): void {
+        if(!this.authService) {
+            this.initializeDatabases();
+            this.authService = new AuthService(this.authDB);
+        }
+    }
+
     static getAuthDB(): IAuthDB {
         this.initializeDatabases();
         return this.authDB;
@@ -66,5 +76,10 @@ export class ServiceFactory {
     static getAppointmentService(): IAppointmentService {
         this.initializeAppointmentService();
         return this.appointmentService;
+    }
+
+    static getAuthService(): IAuthService {
+        this.initializeAuthService();
+        return this.authService;
     }
 }

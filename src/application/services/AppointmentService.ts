@@ -1,5 +1,5 @@
 import {Appointment} from "../../domain/entities/Appointment";
-import {CalendarServiceResponse} from "../../domain/entities/CalendarServiceResponse";
+import {ServiceResponse} from "../../domain/entities/ServiceResponse.ts";
 import {RecurrentAppointment} from "../../domain/entities/ReccurentAppointment";
 import {RecursionRule} from "../../domain/entities/RecursionRule";
 import {IAppointmentService} from "../../domain/interfaces/IAppointmentService";
@@ -8,7 +8,7 @@ import {Sanitizer} from "./utils/Sanitizer";
 import {decode, encode} from "html-entities";
 
 export class AppointmentService implements IAppointmentService {
-    calendarDB: ICalendarDB;
+    private calendarDB: ICalendarDB;
 
     constructor(calendarDB: ICalendarDB) {
         this.calendarDB = calendarDB;
@@ -94,8 +94,8 @@ export class AppointmentService implements IAppointmentService {
     deleteAppointment(
         ownerId: string,
         appointmentId: string
-    ): Promise<CalendarServiceResponse> {
-        return new Promise<CalendarServiceResponse>(async (resolve, reject) => {
+    ): Promise<ServiceResponse> {
+        return new Promise<ServiceResponse>(async (resolve, reject) => {
             if (Sanitizer.doesStringContainSpecialChar(ownerId)) {
                 reject(new Error(`OwnerID (${ownerId}) contains special char`));
                 return;
@@ -112,11 +112,11 @@ export class AppointmentService implements IAppointmentService {
 
             if (appointment === undefined) return; // We already rejected in the catch
             if (appointment === null) {
-                resolve(CalendarServiceResponse.RESOURCE_NOT_EXIST);
+                resolve(ServiceResponse.RESOURCE_NOT_EXIST);
                 return;
             }
             if (ownerId !== appointment.ownerId) {
-                resolve(CalendarServiceResponse.FORBIDDEN);
+                resolve(ServiceResponse.FORBIDDEN);
                 return;
             }
 
@@ -127,9 +127,9 @@ export class AppointmentService implements IAppointmentService {
             if (deleteResult === undefined) return; // We already rejected in the catch
 
             if (deleteResult) {
-                resolve(CalendarServiceResponse.SUCCESS)
+                resolve(ServiceResponse.SUCCESS)
             } else {
-                resolve(CalendarServiceResponse.FAILED)
+                resolve(ServiceResponse.FAILED)
             }
         });
     }
@@ -138,8 +138,8 @@ export class AppointmentService implements IAppointmentService {
         ownerId: string,
         appointmentId: string,
         partialAppointment: Partial<Appointment>
-    ): Promise<CalendarServiceResponse> {
-        return new Promise<CalendarServiceResponse>(async (resolve, reject) => {
+    ): Promise<ServiceResponse> {
+        return new Promise<ServiceResponse>(async (resolve, reject) => {
             if (Sanitizer.doesStringContainSpecialChar(ownerId)) {
                 reject(new Error(`OwnerID (${ownerId}) contains special char`));
                 return;
@@ -168,14 +168,14 @@ export class AppointmentService implements IAppointmentService {
 
             if (appointment === undefined) return; // We already rejected in the catch
             if (appointment === null) {
-                resolve(CalendarServiceResponse.RESOURCE_NOT_EXIST);
+                resolve(ServiceResponse.RESOURCE_NOT_EXIST);
                 return;
             }
             if (ownerId !== appointment.ownerId
                 || (partialAppointment.ownerId && partialAppointment.ownerId !== appointment.ownerId)
                 || (partialAppointment.id && partialAppointment.id !== appointment.id)
             ) {
-                resolve(CalendarServiceResponse.FORBIDDEN);
+                resolve(ServiceResponse.FORBIDDEN);
                 return;
             }
 
@@ -187,7 +187,7 @@ export class AppointmentService implements IAppointmentService {
 
                 if (calendar === undefined) return; // We already rejected in the catch
                 if (calendar === null) {
-                    resolve(CalendarServiceResponse.RESOURCE_NOT_EXIST);
+                    resolve(ServiceResponse.RESOURCE_NOT_EXIST);
                     return;
                 }
             }
@@ -213,9 +213,9 @@ export class AppointmentService implements IAppointmentService {
             if (updateResult === undefined) return; // We already rejected in the catch
 
             if (updateResult) {
-                resolve(CalendarServiceResponse.SUCCESS)
+                resolve(ServiceResponse.SUCCESS)
             } else {
-                resolve(CalendarServiceResponse.FAILED)
+                resolve(ServiceResponse.FAILED)
             }
         });
     }
@@ -224,7 +224,7 @@ export class AppointmentService implements IAppointmentService {
         ownerId: string,
         appointmentId: string,
         appointment: Partial<RecurrentAppointment>
-    ): Promise<CalendarServiceResponse> {
+    ): Promise<ServiceResponse> {
         throw new Error("Method not implemented.");
     }
 
@@ -232,7 +232,7 @@ export class AppointmentService implements IAppointmentService {
         ownerId: string,
         appointmentId: string,
         sharedToId: string
-    ): Promise<CalendarServiceResponse> {
+    ): Promise<ServiceResponse> {
         throw new Error("Method not implemented.");
     }
 
@@ -240,7 +240,7 @@ export class AppointmentService implements IAppointmentService {
         ownerId: string,
         appointmentId: string,
         sharedToId: string
-    ): Promise<CalendarServiceResponse> {
+    ): Promise<ServiceResponse> {
         throw new Error("Method not implemented.");
     }
 

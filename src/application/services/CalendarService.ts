@@ -1,5 +1,5 @@
 import {Calendar} from "../../domain/entities/Calendar";
-import {CalendarServiceResponse} from "../../domain/entities/CalendarServiceResponse";
+import {ServiceResponse} from "../../domain/entities/ServiceResponse.ts";
 import {ICalendarDB} from "../../domain/interfaces/ICalendarDB";
 import {ICalendarService} from "../../domain/interfaces/ICalendarService";
 import {Sanitizer} from "./utils/Sanitizer";
@@ -8,8 +8,8 @@ import {IAuthDB} from "../../domain/interfaces/IAuthDB";
 import {Appointment} from "../../domain/entities/Appointment";
 
 export class CalendarService implements ICalendarService {
-    calendarDB: ICalendarDB;
-    authDB: IAuthDB;
+    private calendarDB: ICalendarDB;
+    private authDB: IAuthDB;
 
     constructor(calendarDB: ICalendarDB, authDB: IAuthDB) {
         this.calendarDB = calendarDB;
@@ -58,8 +58,8 @@ export class CalendarService implements ICalendarService {
         });
     }
 
-    deleteCalendar(ownerId: string, calendarId: string): Promise<CalendarServiceResponse> {
-        return new Promise<CalendarServiceResponse>(async (resolve, reject) => {
+    deleteCalendar(ownerId: string, calendarId: string): Promise<ServiceResponse> {
+        return new Promise<ServiceResponse>(async (resolve, reject) => {
             if (Sanitizer.doesStringContainSpecialChar(ownerId)) {
                 reject(new Error(`OwnerID (${ownerId}) contains special char`));
                 return;
@@ -76,11 +76,11 @@ export class CalendarService implements ICalendarService {
 
             if (calendar === undefined) return; // We already rejected in the catch
             if (calendar === null) {
-                resolve(CalendarServiceResponse.RESOURCE_NOT_EXIST);
+                resolve(ServiceResponse.RESOURCE_NOT_EXIST);
                 return;
             }
             if (ownerId !== calendar.ownerId) {
-                resolve(CalendarServiceResponse.FORBIDDEN);
+                resolve(ServiceResponse.FORBIDDEN);
                 return;
             }
 
@@ -91,9 +91,9 @@ export class CalendarService implements ICalendarService {
             if (deleteResult === undefined) return; // We already rejected in the catch
 
             if (deleteResult) {
-                resolve(CalendarServiceResponse.SUCCESS)
+                resolve(ServiceResponse.SUCCESS)
             } else {
-                resolve(CalendarServiceResponse.FAILED)
+                resolve(ServiceResponse.FAILED)
             }
         });
     }
@@ -102,8 +102,8 @@ export class CalendarService implements ICalendarService {
         ownerId: string,
         calendarId: string,
         partialCalendar: Partial<Calendar>
-    ): Promise<CalendarServiceResponse> {
-        return new Promise<CalendarServiceResponse>(async (resolve, reject) => {
+    ): Promise<ServiceResponse> {
+        return new Promise<ServiceResponse>(async (resolve, reject) => {
             if (Sanitizer.doesStringContainSpecialChar(ownerId)) {
                 reject(new Error(`OwnerID (${ownerId}) contains special char`));
                 return;
@@ -120,14 +120,14 @@ export class CalendarService implements ICalendarService {
 
             if (calendar === undefined) return; // We already rejected in the catch
             if (calendar === null) {
-                resolve(CalendarServiceResponse.RESOURCE_NOT_EXIST);
+                resolve(ServiceResponse.RESOURCE_NOT_EXIST);
                 return;
             }
             if (ownerId !== calendar.ownerId
                 || (partialCalendar.ownerId && partialCalendar.ownerId !== calendar.ownerId)
                 || (partialCalendar.id && partialCalendar.id !== calendar.id)
             ) {
-                resolve(CalendarServiceResponse.FORBIDDEN);
+                resolve(ServiceResponse.FORBIDDEN);
                 return;
             }
 
@@ -144,9 +144,9 @@ export class CalendarService implements ICalendarService {
             if (updateResult === undefined) return; // We already rejected in the catch
 
             if (updateResult) {
-                resolve(CalendarServiceResponse.SUCCESS)
+                resolve(ServiceResponse.SUCCESS)
             } else {
-                resolve(CalendarServiceResponse.FAILED)
+                resolve(ServiceResponse.FAILED)
             }
         });
     }
@@ -208,7 +208,7 @@ export class CalendarService implements ICalendarService {
         ownerId: string,
         calendarId: string,
         sharedToId: string
-    ): Promise<CalendarServiceResponse> {
+    ): Promise<ServiceResponse> {
         throw new Error("Method not implemented.");
     }
 
@@ -216,7 +216,7 @@ export class CalendarService implements ICalendarService {
         ownerId: string,
         calendarId: string,
         sharedToId: string
-    ): Promise<CalendarServiceResponse> {
+    ): Promise<ServiceResponse> {
         throw new Error("Method not implemented.");
     }
 }

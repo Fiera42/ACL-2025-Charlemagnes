@@ -44,9 +44,9 @@ export class MockAuthDB implements IAuthDB {
 
     findUserByEmail(email: string): Promise<User | null> {
         return new Promise<User | null>((resolve) => {
+            const res = Object.values(this.users).filter((user) => user.email === email)[0];
             resolve(
-                Object.values(this.users).concat(null as unknown as User).filter((user) => user.email === email)
-                    .map((user) => structuredClone(user))[0]
+                (res === undefined) ? null : structuredClone(res)
             );
         });
     }
@@ -60,9 +60,9 @@ export class MockAuthDB implements IAuthDB {
 
     findUserByUsername(username: string): Promise<User | null> {
         return new Promise<User | null>((resolve) => {
+            const res = Object.values(this.users).filter((user) => user.username === username)[0];
             resolve(
-                Object.values(this.users).concat(null as unknown as User).filter((user) => user.username === username)
-                    .map((user) => structuredClone(user))[0]
+                (res === undefined) ? null : structuredClone(res)
             );
         });
     }

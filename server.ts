@@ -20,13 +20,6 @@ async function bootstrap() {
     app.use(express.json());
     app.use(express.urlencoded({extended: true}));
 
-    app.use(express.static(__dirname));
-    
-    // Servir index.html pour la route racine
-    app.get('/', (_req: Request, res: Response) => {
-        res.sendFile(path.join(__dirname, 'index.html'));
-    });
-
     // Monter toutes les routes API sous /api
     app.use('/api', apiRoutes);
 
@@ -71,25 +64,24 @@ async function bootstrap() {
             const hashedPassword = await bcrypt.hash('test123', 10);
 
             const insertStmt = db.prepare(`
-                            INSERT INTO users (id, email, password, username)
-                            VALUES (?, ?, ?, ?)
-                        `);
+                INSERT INTO users (id, email, password, username)
+                VALUES (?, ?, ?, ?)
+            `);
             insertStmt.run(testUserId, `test@example.com`, hashedPassword, `TestUser`);
 
             const user = db.prepare('SELECT id, email, username, created_at FROM users WHERE id = ?').get(testUserId);
 
             const testCalendarId = '1';
             const insertStmtCalendar = db.prepare(`
-                            INSERT INTO calendars (id, name, color, owner_id)
-                            VALUES (?, ?, ?, ?)
-                        `);
+                INSERT INTO calendars (id, name, color, owner_id)
+                VALUES (?, ?, ?, ?)
+            `);
             insertStmtCalendar.run(testCalendarId, 'Calendrier Test', '#FF5733', testUserId);
 
-            // Créer un rendez-vous pour aujourd'hui
             const testAppointmentId = '1';
             const now = new Date();
-            const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 10, 0, 0); // Aujourd'hui à 10h00
-            const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 11, 0, 0); // Aujourd'hui à 11h00
+            const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 10, 0, 0);
+            const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 11, 0, 0);
 
             const insertStmtAppointment = db.prepare(`
                 INSERT INTO appointments (id, calendar_id, title, description, start_date, end_date, owner_id)
@@ -159,9 +151,13 @@ async function bootstrap() {
     });
     // ⚠️ FIN DES ROUTES DE TEST
 
-    // Route 404 doit être en DERNIER
-    app.use((_req: Request, res: Response) => {
-        res.status(404).json({error: 'Route non trouvée'});
+    // Servir les fichiers statiques de Vue (après build)
+    app.use(express.static(path.join(__dirname, 'dist')));
+
+    // Toutes les autres routes → index.html (pour Vue Router)
+    // Express 5 ne supporte plus '*', on utilise une regex
+    app.get(/^\/(?!api|test-).*/, (_req: Request, res: Response) => {
+        res.sendFile(path.join(__dirname, 'dist', 'index.html'));
     });
 
     await connectDatabase();
@@ -174,7 +170,8 @@ async function bootstrap() {
         console.log(`\n📋 Routes de test disponibles :`);
         console.log(`   http://localhost:${PORT}/test-db      - Statistiques DB`);
         console.log(`   http://localhost:${PORT}/test-insert  - Créer utilisateur test`);
-        console.log(`   http://localhost:${PORT}/test-clean   - Nettoyer la DB\n`);
+        console.log(`   http://localhost:${PORT}/test-clean   - Nettoyer la DB`);
+        console.log(`\n🎨 Application Vue disponible sur http://localhost:${PORT}\n`);
     });
 
     const shutdown = async (signal: string) => {

@@ -1,5 +1,5 @@
 import { Appointment } from "../entities/Appointment";
-import { CalendarServiceResponse } from "../entities/CalendarServiceResponse";
+import { ServiceResponse } from "../entities/ServiceResponse.ts";
 import { RecurrentAppointment } from "../entities/ReccurentAppointment";
 import { RecursionRule } from "../entities/RecursionRule";
 
@@ -26,31 +26,31 @@ export interface IAppointmentService {
   deleteAppointment(
     ownerId: string,
     appointmentId: string
-  ): Promise<CalendarServiceResponse>;
+  ): Promise<ServiceResponse>;
 
   updateAppointment(
     ownerId: string,
     appointmentId: string,
     appointment: Partial<Appointment>
-  ): Promise<CalendarServiceResponse>;
+  ): Promise<ServiceResponse>;
 
   updateRecurrentAppointment(
     ownerId: string,
     appointmentId: string,
     appointment: Partial<RecurrentAppointment>
-  ): Promise<CalendarServiceResponse>;
+  ): Promise<ServiceResponse>;
 
   shareAppointment(
     ownerId: string,
     appointmentId: string,
     sharedToId: string
-  ): Promise<CalendarServiceResponse>;
+  ): Promise<ServiceResponse>;
 
   unShareAppointment(
     ownerId: string,
     appointmentId: string,
     sharedToId: string
-  ): Promise<CalendarServiceResponse>;
+  ): Promise<ServiceResponse>;
 
   getAppointmentById(id: string): Promise<Appointment | null>;
 
