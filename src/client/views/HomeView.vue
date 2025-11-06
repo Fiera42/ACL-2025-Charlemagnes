@@ -177,7 +177,14 @@ const handleSearch = async (query) => {
     if (!query.trim()) {
       await loadAppointments();
     } else {
-      appointments.value = await calendarService.searchAppointments(query);
+      appointments.value = [];
+      calendars.value.forEach((calendar) => {
+        if(calendarService.visibleCalendars.has(calendar.id)) {
+          calendarService.searchAppointments(query, calendar).then((result) => {
+            appointments.value.push(...result);
+          });
+        }
+      });
     }
   } catch (error) {
     console.error('Erreur lors de la recherche :', error);
