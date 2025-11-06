@@ -96,7 +96,7 @@ router.post('/login', async (req: Request, res: Response) => {
             const token = await createAuthToken({userId: user.id as string, email: user.email});
 
             // Envoyez l'objet avec le token
-            res.status(200).json({ token });
+            res.status(200).json(token);
         } else if (user === null) {
             res.status(404).json({ error: 'Utilisateur inconnu' });
         } else {
@@ -113,7 +113,7 @@ router.post('/register', async (req: Request, res: Response) => {
     try {
         const { username, email, password } = req.body;
         const user = await authService.createUser(username, email, password);
-        const token = createAuthToken({userId: user.id as string, email: user.email})
+        const token = await createAuthToken({userId: user.id as string, email: user.email})
         res.status(201).json(token);
     } catch (error) {
         res.status(500).json({ error: "Erreur lors de la création de l'utilisateur" });

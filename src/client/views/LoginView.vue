@@ -85,8 +85,8 @@ const handleLogin = async () => {
       password: credentials.value.password
     });
 
-    if (response.status === 200 && response.data?.token) {
-      const token = response.data.token;
+    if (response.status === 200 && response.data) {
+      const token = response.data;
 
       localStorage.setItem('token', token);
       localStorage.setItem('userName', credentials.value.username);

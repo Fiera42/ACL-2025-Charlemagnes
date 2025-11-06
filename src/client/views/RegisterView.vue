@@ -121,6 +121,7 @@ const handleRegister = async () => {
     if (response.status === 201 && response.data) {
       localStorage.setItem('token', response.data);
       localStorage.setItem('userName', formData.value.username);
+
       await calendarService.createCalendar({
         name: "Calendrier 1",
         description: "Calendrier par défaut",

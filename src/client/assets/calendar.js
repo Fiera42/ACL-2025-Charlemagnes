@@ -125,7 +125,7 @@ export const calendarService = {
                 color: calendar.color
             });
         } catch (error) {
-            console.error('Erreur lors de la creation de l agenda 1 :', error.response.data || error);
+            console.error('Erreur lors de la creation de l agenda :', error.response.data || error);
             throw error;
         }
     },
