@@ -119,15 +119,21 @@ const handleRegister = async () => {
     const response = await axios.post('/api/auth/register', formData.value);
 
     if (response.status === 201 && response.data) {
-      localStorage.setItem('token', response.data);
-      localStorage.setItem('userName', formData.value.username);
+      const token = response.data;
 
+      // Configurer le token dans axios AVANT l'appel à createCalendar
+      localStorage.setItem('token', token);
+      localStorage.setItem('userName', formData.value.username);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      // Maintenant createCalendar aura accès au token
       await calendarService.createCalendar({
         name: "Calendrier 1",
         description: "Calendrier par défaut",
         color: "#63a6a0"
-      })
-      router.push('/');
+      });
+
+      await router.push('/');
     }
   } catch (err) {
     error.value = err.response?.data?.error || 'Erreur lors de l\'inscription. Veuillez réessayer.';
