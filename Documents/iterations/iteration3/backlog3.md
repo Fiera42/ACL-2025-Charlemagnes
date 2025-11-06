@@ -1,4 +1,4 @@
-# BACKLOG - itération n°2
+# BACKLOG - itération n°3
 ## Objectifs
 - Rattraper dettes techniques
 - Avancer sur les fonctionnalités avancées
