@@ -13,8 +13,8 @@
 - **Recherche sur les tags** : Améliorer la barre de recherche pour permettre la recherche par tags.
 
 ### CU2 : Fonctionnalités avancées des rendez-vous
-- **Rendez-vous récurrents** : Ajouter la possibilité de créer des rendez-vous récurrents.
-- **Lister les rendez-vous avec des conflits** : Afficher une liste des rendez-vous qui ont des conflits d'horaires.
-- 
+- **Rendez-vous récurrents** : Ajouter la possibilité de créer/supprimer/modifier des rendez-vous récurrents.
+- **Revoir la barre de recherche** : Déplacer le comportement actuel dans les filtres et à la place lister les rendez-vous qui concordent
+
 ### CU3 : Profil utilisateur
 - **Consulter son profil utilisateur** : Ajouter une page pour consulter et modifier les informations de son profil utilisateur.
