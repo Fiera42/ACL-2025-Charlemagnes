@@ -262,6 +262,7 @@ const goToAppointment = (appointment) => {
   setTimeout(() => {
     if (dayViewRef.value) {
       dayViewRef.value.goToDate(appointmentDate);
+      dayViewRef.value.scrollToAppointmentTime(appointmentDate);
     }
   }, 50);
 };

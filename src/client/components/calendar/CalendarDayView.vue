@@ -211,6 +211,26 @@ const scrollToWorkHours = () => {
   });
 };
 
+const scrollToAppointmentTime = (appointmentDate) => {
+  nextTick(() => {
+    if (!scrollContainer.value) return;
+    const container = scrollContainer.value;
+
+    // récupère l'heure de l'appointment
+    const hour = appointmentDate.getHours();
+    const minute = appointmentDate.getMinutes();
+
+    // une heure = 80px de hauteur
+    const hourHeight = 80;
+
+    // On calcule la hauteur du rdv
+    const scrollPosition = hour * hourHeight + (minute / 60) * hourHeight;
+
+    container.scrollTop = scrollPosition - 40; // petit offset visuel
+  });
+};
+
+
 const previousDay = () => {
   currentDate.value = new Date(currentDate.value.setDate(currentDate.value.getDate() - 1));
   scrollToWorkHours();
@@ -229,7 +249,8 @@ defineExpose({
   goToDate: (date) => {
     currentDate.value = new Date(date);
     scrollToWorkHours();
-  }
+  },
+  scrollToAppointmentTime
 });
 
 function addAlpha(color, opacity) {

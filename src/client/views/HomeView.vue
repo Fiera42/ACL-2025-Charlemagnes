@@ -2,11 +2,13 @@
   <div id="app" class="min-h-screen bg-stone-50 flex flex-col">
     <AppHeader
         :user-name="userName"
+        :appointments="appointments"
         :reset-search-key="resetSearchKey"
         :reset-filters-key="resetFiltersKey"
         @toggle-sidebar="toggleSidebar"
         @logout="handleLogout"
         @search="handleSearch"
+        @selectAppointment="handleSelectAppointment"
         @filters-changed="handleFilters"
     />
 
@@ -203,6 +205,14 @@ const filteredAppointments = computed(() => {
   return appointments.value.filter((a) => {
     let matchesFilter = true;
 
+    // Filtre mot-clé (titre, description)
+    if (filters.value.keyword) {
+      const q = filters.value.keyword.toLowerCase();
+      const text = `${a.title ?? ''} ${a.description ?? ''} ${a.location ?? ''}`.toLowerCase();
+      matchesFilter = text.includes(q);
+    }
+
+    // Filtre date de début
     if (filters.value.startDate) {
       const start = new Date(a.startDate); // <-- ici
       const filterStart = new Date(filters.value.startDate);
@@ -212,6 +222,7 @@ const filteredAppointments = computed(() => {
               : start < filterStart;
     }
 
+    // Filtre dates de fin
     if (matchesFilter && filters.value.endDate) {
       const end = new Date(a.endDate); // <-- ici
       const filterEnd = new Date(filters.value.endDate);
@@ -248,9 +259,6 @@ const deleteCalendar = async (calendarId) => {
   if (calendars.value.length > 1) {
     try {
       calendars.value = await calendarService.deleteCalendar(calendarId);
-      resetSearchKey.value++; // Réinitialise la barre de recherche
-      resetFiltersKey.value++; // réinitialise les filtres
-      filters.value = {}; // Réinitialise les filtres
 
       // Remove the calendar from visible ones
       localStorage.removeItem(`isVisible_${calendarId}`);
@@ -268,9 +276,6 @@ const loadCalendars = async () => {
   loadingCalendars.value = true;
   try {
     calendars.value = await calendarService.getCalendarsByOwnerId();
-    resetSearchKey.value++; // Réinitialise la barre de recherche
-    resetFiltersKey.value++; // réinit filtres
-    filters.value = {}; // Réinitialise les filtres
   } catch (error) {
     console.error('Erreur lors du chargement des calendriers:', error);
     throw error;

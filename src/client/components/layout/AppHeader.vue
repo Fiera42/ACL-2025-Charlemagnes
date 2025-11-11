@@ -49,6 +49,12 @@
            focus:ring-0 focus:border-indigo-500 outline-none transition-colors"
           />
 
+          <SearchDropdown
+              :results="searchResults"
+              :visible="searchQuery.length > 0"
+              @select="handleSelectResult"
+          />
+
           <!-- Croix à droite -->
           <button
               v-if="searchQuery"
@@ -78,6 +84,17 @@
               v-if="showFilters"
               class="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50"
           >
+
+            <h3 class="text-sm font-medium mb-2 text-gray-700">Mot-clé</h3>
+            <div class="flex items-center gap-2 mb-3">
+              <input
+                  type="text"
+                  v-model="keyword"
+                  placeholder="Titre, description..."
+                  class="border rounded p-1 text-sm w-full"
+              />
+            </div>
+
             <h3 class="text-sm font-medium mb-2 text-gray-700">Date de début</h3>
             <div class="flex items-center gap-2 mb-3">
               <select v-model="startOperator" class="border rounded p-1 text-sm">
@@ -137,6 +154,7 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import SearchDropdown from './SearchDropdown.vue';
 
 const props = defineProps({
   userName: {
@@ -150,11 +168,16 @@ const props = defineProps({
   resetFiltersKey: {  // Pour reset les filtres
     type: Number,
     default: 0
+  },
+  appointments: {
+    type: Array,
+    default: () => []
   }
 });
 
 const emit = defineEmits(['toggleSidebar', 'logout', 'search', 'filters-changed']);
 const searchQuery = ref('');
+const searchResults = ref([]);
 
 // Champs pour filtre
 const showFilters = ref(false);
@@ -162,20 +185,33 @@ const startDate = ref('');
 const endDate = ref('');
 const startOperator = ref('>');
 const endOperator = ref('>');
+const keyword = ref('');
 
 // On émet l'événement de recherche avec un délai pour éviter trop d'appels successifs
 let debounceTimeout;
 watch(searchQuery, (newValue) => {
   clearTimeout(debounceTimeout);
   debounceTimeout = setTimeout(() => {
-    emit('search', newValue);
-  }, 500);
+    if (!newValue) {
+      searchResults.value = [];
+      return;
+    }
+
+    if (!props.appointments?.length) return [];
+
+    searchResults.value = props.appointments.filter(a => {
+      const text = `${a.title ?? ''} ${a.description ?? ''}`.toLowerCase();
+      return text.includes(newValue.toLowerCase());
+    }).slice(0, 5); // Limite à 5 suggestions
+  }, 300);
 });
 
-// Réinitialisation depuis App.vue
-watch(() => props.resetSearchKey, () => {
-  searchQuery.value = '';
-});
+// Quand on clique sur un résultat
+const handleSelectResult = (appointment) => {
+  emit('selectAppointment', appointment);
+  searchQuery.value = ''; // on vide la barre
+  searchResults.value = [];
+};
 
 watch(() => props.resetFiltersKey, () => {
   // quand App.vue réinitialise les filtres globalement
@@ -188,6 +224,7 @@ watch(() => props.resetFiltersKey, () => {
 // Bouton pour vider localement
 const clearSearch = () => {
   searchQuery.value = '';
+  searchResults.value = [];
   emit('search', ''); // notifie App.vue pour réafficher tout
 };
 
@@ -195,6 +232,7 @@ const clearSearch = () => {
 const applyFilters = () => {
   showFilters.value = false;
   emit('filters-changed', {
+    keyword: keyword.value,
     startDate: startDate.value,
     startOperator: startOperator.value,
     endDate: endDate.value,
@@ -204,11 +242,12 @@ const applyFilters = () => {
 
 // Réinitialiser les filtres
 const resetFilters = () => {
+  keyword.value = '';
   startDate.value = '';
   endDate.value = '';
   startOperator.value = '>';
   endOperator.value = '>';
-  emit('filters-changed', {}); // envoie vide = plus de filtres
+  emit('filters-changed', {}); // envoie vide pour réinitialiser dans les composants parents
 };
 
 </script>
