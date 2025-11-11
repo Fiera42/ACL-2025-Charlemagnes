@@ -2,8 +2,7 @@
   <!-- Overlay -->
   <div
       v-if="isOpen"
-      class="fixed inset-0 bg-opacity-50 z-40"
-      @click="$emit('close')"
+      class="fixed inset-0 bg-opacity-50 z-40 pointer-events-none"
   ></div>
 
   <!-- Sidebar -->
@@ -110,15 +109,17 @@
           </div>
 
           <div class="flex-1 overflow-y-auto p-4">
-            <button
-                class="py-2.5 pr-7 pl-5 bg-indigo-600 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
-                @click="$emit('CalendarForm')"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 5V15M15 10H5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
-              </svg>
-              Nouveau calendrier
-            </button>
+            <div class="flex justify-center mb-6">
+              <button
+                  class="py-2.5 px-6 bg-indigo-600 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
+                  @click="$emit('CalendarForm')"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 5V15M15 10H5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+                Nouveau calendrier
+              </button>
+            </div>
 
             <div v-if="loadingCalendars" class="text-center text-gray-500 py-8">
               Chargement...
@@ -143,8 +144,15 @@
                   class="p-3 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all cursor-pointer"
                   @click="$emit('selectCalendar', calendar)"
               >
-                <div class="flex items-start justify-between mb-2">
-                  <h3 class="font-medium text-gray-900 text-sm truncate flex-1">{{ calendar.name }}</h3>
+                <div class="flex items-center justify-between mb-2">
+                  <!-- Cercle de couleur -->
+                  <div class="flex items-center gap-2">
+        <span
+            :style="{ backgroundColor: calendar.color }"
+            class="w-4 h-4 rounded-full border border-gray-300"
+        ></span>
+                    <h3 class="font-medium text-gray-900 text-sm truncate">{{ calendar.name }}</h3>
+                  </div>
                 </div>
 
                 <p v-if="calendar.description" class="text-xs text-gray-600 mb-2 line-clamp-2">
@@ -157,37 +165,34 @@
                     @change="$emit('calendarToggled', calendar.id, $event.target.checked)"
                 />
 
-                <button
-                    class="py-2.5 pr-7 pl-5 bg-red-500 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-red-600"
-                    @click="$emit('deleteCalendar',calendar.id)"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M15 10H5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
-                  </svg>
-                  Supprimer
-                </button>
+                <div class="flex gap-2 mt-2">
+                  <button
+                      class="py-2.5 px-3 bg-red-500 rounded-xl flex items-center gap-2 text-xs font-semibold text-white transition-all duration-300 hover:bg-red-600"
+                      @click="$emit('deleteCalendar',calendar.id)"
+                  >
+                    Supprimer
+                  </button>
 
-                <button
-                    class="py-2.5 pr-7 pl-5 bg-indigo-600 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
-                    @click="$emit('editCalendar',calendar.id,calendar.name,calendar.description,calendar.color)"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M10 5V15M15 10H5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
-                  </svg>
-                  Modifier
-                </button>
+                  <button
+                      class="py-2.5 px-3 bg-indigo-600 rounded-xl flex items-center gap-2 text-xs font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
+                      @click="$emit('editCalendar',calendar.id,calendar.name,calendar.description,calendar.color)"
+                  >
+                    Modifier
+                  </button>
+                </div>
 
 
-                <!-- <div class="flex items-center gap-2 text-xs text-gray-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  <span>{{ appointment.dateLabel }}</span>
-                </div> -->
+
+            <!-- <div class="flex items-center gap-2 text-xs text-gray-500">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span>{{ appointment.dateLabel }}</span>
+            </div> -->
               </div>
             </div>
           </div>

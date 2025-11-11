@@ -12,7 +12,7 @@
       </div>
       <div class="mb-4">
         <label class="block text-sm font-medium mb-1">Couleur</label>
-        <input v-model="form.color" type="color" required class="w-full px-4 py-2 border rounded-lg">
+        <input v-model="form.color" type="color" required class="w-full h-10 border rounded-lg p-1">
       </div>
       <button type="submit" class="w-full bg-blue-600 text-white px-6 py-2 rounded-lg">Créer</button>
     </form>
@@ -29,11 +29,20 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'create']);
 
+const randomColor = () => {
+  const letters = '0123456789ABCDEF';
+  let color = '#';
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+};
+
 const form = ref({
   id: props.calendar?.id || '',
   name: props.calendar?.name || '',
   description: props.calendar?.description || '',
-  color: props.calendar?.color || '#63a6a0'
+  color: props.calendar?.color || randomColor()
 });
 
 const handleSubmit = () => {
