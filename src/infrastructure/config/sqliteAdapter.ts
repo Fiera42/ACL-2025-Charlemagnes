@@ -21,7 +21,7 @@ db.pragma('journal_mode = WAL');
 db.exec('PRAGMA foreign_keys = ON');
 
 export async function initDatabase(): Promise<void> {
-  db.exec(`
+    db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
@@ -52,6 +52,7 @@ export async function initDatabase(): Promise<void> {
       end_date DATETIME NOT NULL,
       calendar_id TEXT NOT NULL,
       owner_id TEXT NOT NULL,
+      tags TEXT DEFAULT '[]',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_by TEXT,
@@ -68,6 +69,7 @@ export async function initDatabase(): Promise<void> {
       start_date DATETIME NOT NULL,
       end_date DATETIME NOT NULL,
       owner_id TEXT NOT NULL,
+      tags TEXT DEFAULT '[]',
       recursion_rule INTEGER NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -90,8 +92,9 @@ export async function initDatabase(): Promise<void> {
       FOREIGN KEY (user_share_id) REFERENCES users(id) ON DELETE CASCADE
     );
   `);
-  console.log('✓ Base de données SQLite initialisée');
+    console.log('✓ Base de données SQLite initialisée');
 }
+
 
 export async function closeDatabase(): Promise<void> {
   db.close();
