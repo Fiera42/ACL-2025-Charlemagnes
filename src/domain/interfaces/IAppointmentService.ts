@@ -28,6 +28,11 @@ export interface IAppointmentService {
     appointmentId: string
   ): Promise<ServiceResponse>;
 
+  deleteRecurrentAppointment(
+    ownerId: string,
+    appointmentId: string
+  ): Promise<ServiceResponse>;
+
   updateAppointment(
     ownerId: string,
     appointmentId: string,
@@ -55,6 +60,10 @@ export interface IAppointmentService {
   getAppointmentById(id: string): Promise<Appointment | null>;
 
   getAppointmentsByCalendarId(calendarId: string): Promise<Appointment[]>;
+
+  getRecurrentAppointmentByCalendarId(calendarId: string): Promise<RecurrentAppointment[]>;
+
+  getAllAppointmentsByCalendarId(calendarId: string): Promise<{appointments: Appointment[], recurrentAppointments: RecurrentAppointment[]}>;
 
   getConflictsOfUser(
     ownerId: string

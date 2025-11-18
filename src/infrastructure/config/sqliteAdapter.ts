@@ -60,6 +60,23 @@ export async function initDatabase(): Promise<void> {
       FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
     );
 
+    CREATE TABLE IF NOT EXISTS recurrent_appointments (
+      id TEXT PRIMARY KEY,
+      calendar_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      start_date DATETIME NOT NULL,
+      end_date DATETIME NOT NULL,
+      owner_id TEXT NOT NULL,
+      recursion_rule INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_by TEXT,
+      FOREIGN KEY (calendar_id) REFERENCES calendars(id) ON DELETE CASCADE,
+      FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+    );
+
     CREATE TABLE IF NOT EXISTS shares (
       id TEXT PRIMARY KEY,
       owner_id TEXT NOT NULL,

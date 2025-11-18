@@ -56,7 +56,7 @@ export class RecurrentAppointment extends Appointment {
             this.title &&
             this.startDate &&
             this.ownerId &&
-            this.recursionRule
+            this.recursionRule !== undefined
         );
     }
 }

@@ -43,6 +43,17 @@
         </svg>
         <span class="text-sm text-gray-700">{{ appointment.description }}</span>
       </div>
+
+      <div v-if="appointment.recursionRule !== undefined && appointment.recursionRule !== null" class="flex items-start gap-2 text-sm text-gray-500">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="17 1 21 5 17 9"></polyline>
+          <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+          <polyline points="7 23 3 19 7 15"></polyline>
+          <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+        </svg>
+        <span class="text-sm text-gray-700">Récurrence : {{ readableRecursionRule }}</span>
+      </div>
     </div>
 
     <div class="flex gap-2">
@@ -58,8 +69,9 @@
 
 <script setup>
 import BaseModal from '../common/BaseModal.vue';
+import { computed } from 'vue';
 
-defineProps({
+const props = defineProps({
   appointment: {
     type: Object,
     required: true
@@ -110,4 +122,12 @@ const formatTimeRange = (start, end) => {
   });
   return `${startTime} - ${endTime}`;
 };
+
+const ruleLabels = ["Quotidienne", "Hebdomadaire", "Mensuelle", "Annuelle"];
+
+const readableRecursionRule = computed(() => {
+  if (props.appointment.recursionRule === null || props.appointment.recursionRule === undefined) return "Aucune";
+  return ruleLabels[props.appointment.recursionRule];
+});
+
 </script>

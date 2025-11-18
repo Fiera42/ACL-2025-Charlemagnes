@@ -73,6 +73,7 @@ import AppointmentForm from '../components/appointment/AppointmentForm.vue';
 import AppointmentDetail from '../components/appointment/AppointmentDetail.vue';
 import {calendarService} from '../assets/calendar.js';
 import CalendarCreationForm from '../components/calendar/CalendarCreationForm.vue';
+import { RecursionRule } from '../../domain/entities/RecursionRule.js';
 
 const props = defineProps({
   calendars: {
@@ -169,19 +170,38 @@ const closeForm = () => {
 
 const saveAppointment = async (appointment) => {
   try {
-    const appointmentData = {
-      ...appointment,
-      startDate: new Date(appointment.startDate),
-      endDate: new Date(appointment.endDate)
-    };
+    const startDate = new Date(appointment.startDate);
+    const endDate = new Date(appointment.endDate);
 
     if (editingAppointment.value?.id) {
       await calendarService.updateAppointment({
         id: editingAppointment.value.id,
-        ...appointmentData
+        title: appointment.title,
+        description: appointment.description,
+        startDate,
+        endDate,
+        calendarId: appointment.calendarId,
+        recursionRule: RecursionRule[appointment.recursionRule] ?? null
       });
     } else {
-      await calendarService.createAppointment(appointmentData);
+      if (appointment.isRecurring) {
+        await calendarService.createRecurrentAppointment({
+          title: appointment.title,
+          description: appointment.description,
+          startDate,
+          endDate,
+          calendarId: appointment.calendarId,
+          recursionRule: RecursionRule[appointment.recursionRule]
+        });
+      } else {
+        await calendarService.createAppointment({
+          title: appointment.title,
+          description: appointment.description,
+          startDate,
+          endDate,
+          calendarId: appointment.calendarId
+        });
+      }
     }
 
     emit('appointmentsUpdated');
@@ -236,7 +256,9 @@ const editAppointment = () => {
     description: selectedAppointment.value.description,
     calendarId: selectedAppointment.value.calendarId,
     startDate: new Date(selectedAppointment.value.startDate).toISOString().slice(0, 16),
-    endDate: new Date(selectedAppointment.value.endDate).toISOString().slice(0, 16)
+    endDate: new Date(selectedAppointment.value.endDate).toISOString().slice(0, 16),
+    isRecurring: selectedAppointment.value.recursionRule !== undefined && selectedAppointment.value.recursionRule !== null,
+    recursionRule: selectedAppointment.value.recursionRule ?? null
   };
   showDetail.value = false;
   showForm.value = true;
@@ -245,7 +267,7 @@ const editAppointment = () => {
 const deleteAppointment = async () => {
   if (confirm('Êtes-vous sûr de vouloir supprimer ce rendez-vous ?')) {
     try {
-      await calendarService.deleteAppointment(selectedAppointment.value.id);
+      await calendarService.deleteAppointment(selectedAppointment.value.id, selectedAppointment.value.recursionRule);
       emit('appointmentsUpdated');
       closeDetail();
     } catch (error) {

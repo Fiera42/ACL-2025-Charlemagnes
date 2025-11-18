@@ -202,38 +202,41 @@ const handleFilters = (newFilters) => {
 
 // calcule les rdv avec les filtres appliqué
 const filteredAppointments = computed(() => {
-  return appointments.value.filter((a) => {
-    let matchesFilter = true;
+  const now = new Date();
 
-    // Filtre mot-clé (titre, description)
-    if (filters.value.keyword) {
-      const q = filters.value.keyword.toLowerCase();
-      const text = `${a.title ?? ''} ${a.description ?? ''} ${a.location ?? ''}`.toLowerCase();
-      matchesFilter = text.includes(q);
-    }
+  return appointments.value
+    .filter((a) => {
+      let matches = true;
 
-    // Filtre date de début
-    if (filters.value.startDate) {
-      const start = new Date(a.startDate); // <-- ici
-      const filterStart = new Date(filters.value.startDate);
-      matchesFilter =
-          filters.value.startOperator === '>'
-              ? start > filterStart
-              : start < filterStart;
-    }
+      // Filtre mot-clé
+      if (filters.value.keyword) {
+        const q = filters.value.keyword.toLowerCase();
+        const text = `${a.title ?? ''} ${a.description ?? ''} ${a.location ?? ''}`.toLowerCase();
+        matches = text.includes(q);
+      }
 
-    // Filtre dates de fin
-    if (matchesFilter && filters.value.endDate) {
-      const end = new Date(a.endDate); // <-- ici
-      const filterEnd = new Date(filters.value.endDate);
-      matchesFilter =
-          filters.value.endOperator === '>'
-              ? end > filterEnd
-              : end < filterEnd;
-    }
+      // Filtre date début
+      if (matches && filters.value.startDate) {
+        const start = new Date(a.startDate);
+        const filterStart = new Date(filters.value.startDate);
+        matches = filters.value.startOperator === '>' ? start > filterStart : start < filterStart;
+      }
 
-    return matchesFilter;
-  });
+      // Filtre date fin
+      if (matches && filters.value.endDate) {
+        const end = new Date(a.endDate);
+        const filterEnd = new Date(filters.value.endDate);
+        matches = filters.value.endOperator === '>' ? end > filterEnd : end < filterEnd;
+      }
+
+      // Filtre récurrence
+      if (matches && filters.value.showRecurring === false) {
+        matches = !(a.recursionRule !== undefined && a.recursionRule !== null);
+      }
+
+      return matches;
+    })
+    .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
 });
 
 

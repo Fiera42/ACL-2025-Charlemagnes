@@ -88,7 +88,69 @@ export class AppointmentService implements IAppointmentService {
         endDate: Date,
         recursionRule: RecursionRule
     ): Promise<RecurrentAppointment> {
-        throw new Error("Method not implemented.");
+        return new Promise<RecurrentAppointment>(async (resolve, reject) => {
+
+            if (Object.prototype.toString.call(startDate) !== '[object Date]' || isNaN(startDate.getTime())) {
+                reject(new Error(`StartDate (${startDate}) is not valid`));
+                return;
+            }
+            if (Object.prototype.toString.call(endDate) !== '[object Date]' || isNaN(endDate.getTime())) {
+                reject(new Error(`EndDate (${endDate}) is not valid`));
+                return;
+            }
+            if (Sanitizer.doesStringContainSpecialChar(ownerId)) {
+                reject(new Error(`OwnerID (${ownerId}) contains special char`));
+                return;
+            }
+            if (Sanitizer.doesStringContainSpecialChar(calendarId)) {
+                reject(new Error(`CalendarId (${calendarId}) contains special char`));
+                return;
+            }
+            if (!Object.values(RecursionRule).includes(recursionRule)) {
+                reject(new Error(`RecursionRule (${recursionRule}) is invalid`));
+                return;
+            }
+            const calendar = await this.calendarDB.findCalendarById(calendarId)
+                .catch((reason) => {
+                    reject(reason);
+                });
+            if (calendar === undefined) return; // We already rejected in the catch
+            if (calendar === null) {
+                reject(new Error(`CalendarId (${calendarId}) does not exist`));
+                return;
+            }
+            if (ownerId !== calendar.ownerId) {
+                reject(new Error(`User of id (${ownerId}) does not own calendar of id (${calendarId})`));
+                return;
+            }
+            title = encode(title, {mode: 'extensive'});
+            description = encode(description, {mode: 'extensive'});
+            if (endDate < startDate) {
+                let temp = endDate;
+                endDate = startDate;
+                startDate = temp;
+            }
+            
+            const recurrentAppointment = RecurrentAppointment.createRecurrent(
+                calendarId,
+                title,
+                description,
+                startDate,
+                endDate,
+                ownerId,
+                recursionRule
+            );
+            
+            this.calendarDB.createRecurrentAppointment(recurrentAppointment)
+                .then((recurrentAppointment: RecurrentAppointment) => {
+                    recurrentAppointment.title = decode(recurrentAppointment.title);
+                    recurrentAppointment.description = decode(recurrentAppointment.description);
+                    resolve(recurrentAppointment);
+                })
+                .catch((reason: any) => {
+                    reject(reason);
+                })
+        });
     }
 
     deleteAppointment(
@@ -121,6 +183,49 @@ export class AppointmentService implements IAppointmentService {
             }
 
             const deleteResult = await this.calendarDB.deleteAppointment(appointmentId)
+                .catch((reason) => {
+                    reject(reason);
+                });
+            if (deleteResult === undefined) return; // We already rejected in the catch
+
+            if (deleteResult) {
+                resolve(ServiceResponse.SUCCESS)
+            } else {
+                resolve(ServiceResponse.FAILED)
+            }
+        });
+    }
+
+    deleteRecurrentAppointment(
+        ownerId: string,
+        appointmentId: string
+    ): Promise<ServiceResponse> {
+        return new Promise<ServiceResponse>(async (resolve, reject) => {
+            if (Sanitizer.doesStringContainSpecialChar(ownerId)) {
+                reject(new Error(`OwnerID (${ownerId}) contains special char`));
+                return;
+            }
+            if (Sanitizer.doesStringContainSpecialChar(appointmentId)) {
+                reject(new Error(`AppointmentId (${appointmentId}) contains special char`));
+                return;
+            }
+
+            const appointment = await this.calendarDB.findRecurrentAppointmentById(appointmentId)
+                .catch((reason) => {
+                    reject(reason);
+                });
+
+            if (appointment === undefined) return; // We already rejected in the catch
+            if (appointment === null) {
+                resolve(ServiceResponse.RESOURCE_NOT_EXIST);
+                return;
+            }
+            if (ownerId !== appointment.ownerId) {
+                resolve(ServiceResponse.FORBIDDEN);
+                return;
+            }
+
+            const deleteResult = await this.calendarDB.deleteRecurrentAppointment(appointmentId)
                 .catch((reason) => {
                     reject(reason);
                 });
@@ -223,10 +328,31 @@ export class AppointmentService implements IAppointmentService {
     updateRecurrentAppointment(
         ownerId: string,
         appointmentId: string,
-        appointment: Partial<RecurrentAppointment>
+        partial: Partial<RecurrentAppointment>
     ): Promise<ServiceResponse> {
-        throw new Error("Method not implemented.");
+        return new Promise(async (resolve, reject) => {
+            const appt = await this.calendarDB.findRecurrentAppointmentById(appointmentId)
+                .catch(reason => reject(reason));
+            if (!appt) return resolve(ServiceResponse.RESOURCE_NOT_EXIST);
+
+            if (appt.ownerId !== ownerId)
+                return resolve(ServiceResponse.FORBIDDEN);
+
+            if (partial.recursionRule && 
+                !Object.values(RecursionRule).includes(partial.recursionRule)) {
+                return reject(new Error(`Invalid recursionRule`));
+            }
+
+            const updateResult = await this.calendarDB.updateRecurrentAppointment(appointmentId, partial)
+                .catch(reason => reject(reason));
+
+            if (updateResult)
+                resolve(ServiceResponse.SUCCESS);
+            else
+                resolve(ServiceResponse.FAILED);
+        });
     }
+
 
     shareAppointment(
         ownerId: string,
@@ -292,6 +418,37 @@ export class AppointmentService implements IAppointmentService {
 
             resolve(appointments);
         });
+    }
+
+    getRecurrentAppointmentByCalendarId(calendarId: string): Promise<RecurrentAppointment[]> {
+        return new Promise<RecurrentAppointment[]>(async (resolve, reject) => {
+            if (Sanitizer.doesStringContainSpecialChar(calendarId)) {
+                reject(new Error(`CalendarId (${calendarId}) contains special char`));
+                return;
+            }
+
+            const appointments = await this.calendarDB.findRecurrentAppointmentsByCalendarId(calendarId)
+                .catch((reason) => {
+                    reject(reason);
+                });
+
+            if (appointments === undefined) return; // We already rejected in the catch
+
+            // We sanitized at creation, so we have to sanitize when getting it back
+            appointments.forEach((appointment) => {
+                appointment.title = decode(appointment.title);
+                appointment.description = decode(appointment.description);
+            })
+
+            resolve(appointments);
+        });
+    }
+
+    
+    async getAllAppointmentsByCalendarId(calendarId: string): Promise<{appointments: Appointment[], recurrentAppointments: RecurrentAppointment[]}> {
+        const appointments = await this.getAppointmentsByCalendarId(calendarId);
+        const recurrentAppointments = await this.calendarDB.findRecurrentAppointmentsByCalendarId(calendarId);
+        return { appointments, recurrentAppointments };
     }
 
     getConflictsOfUser(

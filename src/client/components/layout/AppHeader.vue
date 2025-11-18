@@ -113,6 +113,17 @@
               <input type="date" v-model="endDate" class="border rounded p-1 text-sm flex-1"/>
             </div>
 
+            <h3 class="text-sm font-medium mb-2 text-gray-700">Rendez-vous récurrents</h3>
+              <div class="flex items-center mb-3">
+                <input
+                    type="checkbox"
+                    id="showRecurring"
+                    v-model="showRecurring"
+                    class="mr-2"
+                />
+                <label for="showRecurring" class="text-sm text-gray-700">Afficher les rendez-vous récurrents</label>
+              </div>
+
             <div class="flex justify-between mt-4">
               <button @click="resetFilters" class="text-gray-500 text-sm hover:underline">Réinitialiser</button>
               <button @click="applyFilters" class="bg-indigo-500 text-white text-sm px-3 py-1.5 rounded hover:bg-indigo-600">Appliquer</button>
@@ -186,6 +197,7 @@ const endDate = ref('');
 const startOperator = ref('>');
 const endOperator = ref('>');
 const keyword = ref('');
+const showRecurring = ref(true);
 
 // On émet l'événement de recherche avec un délai pour éviter trop d'appels successifs
 let debounceTimeout;
@@ -199,10 +211,35 @@ watch(searchQuery, (newValue) => {
 
     if (!props.appointments?.length) return [];
 
-    searchResults.value = props.appointments.filter(a => {
+    searchResults.value = props.appointments.flatMap(a => {
       const text = `${a.title ?? ''} ${a.description ?? ''}`.toLowerCase();
-      return text.includes(newValue.toLowerCase());
-    }).slice(0, 5); // Limite à 5 suggestions
+      if (!text.includes(newValue.toLowerCase())) return [];
+
+      // Si récurrent et si on veut les inclure
+      if (a.recursionRule !== undefined && a.recursionRule !== null && showRecurring.value) {
+        const occurrences = [];
+        let start = new Date(a.startDate);
+        let end = new Date(a.endDate);
+        const duration = end - start;
+        const limitDate = new Date();
+        limitDate.setMonth(limitDate.getMonth() + 1); // 1 mois max dans la recherche
+
+        while (start <= limitDate) {
+          occurrences.push({ ...a, startDate: new Date(start), endDate: new Date(end) });
+          switch (a.recursionRule) {
+            case 0: start.setDate(start.getDate() + 1); break; // quotidien
+            case 1: start.setDate(start.getDate() + 7); break; // hebdomadaire
+            case 2: start.setMonth(start.getMonth() + 1); break; // mensuel
+            case 3: start.setFullYear(start.getFullYear() + 1); break; // annuel
+          }
+          end = new Date(start.getTime() + duration);
+        }
+
+        return occurrences;
+      }
+
+      return [a]; // non récurrent
+    })
   }, 300);
 });
 
@@ -236,7 +273,8 @@ const applyFilters = () => {
     startDate: startDate.value,
     startOperator: startOperator.value,
     endDate: endDate.value,
-    endOperator: endOperator.value
+    endOperator: endOperator.value,
+    showRecurring: showRecurring.value
   });
 };
 

@@ -68,7 +68,7 @@
               <div
                   v-for="appointment in upcomingAppointments"
                   :key="appointment.id"
-                  class="p-3 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all cursor-pointer"
+                  class="p-3 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all cursor-pointer relative"
                   @click="$emit('selectAppointment', appointment)"
               >
                 <div class="flex items-start justify-between mb-2">
@@ -87,6 +87,15 @@
                     <line x1="3" y1="10" x2="21" y2="10"></line>
                   </svg>
                   <span>{{ appointment.dateLabel }}</span>
+                </div>
+                <div v-if="appointment.recursionRule !== undefined && appointment.recursionRule !== null" class="absolute bottom-1 right-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="17 1 21 5 17 9"></polyline>
+                    <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                    <polyline points="7 23 3 19 7 15"></polyline>
+                    <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                  </svg>
                 </div>
               </div>
             </div>
@@ -242,21 +251,69 @@ defineEmits(['close', 'selectAppointment', 'toggleappointmentsdisplay', 'togglec
 
 const upcomingAppointments = computed(() => {
   const now = new Date();
-  // Date limite d'un mois
   const limitDate = new Date();
   limitDate.setMonth(limitDate.getMonth() + 1);
-  return props.appointments
-      .filter(appt => new Date(appt.startDate) > now)
-      .filter(appt => new Date(appt.startDate) <= limitDate)
+
+  const result = [];
+
+  props.appointments.forEach(appt => {
+    const start = new Date(appt.startDate);
+    const end = new Date(appt.endDate);
+    const duration = end - start;
+    const rule = appt.recursionRule;
+
+    // Pas de récurrence
+    if (rule === undefined || rule === null) {
+      if (start > now && start <= limitDate) result.push(appt);
+      return;
+    }
+
+    // Calculer la première occurrence après maintenant
+    let cursor = new Date(start);
+
+    switch (rule) {
+      case 0: // quotidien
+        while (cursor < now) cursor.setDate(cursor.getDate() + 1);
+        break;
+      case 1: // hebdomadaire
+        while (cursor < now) cursor.setDate(cursor.getDate() + 7);
+        break;
+      case 2: // mensuel
+        while (cursor < now) cursor.setMonth(cursor.getMonth() + 1);
+        break;
+      case 3: // annuel
+        while (cursor < now) cursor.setFullYear(cursor.getFullYear() + 1);
+        break;
+    }
+
+    // Ajouter toutes les occurrences jusqu'à la limite
+    while (cursor <= limitDate) {
+      result.push({
+        ...appt,
+        startDate: new Date(cursor),
+        endDate: new Date(cursor.getTime() + duration),
+        isOccurrence: true
+      });
+
+      switch (rule) {
+        case 0: cursor.setDate(cursor.getDate() + 1); break;
+        case 1: cursor.setDate(cursor.getDate() + 7); break;
+        case 2: cursor.setMonth(cursor.getMonth() + 1); break;
+        case 3: cursor.setFullYear(cursor.getFullYear() + 1); break;
+      }
+    }
+  });
+
+  return result
       .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
-      .slice(0, 10)
       .map(appt => ({
         ...appt,
         dateLabel: new Date(appt.startDate).toLocaleDateString('fr-FR', {
           weekday: 'short',
           day: 'numeric',
           month: 'short'
-        })
+        }),
+        hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})
       }));
 });
 </script>

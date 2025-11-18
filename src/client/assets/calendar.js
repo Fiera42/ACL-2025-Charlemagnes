@@ -19,22 +19,36 @@ export const calendarService = {
             console.log('Réponse API brute:', response.data);
 
             const appointments = response.data.appointments || [];
+            const recurrentAppointments = response.data.recurrentAppointments || [];
 
-            return appointments.map(appt => ({
-                id: appt.id,
-                title: appt.title,
-                description: appt.description,
-                startDate: new Date(appt.startDate),
-                endDate: new Date(appt.endDate),
-                date: new Date(appt.startDate).toDateString(),
-                hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'}),
-                time: `${new Date(appt.startDate).toLocaleTimeString('fr-FR', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })} - ${new Date(appt.endDate).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`,
-                color: calendar.color,
-                calendarId: appt.calendarId
-            }));
+            const normalize = (appt) => ({
+            id: appt.id,
+            title: appt.title,
+            description: appt.description,
+            startDate: new Date(appt.startDate),
+            endDate: new Date(appt.endDate),
+            date: new Date(appt.startDate).toDateString(),
+            hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+            time: `${new Date(appt.startDate).toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            })} - ${new Date(appt.endDate).toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            })}`,
+            color: calendar.color,
+            calendarId: appt.calendarId,
+            recursionRule: appt.recursionRule ?? null
+        });
+
+        // On fusionne tout
+        const allEvents = [
+            ...appointments.map(normalize),
+            ...recurrentAppointments.map(normalize)
+        ];
+
+        return allEvents;
+
         } catch (error) {
             console.error('Erreur détaillée:', {
                 message: error.message,
@@ -79,6 +93,24 @@ export const calendarService = {
         }
     },
 
+    async createRecurrentAppointment(appointment) {
+        if(!appointment.calendarId) {
+            throw new Error('No calendarId provided');
+        }
+        try {
+            await axios.post(`/api/calendar/${appointment.calendarId}/appointments`, {
+                title: appointment.title,
+                description: appointment.description,
+                startDate: appointment.startDate.toISOString(),
+                endDate: appointment.endDate.toISOString(),
+                recursionRule: appointment.recursionRule
+            });
+        } catch (error) {
+            console.error('Erreur lors de la création récurrente:', error.response?.data || error);
+            throw error;
+        }
+    },
+
     // Modifier un rendez-vous
     async updateAppointment(appointment) {
         try {
@@ -86,7 +118,8 @@ export const calendarService = {
                 title: appointment.title,
                 description: appointment.description,
                 startDate: appointment.startDate.toISOString(),
-                endDate: appointment.endDate.toISOString()
+                endDate: appointment.endDate.toISOString(),
+                recursionRule: appointment.recursionRule ?? null
             });
         } catch (error) {
             console.error('Erreur lors de la modification:', error.response?.data || error);
@@ -95,9 +128,9 @@ export const calendarService = {
     },
 
     // Supprimer un rendez-vous
-    async deleteAppointment(appointmentId) {
+    async deleteAppointment(appointmentId, recursionRule) {
         try {
-            await axios.delete(`/api/calendar/appointments/${appointmentId}`);
+            await axios.delete(`/api/calendar/appointments/${appointmentId}?recurring=${recursionRule !== undefined && recursionRule !== null}`);
         } catch (error) {
             console.error('Erreur lors de la suppression:', error.response?.data || error);
             throw error;

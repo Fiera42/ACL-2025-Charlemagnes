@@ -78,7 +78,7 @@
           >
             <div
                 :class="[
-                  'rounded p-1.5 border-l-4 cursor-pointer h-full overflow-hidden'
+                  'rounded p-1.5 border-l-4 cursor-pointer h-full overflow-hidden relative'
                 ]"
                 :style="{
                   borderColor: event.color,
@@ -100,6 +100,15 @@
                   class="text-xs text-gray-600 block"
                   title="Continue après"
               >↓</span>
+              <div v-if="event.recursionRule !== undefined && event.recursionRule !== null" class="absolute bottom-1 right-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="17 1 21 5 17 9"></polyline>
+                  <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                  <polyline points="7 23 3 19 7 15"></polyline>
+                  <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                </svg>
+              </div>
             </div>
           </div>
         </div>
@@ -165,7 +174,7 @@ const getDayPositionedEvents = (date) => {
   const dayEnd = new Date(date);
   dayEnd.setHours(23, 59, 59, 999);
 
-  return props.events
+  return expandedEvents.value
       .filter(event => {
         const eventStart = new Date(event.startDate);
         const eventEnd = new Date(event.endDate);
@@ -216,6 +225,85 @@ const isToday = (date) => {
   const today = new Date();
   return date.toDateString() === today.toDateString();
 };
+
+const expandedEvents = computed(() => {
+  const result = [];
+
+  const viewStart = new Date(currentDate.value);
+  viewStart.setHours(0, 0, 0, 0);
+  // Déplacer au lundi de la semaine
+  viewStart.setDate(viewStart.getDate() - ((viewStart.getDay() + 6) % 7));
+
+  const viewEnd = new Date(viewStart);
+  viewEnd.setDate(viewEnd.getDate() + 7);
+
+  props.events.forEach(event => {
+    // Si pas de récurrence
+    if (!event.recursionRule && event.recursionRule !== 0) {
+      const eventStart = new Date(event.startDate);
+      const eventEnd = new Date(event.endDate);
+      if (eventEnd >= viewStart && eventStart <= viewEnd) result.push(event);
+      return;
+    }
+
+    const rule = event.recursionRule;
+    const duration = new Date(event.endDate) - new Date(event.startDate);
+
+    let cursor = new Date(event.startDate);
+
+    // Ajuster le curseur pour commencer dans la semaine affichée
+    if (cursor < viewStart) {
+      switch(rule) {
+        case 0: cursor = new Date(viewStart); break;
+        case 1: {
+          const dayDiff = Math.floor((viewStart - cursor)/(1000*60*60*24));
+          const weeksToAdd = Math.floor(dayDiff / 7);
+          cursor.setDate(cursor.getDate() + weeksToAdd * 7);
+          if (cursor < viewStart) cursor.setDate(cursor.getDate() + 7);
+          break;
+        }
+        case 2:
+          cursor = new Date(cursor);
+          cursor.setFullYear(viewStart.getFullYear(), viewStart.getMonth(), cursor.getDate());
+          if (cursor < viewStart) cursor.setMonth(cursor.getMonth() + 1);
+          break;
+        case 3:
+          cursor = new Date(cursor);
+          cursor.setFullYear(viewStart.getFullYear());
+          if (cursor < viewStart) cursor.setFullYear(cursor.getFullYear() + 1);
+          break;
+      }
+    }
+
+    while (cursor < viewEnd) {
+      const newStart = new Date(cursor);
+      newStart.setHours(
+        new Date(event.startDate).getHours(),
+        new Date(event.startDate).getMinutes(),
+        new Date(event.startDate).getSeconds(),
+        new Date(event.startDate).getMilliseconds()
+      );
+
+      const newEnd = new Date(newStart.getTime() + duration);
+
+      result.push({
+        ...event,
+        startDate: newStart,
+        endDate: newEnd,
+        isOccurrence: true
+      });
+
+      switch(rule) {
+        case 0: cursor.setDate(cursor.getDate() + 1); break;
+        case 1: cursor.setDate(cursor.getDate() + 7); break;
+        case 2: cursor.setMonth(cursor.getMonth() + 1); break;
+        case 3: cursor.setFullYear(cursor.getFullYear() + 1); break;
+      }
+    }
+  });
+
+  return result;
+});
 
 const scrollToWorkHours = () => {
   nextTick(() => {
