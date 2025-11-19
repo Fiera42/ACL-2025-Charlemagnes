@@ -26,7 +26,7 @@
                   d="M15.6947 13.7H15.7037M15.6947 16.7H15.7037M11.9955 13.7H12.0045M11.9955 16.7H12.0045M8.29431 13.7H8.30329M8.29431 16.7H8.30329"
                   stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <h1 class="text-xl font-bold text-gray-900">Mon Calendrier</h1>
+            <h1 class="text-xl font-bold text-gray-900">Charl'endar</h1>
           </div>
         </div>
 

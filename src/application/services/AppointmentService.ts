@@ -4,15 +4,15 @@ import {RecurrentAppointment} from "../../domain/entities/ReccurentAppointment";
 import {RecursionRule} from "../../domain/entities/RecursionRule";
 import {IAppointmentService} from "../../domain/interfaces/IAppointmentService";
 import {ICalendarDB} from "../../domain/interfaces/ICalendarDB";
+import {ITagDB} from "../../domain/interfaces/ITagDB";
 import {Sanitizer} from "./utils/Sanitizer";
 import {decode, encode} from "html-entities";
 
 export class AppointmentService implements IAppointmentService {
-    private calendarDB: ICalendarDB;
-
-    constructor(calendarDB: ICalendarDB) {
-        this.calendarDB = calendarDB;
-    }
+    constructor(
+        private calendarDB: ICalendarDB,
+        private tagDB: ITagDB
+    ) {}
 
     createAppointment(
         ownerId: string,
@@ -20,7 +20,8 @@ export class AppointmentService implements IAppointmentService {
         title: string,
         description: string,
         startDate: Date,
-        endDate: Date
+        endDate: Date,
+        tags: string[] = []
     ): Promise<Appointment> {
         return new Promise<Appointment>(async (resolve, reject) => {
             if (Object.prototype.toString.call(startDate) !== '[object Date]' || isNaN(startDate.getTime())) {
@@ -67,10 +68,12 @@ export class AppointmentService implements IAppointmentService {
             const appointment = Appointment.create(calendarId, title, description, startDate, endDate, ownerId);
 
             this.calendarDB.createAppointment(appointment)
-                .then((appointment: Appointment) => {
-                    // We sanitized at creation, so we have to sanitize when getting it back
+                .then(async (appointment: Appointment) => {
                     appointment.title = decode(appointment.title);
                     appointment.description = decode(appointment.description);
+                    if (appointment.id) {
+                        appointment.tags = await this.syncTagsForAppointment(appointment.id, tags);
+                    }
                     resolve(appointment);
                 })
                 .catch((reason: any) => {
@@ -86,7 +89,8 @@ export class AppointmentService implements IAppointmentService {
         description: string,
         startDate: Date,
         endDate: Date,
-        recursionRule: RecursionRule
+        recursionRule: RecursionRule,
+        tags: string[] = []
     ): Promise<RecurrentAppointment> {
         return new Promise<RecurrentAppointment>(async (resolve, reject) => {
 
@@ -138,13 +142,17 @@ export class AppointmentService implements IAppointmentService {
                 startDate,
                 endDate,
                 ownerId,
+                [],
                 recursionRule
             );
             
             this.calendarDB.createRecurrentAppointment(recurrentAppointment)
-                .then((recurrentAppointment: RecurrentAppointment) => {
+                .then(async (recurrentAppointment: RecurrentAppointment) => {
                     recurrentAppointment.title = decode(recurrentAppointment.title);
                     recurrentAppointment.description = decode(recurrentAppointment.description);
+                    if (recurrentAppointment.id) {
+                        recurrentAppointment.tags = await this.syncTagsForRecurrentAppointment(recurrentAppointment.id, tags);
+                    }
                     resolve(recurrentAppointment);
                 })
                 .catch((reason: any) => {
@@ -182,6 +190,7 @@ export class AppointmentService implements IAppointmentService {
                 return;
             }
 
+            await this.syncTagsForAppointment(appointmentId, []);
             const deleteResult = await this.calendarDB.deleteAppointment(appointmentId)
                 .catch((reason) => {
                     reject(reason);
@@ -225,6 +234,7 @@ export class AppointmentService implements IAppointmentService {
                 return;
             }
 
+            await this.syncTagsForRecurrentAppointment(appointmentId, []);
             const deleteResult = await this.calendarDB.deleteRecurrentAppointment(appointmentId)
                 .catch((reason) => {
                     reject(reason);
@@ -297,12 +307,16 @@ export class AppointmentService implements IAppointmentService {
                 }
             }
 
+            if (partialAppointment.tags !== undefined) {
+                await this.syncTagsForAppointment(appointmentId, partialAppointment.tags);
+            }
+
             const cleanedAppointment: Partial<Appointment> = {
                 ...(partialAppointment.title && {title: encode(partialAppointment.title, {mode: 'extensive'})}),
                 ...(partialAppointment.description && {description: encode(partialAppointment.description, {mode: 'extensive'})}),
                 ...(partialAppointment.calendarId && {calendarId: partialAppointment.calendarId}),
-                startDate: (partialAppointment.startDate) ? partialAppointment.startDate : appointment.startDate,
-                endDate: (partialAppointment.endDate) ? partialAppointment.endDate : appointment.endDate,
+                ...(partialAppointment.startDate && {startDate: partialAppointment.startDate}),
+                ...(partialAppointment.endDate && {endDate: partialAppointment.endDate}),
             };
 
             if ((cleanedAppointment.endDate as Date) < (cleanedAppointment.startDate as Date)) {
@@ -341,6 +355,10 @@ export class AppointmentService implements IAppointmentService {
             if (partial.recursionRule && 
                 !Object.values(RecursionRule).includes(partial.recursionRule)) {
                 return reject(new Error(`Invalid recursionRule`));
+            }
+
+            if (partial.tags !== undefined) {
+                await this.syncTagsForRecurrentAppointment(appointmentId, partial.tags);
             }
 
             const updateResult = await this.calendarDB.updateRecurrentAppointment(appointmentId, partial)
@@ -391,6 +409,9 @@ export class AppointmentService implements IAppointmentService {
             // We sanitized at creation, so we have to sanitize when getting it back
             appointment.title = decode(appointment.title);
             appointment.description = decode(appointment.description);
+            if (appointment.id) {
+                await this.attachTagsToAppointment(appointment);
+            }
 
             resolve(appointment);
         });
@@ -415,6 +436,7 @@ export class AppointmentService implements IAppointmentService {
                 appointment.title = decode(appointment.title);
                 appointment.description = decode(appointment.description);
             })
+            await this.attachTagsToAppointments(appointments);
 
             resolve(appointments);
         });
@@ -439,15 +461,15 @@ export class AppointmentService implements IAppointmentService {
                 appointment.title = decode(appointment.title);
                 appointment.description = decode(appointment.description);
             })
+            await this.attachTagsToRecurrentAppointments(appointments);
 
             resolve(appointments);
         });
     }
-
     
     async getAllAppointmentsByCalendarId(calendarId: string): Promise<{appointments: Appointment[], recurrentAppointments: RecurrentAppointment[]}> {
         const appointments = await this.getAppointmentsByCalendarId(calendarId);
-        const recurrentAppointments = await this.calendarDB.findRecurrentAppointmentsByCalendarId(calendarId);
+        const recurrentAppointments = await this.getRecurrentAppointmentByCalendarId(calendarId);
         return { appointments, recurrentAppointments };
     }
 
@@ -461,5 +483,59 @@ export class AppointmentService implements IAppointmentService {
         calendarId: string
     ): Promise<{ appointmentA: Appointment; appointmentB: Appointment }[]> {
         throw new Error("Method not implemented.");
+    }
+
+    private normalizeTagIds(tagIds?: string[]): string[] {
+        const list = Array.isArray(tagIds) ? tagIds : [];
+        const filtered = list.filter(tag => typeof tag === 'string' && tag.trim().length > 0);
+        return Array.from(new Set(filtered));
+    }
+
+    private async syncTagsForAppointment(appointmentId: string, tagIds?: string[]): Promise<string[]> {
+        const normalized = this.normalizeTagIds(tagIds);
+        const current = await this.tagDB.findTagsByAppointment(appointmentId);
+        const currentIds = current.map(tag => tag.id as string);
+
+        const toAdd = normalized.filter(id => !currentIds.includes(id));
+        const toRemove = currentIds.filter(id => !normalized.includes(id));
+
+        await Promise.all(toAdd.map(id => this.tagDB.addTagToAppointment(appointmentId, id)));
+        await Promise.all(toRemove.map(id => this.tagDB.removeTagFromAppointment(appointmentId, id)));
+
+        return normalized;
+    }
+
+    private async syncTagsForRecurrentAppointment(appointmentId: string, tagIds?: string[]): Promise<string[]> {
+        const normalized = this.normalizeTagIds(tagIds);
+        const current = await this.tagDB.findTagsByRecurrentAppointment(appointmentId);
+        const currentIds = current.map(tag => tag.id as string);
+
+        const toAdd = normalized.filter(id => !currentIds.includes(id));
+        const toRemove = currentIds.filter(id => !normalized.includes(id));
+
+        await Promise.all(toAdd.map(id => this.tagDB.addTagToRecurrentAppointment(appointmentId, id)));
+        await Promise.all(toRemove.map(id => this.tagDB.removeTagFromRecurrentAppointment(appointmentId, id)));
+
+        return normalized;
+    }
+
+    private async attachTagsToAppointment(appointment: Appointment): Promise<void> {
+        if (!appointment.id) return;
+        const tags = await this.tagDB.findTagsByAppointment(appointment.id);
+        appointment.tags = tags.map(tag => tag.id as string);
+    }
+
+    private async attachTagsToAppointments(appointments: Appointment[]): Promise<void> {
+        await Promise.all(appointments.map(appt => this.attachTagsToAppointment(appt)));
+    }
+
+    private async attachTagsToRecurrentAppointment(appointment: RecurrentAppointment): Promise<void> {
+        if (!appointment.id) return;
+        const tags = await this.tagDB.findTagsByRecurrentAppointment(appointment.id);
+        appointment.tags = tags.map(tag => tag.id as string);
+    }
+
+    private async attachTagsToRecurrentAppointments(appointments: RecurrentAppointment[]): Promise<void> {
+        await Promise.all(appointments.map(appt => this.attachTagsToRecurrentAppointment(appt)));
     }
 }

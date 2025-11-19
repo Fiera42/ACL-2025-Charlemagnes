@@ -7,6 +7,7 @@ export class Appointment {
         public startDate: Date,
         public endDate: Date,
         public ownerId: string,
+        public tags: string[] = [],
         public createdAt: Date = new Date(),
         public updatedAt: Date = new Date(),
         public updatedBy: string | null = null

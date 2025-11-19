@@ -85,9 +85,13 @@ export class SQLiteTagDB implements ITagDB {
     }
 
     async deleteTag(id: string): Promise<boolean> {
-        const stmt = this.db.prepare('DELETE FROM tags WHERE id = ?');
-        const result = stmt.run(id);
-        return result.changes > 0;
+        const deleteTagTx = this.db.transaction((tagId: string) => {
+            this.db.prepare('DELETE FROM appointment_tags WHERE tag_id = ?').run(tagId);
+            this.db.prepare('DELETE FROM recurrent_appointment_tags WHERE tag_id = ?').run(tagId);
+            return this.db.prepare('DELETE FROM tags WHERE id = ?').run(tagId).changes > 0;
+        });
+
+        return deleteTagTx(id);
     }
 
     async addTagToAppointment(appointmentId: string, tagId: string): Promise<void> {

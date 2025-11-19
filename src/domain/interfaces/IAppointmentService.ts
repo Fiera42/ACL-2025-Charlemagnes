@@ -10,7 +10,8 @@ export interface IAppointmentService {
     title: string,
     description: string,
     startDate: Date,
-    endDate: Date
+    endDate: Date,
+    tags?: string[]
   ): Promise<Appointment>;
 
   createRecurrentAppointment(
@@ -20,7 +21,8 @@ export interface IAppointmentService {
     description: string,
     startDate: Date,
     endDate: Date,
-    recursionRule: RecursionRule
+    recursionRule: RecursionRule,
+    tags?: string[]
   ): Promise<RecurrentAppointment>;
 
   deleteAppointment(

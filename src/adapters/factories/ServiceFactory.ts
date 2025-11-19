@@ -8,17 +8,23 @@ import { CalendarService } from '../../application/services/CalendarService';
 import { SQLiteAuthDB } from '../../infrastructure/database/SQLiteAuthDB';
 import { SQLiteCalendarDB } from '../../infrastructure/database/SQLiteCalendarDB';
 import { SQLiteShareDB } from '../../infrastructure/database/SQLiteShareDB';
+import { SQLiteTagDB } from '../../infrastructure/database/SQLiteTagDB';
 import { db } from '../../infrastructure/config/sqliteAdapter';
 import {AuthService} from "../../application/services/AuthService.ts";
 import {IAuthService} from "../../domain/interfaces/IAuthService.ts";
+import { ITagDB } from '../../domain/interfaces/ITagDB';
+import { ITagService } from '../../domain/interfaces/ITagService';
+import { TagService } from '../../application/services/TagService';
 
 export class ServiceFactory {
     private static authDB: IAuthDB;
     private static calendarDB: ICalendarDB;
     private static shareDB: IShareDB;
+    private static tagDB: ITagDB;
     private static authService: AuthService;
     private static calendarService: ICalendarService;
     private static appointmentService: IAppointmentService;
+    private static tagService: ITagService;
 
     private static initializeDatabases(): void {
         if (!this.authDB) {
@@ -30,12 +36,15 @@ export class ServiceFactory {
         if (!this.shareDB) {
             this.shareDB = new SQLiteShareDB(db);
         }
+        if (!this.tagDB) {
+            this.tagDB = new SQLiteTagDB(db);
+        }
     }
 
     private static initializeAppointmentService(): void {
         if(!this.appointmentService) {
             this.initializeDatabases();
-            this.appointmentService = new AppointmentService(this.calendarDB);
+            this.appointmentService = new AppointmentService(this.calendarDB, this.tagDB);
         }
     }
 
@@ -50,6 +59,13 @@ export class ServiceFactory {
         if(!this.authService) {
             this.initializeDatabases();
             this.authService = new AuthService(this.authDB);
+        }
+    }
+
+    private static initializeTagService(): void {
+        if (!this.tagService) {
+            this.initializeDatabases();
+            this.tagService = new TagService(this.tagDB);
         }
     }
 
@@ -81,5 +97,10 @@ export class ServiceFactory {
     static getAuthService(): IAuthService {
         this.initializeAuthService();
         return this.authService;
+    }
+
+    static getTagService(): ITagService {
+        this.initializeTagService();
+        return this.tagService;
     }
 }
