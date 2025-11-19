@@ -249,14 +249,22 @@ const closeDetail = () => {
   selectedAppointment.value = null;
 };
 
+// Méthode pour convertir une date en ISO sans décalage horaire
+const DateSansDecalage = (date) => {
+  const d = new Date(date);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
+};
+
+
 const editAppointment = () => {
   editingAppointment.value = {
     id: selectedAppointment.value.id,
     title: selectedAppointment.value.title,
     description: selectedAppointment.value.description,
     calendarId: selectedAppointment.value.calendarId,
-    startDate: new Date(selectedAppointment.value.startDate).toISOString().slice(0, 16),
-    endDate: new Date(selectedAppointment.value.endDate).toISOString().slice(0, 16),
+    startDate: DateSansDecalage(selectedAppointment.value.startDate),
+    endDate: DateSansDecalage(selectedAppointment.value.endDate),
     isRecurring: selectedAppointment.value.recursionRule !== undefined && selectedAppointment.value.recursionRule !== null,
     recursionRule: selectedAppointment.value.recursionRule ?? null
   };
