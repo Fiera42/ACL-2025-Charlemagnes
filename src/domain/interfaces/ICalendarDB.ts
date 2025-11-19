@@ -1,5 +1,6 @@
 import { Calendar } from '../entities/Calendar';
 import { Appointment } from '../entities/Appointment';
+import { RecurrentAppointment } from '../entities/ReccurentAppointment';
 
 export interface ICalendarDB {
   // Calendars
@@ -15,4 +16,11 @@ export interface ICalendarDB {
   findAppointmentsByCalendarId(calendarId: string): Promise<Appointment[]>;
   updateAppointment(id: string, appointment: Partial<Appointment>): Promise<Appointment>;
   deleteAppointment(id: string): Promise<boolean>;
+
+  // Recurrent Appointments
+  createRecurrentAppointment(appointment: RecurrentAppointment): Promise<RecurrentAppointment>;
+  findRecurrentAppointmentById(id: string): Promise<RecurrentAppointment | null>;
+  findRecurrentAppointmentsByCalendarId(calendarId: string): Promise<RecurrentAppointment[]>;
+  updateRecurrentAppointment(id: string, appointment: Partial<RecurrentAppointment>): Promise<RecurrentAppointment>;
+  deleteRecurrentAppointment(id: string): Promise<boolean>;
 }

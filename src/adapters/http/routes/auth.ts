@@ -111,8 +111,8 @@ router.post('/login', async (req: Request, res: Response) => {
 
 router.post('/register', async (req: Request, res: Response) => {
     try {
-        const { username, email, password } = req.body;
-        const user = await authService.createUser(username, email, password);
+        const { username, password } = req.body;
+        const user = await authService.createUser(username, password);
         const token = await createAuthToken({userId: user.id as string, email: user.email})
         res.status(201).json(token);
     } catch (error) {

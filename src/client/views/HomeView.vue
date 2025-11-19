@@ -2,11 +2,13 @@
   <div id="app" class="min-h-screen bg-stone-50 flex flex-col">
     <AppHeader
         :user-name="userName"
+        :appointments="appointments"
         :reset-search-key="resetSearchKey"
         :reset-filters-key="resetFiltersKey"
         @toggle-sidebar="toggleSidebar"
         @logout="handleLogout"
         @search="handleSearch"
+        @selectAppointment="handleSelectAppointment"
         @filters-changed="handleFilters"
     />
 
@@ -19,6 +21,7 @@
           :loadingCalendars="loadingCalendars"
           :calendars="calendars"
           :calendarsdisplayed="calendarsdisplayed"
+          :tags="tags"
           @toggleappointmentsdisplay="viewAppointments"
           @togglecalendarsdisplay="viewCalendars"
           @close="closeSidebar"
@@ -28,6 +31,8 @@
           @deleteCalendar="deleteCalendar"
           @editCalendar="openCalendarForm"
           @calendarToggled="calendarToggled"
+          @editTag="openTagForm"
+          @deleteTag="deleteTag"
       />
 
       <main
@@ -41,12 +46,14 @@
               ref="calendarViewRef"
               :appointments="filteredAppointments"
               :calendars="calendars"
+              :tags="tags"
               :loading="loading"
               @appointments-updated="loadAppointments"
+              @calendars-updated="loadCalendars"
+              @tags-updated="loadTags"
               :editingCalendar="editingCalendar"
               :showCalendarForm="showCalendarForm"
               @closeCalendarForm="closeCalendarForm"
-              @calendarsUpdated="loadCalendars"
           />
         </div>
       </main>
@@ -64,7 +71,7 @@ import CalendarView from './CalendarView.vue';
 import {calendarService} from '../assets/calendar.js';
 
 const router = useRouter();
-const sidebarOpen = ref(false);
+const sidebarOpen = ref(true);
 const appointments = ref([]);
 const loading = ref(false);
 const userName = ref('');
@@ -78,6 +85,8 @@ const resetFiltersKey = ref(0);
 const filters = ref({});
 const showCalendarForm = ref(false);
 const editingCalendar = ref(null);
+const tags = ref([]);
+const loadingTags = ref(false);
 
 onMounted(async () => {
   const token = localStorage.getItem('token');
@@ -92,6 +101,7 @@ onMounted(async () => {
   try {
     // Load all calendars, make them visible by default
     await loadCalendars();
+    await loadTags();
     calendars.value.forEach((calendar) => {
       const isVisible = localStorage.getItem(`isVisible_${calendar.id}`);
       if(isVisible === null || isVisible.toLowerCase() === "true"){
@@ -200,29 +210,41 @@ const handleFilters = (newFilters) => {
 
 // calcule les rdv avec les filtres appliqué
 const filteredAppointments = computed(() => {
-  return appointments.value.filter((a) => {
-    let matchesFilter = true;
+  const now = new Date();
 
-    if (filters.value.startDate) {
-      const start = new Date(a.startDate); // <-- ici
-      const filterStart = new Date(filters.value.startDate);
-      matchesFilter =
-          filters.value.startOperator === '>'
-              ? start > filterStart
-              : start < filterStart;
-    }
+  return appointments.value
+    .filter((a) => {
+      let matches = true;
 
-    if (matchesFilter && filters.value.endDate) {
-      const end = new Date(a.endDate); // <-- ici
-      const filterEnd = new Date(filters.value.endDate);
-      matchesFilter =
-          filters.value.endOperator === '>'
-              ? end > filterEnd
-              : end < filterEnd;
-    }
+      // Filtre mot-clé
+      if (filters.value.keyword) {
+        const q = filters.value.keyword.toLowerCase();
+        const text = `${a.title ?? ''} ${a.description ?? ''} ${a.location ?? ''}`.toLowerCase();
+        matches = text.includes(q);
+      }
 
-    return matchesFilter;
-  });
+      // Filtre date début
+      if (matches && filters.value.startDate) {
+        const start = new Date(a.startDate);
+        const filterStart = new Date(filters.value.startDate);
+        matches = filters.value.startOperator === '>' ? start > filterStart : start < filterStart;
+      }
+
+      // Filtre date fin
+      if (matches && filters.value.endDate) {
+        const end = new Date(a.endDate);
+        const filterEnd = new Date(filters.value.endDate);
+        matches = filters.value.endOperator === '>' ? end > filterEnd : end < filterEnd;
+      }
+
+      // Filtre récurrence
+      if (matches && filters.value.showRecurring === false) {
+        matches = !(a.recursionRule !== undefined && a.recursionRule !== null);
+      }
+
+      return matches;
+    })
+    .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
 });
 
 
@@ -236,6 +258,7 @@ const closeCalendarForm = async () => {
   editingCalendar.value = null;
   await loadCalendars();
   await loadAppointments();
+  await loadTags();
   resetSearchKey.value++; // Réinitialise la barre de recherche
   resetFiltersKey.value++; // réinitialise les filtres
   filters.value = {}; // Réinitialise les filtres
@@ -248,9 +271,6 @@ const deleteCalendar = async (calendarId) => {
   if (calendars.value.length > 1) {
     try {
       calendars.value = await calendarService.deleteCalendar(calendarId);
-      resetSearchKey.value++; // Réinitialise la barre de recherche
-      resetFiltersKey.value++; // réinitialise les filtres
-      filters.value = {}; // Réinitialise les filtres
 
       // Remove the calendar from visible ones
       localStorage.removeItem(`isVisible_${calendarId}`);
@@ -268,14 +288,39 @@ const loadCalendars = async () => {
   loadingCalendars.value = true;
   try {
     calendars.value = await calendarService.getCalendarsByOwnerId();
-    resetSearchKey.value++; // Réinitialise la barre de recherche
-    resetFiltersKey.value++; // réinit filtres
-    filters.value = {}; // Réinitialise les filtres
   } catch (error) {
     console.error('Erreur lors du chargement des calendriers:', error);
     throw error;
   } finally {
     loadingCalendars.value = false;
+  }
+};
+
+const loadTags = async () => {
+  loadingTags.value = true;
+  try {
+    tags.value = await calendarService.getTags();
+  } catch (error) {
+    console.error('Erreur lors du chargement des tags:', error);
+    throw error;
+  } finally {
+    loadingTags.value = false;
+  }
+};
+
+const openTagForm = (tag = null) => {
+  if (calendarViewRef.value) {
+    calendarViewRef.value.openTagForm(tag);
+  }
+};
+
+const deleteTag = async (tagId) => {
+  try {
+    await calendarService.deleteTag(tagId);
+    await loadTags();
+  } catch (error) {
+    console.error('Erreur lors de la suppression du tag:', error);
+    alert('Erreur lors de la suppression du tag');
   }
 };
 

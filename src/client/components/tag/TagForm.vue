@@ -3,7 +3,7 @@
     <div class="flex flex-col max-h-[75vh]">
       <div class="flex-shrink-0 pb-4 border-b border-gray-200">
         <h2 class="text-2xl font-bold text-gray-900">
-          {{ calendar.id ? 'Modifier le' : 'Nouveau' }} calendrier
+          {{ form.id ? 'Modifier le' : 'Nouveau' }} tag
         </h2>
       </div>
 
@@ -12,32 +12,17 @@
           <div class="group">
             <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
               <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
               </svg>
-              Nom du calendrier
+              Nom du tag
             </label>
             <input
                 v-model="form.name"
                 type="text"
                 required
-                placeholder="Travail, Personnel, Sport..."
+                placeholder="Travail, Personnel, Urgent..."
                 class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
             />
-          </div>
-
-          <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
-              </svg>
-              Description
-            </label>
-            <textarea
-                v-model="form.description"
-                rows="3"
-                placeholder="Ajouter une description..."
-                class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all resize-none"
-            ></textarea>
           </div>
 
           <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 border-2 border-purple-100">
@@ -47,7 +32,7 @@
               </svg>
               Couleur
             </label>
-
+            
             <div class="flex items-center gap-4">
               <div class="relative group">
                 <input
@@ -77,20 +62,20 @@
             </div>
 
             <div class="mt-4 flex items-center gap-2 p-3 bg-white rounded-lg border border-purple-200">
-              <div
-                  class="w-10 h-10 rounded-lg shadow-inner flex-shrink-0 transition-all"
-                  :style="{ backgroundColor: form.color }"
+              <div 
+                class="w-10 h-10 rounded-full shadow-inner flex-shrink-0 transition-all"
+                :style="{ backgroundColor: form.color }"
               ></div>
               <div class="flex-1 min-w-0">
-                <p class="text-xs font-medium text-gray-700">Aperçu du calendrier</p>
-                <div class="flex items-center gap-2 mt-1">
-                  <div
-                      class="w-3 h-3 rounded-full"
-                      :style="{ backgroundColor: form.color }"
-                  ></div>
-                  <span class="text-sm font-medium text-gray-800 truncate">
-                    {{ form.name || 'Nom du calendrier' }}
-                  </span>
+                <p class="text-xs font-medium text-gray-700">Aperçu du tag</p>
+                <div 
+                  class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mt-1 shadow-sm"
+                  :style="{ 
+                    backgroundColor: form.color, 
+                    color: getContrastColor(form.color) 
+                  }"
+                >
+                  {{ form.name || 'Nom du tag' }}
                 </div>
               </div>
             </div>
@@ -112,7 +97,7 @@
               @click="handleSubmit"
               class="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]"
           >
-            {{ calendar.id ? '✓ Enregistrer' : '+ Créer' }}
+            {{ form.id ? '✓ Enregistrer' : '+ Créer' }}
           </button>
         </div>
       </div>
@@ -120,42 +105,56 @@
   </BaseModal>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watchEffect } from 'vue';
 import BaseModal from '../common/BaseModal.vue';
 
 const props = defineProps({
-  calendar: {
+  tag: {
     type: Object,
-    default: () => ({ name: '', description: '', color: '#4F46E5' })
+    default: null
   }
 });
 
 const emit = defineEmits(['close', 'save']);
 
-const form = ref({
-  id: null,
+const getInitialForm = () => ({
+  id: null as string | null,
   name: '',
-  description: '',
   color: '#4F46E5'
 });
 
+const form = ref(getInitialForm());
+
 watchEffect(() => {
-  if (props.calendar) {
-    form.value = {
-      id: props.calendar.id || null,
-      name: props.calendar.name || '',
-      description: props.calendar.description || '',
-      color: props.calendar.color || '#4F46E5'
-    };
+  if (!props.tag) {
+    form.value = getInitialForm();
+    return;
   }
+  form.value = {
+    id: props.tag.id ?? null,
+    name: props.tag.name ?? '',
+    color: props.tag.color ?? '#4F46E5'
+  };
 });
 
+const getContrastColor = (hexColor: string): string => {
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? '#1F2937' : '#FFFFFF';
+};
+
 const handleSubmit = () => {
-  emit('save', {
-    ...form.value,
+  const payload: any = {
+    name: form.value.name,
     color: form.value.color.toUpperCase()
-  });
+  };
+  if (form.value.id) {
+    payload.id = form.value.id;
+  }
+  emit('save', payload);
 };
 </script>
 
@@ -174,7 +173,7 @@ input[type="color"]::-moz-color-swatch {
   border-radius: 12px;
 }
 
-input:focus, textarea:focus {
+input:focus {
   transform: scale(1.01);
 }
 </style>

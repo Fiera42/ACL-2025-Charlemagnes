@@ -15,28 +15,64 @@ export const calendarService = {
             throw new Error('No calendarId provided');
         }
         try {
+            console.log('📡 Fetching appointments for calendar:', calendar.id);
             const response = await axios.get(`/api/calendar/${calendar.id}/appointments`);
-            console.log('Réponse API brute:', response.data);
+            console.log('📦 Raw response from server:', response.data);
 
             const appointments = response.data.appointments || [];
+            const recurrentAppointments = response.data.recurrentAppointments || [];
 
-            return appointments.map(appt => ({
-                id: appt.id,
-                title: appt.title,
-                description: appt.description,
-                startDate: new Date(appt.startDate),
-                endDate: new Date(appt.endDate),
-                date: new Date(appt.startDate).toDateString(),
-                hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'}),
-                time: `${new Date(appt.startDate).toLocaleTimeString('fr-FR', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })} - ${new Date(appt.endDate).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`,
-                color: calendar.color,
-                calendarId: appt.calendarId
-            }));
+            console.log('📋 Appointments count:', appointments.length);
+            console.log('🔁 Recurrent appointments count:', recurrentAppointments.length);
+
+            if (appointments.length > 0) {
+                console.log('🔍 First appointment raw:', appointments[0]);
+                console.log('🏷️ First appointment tags:', appointments[0]?.tags);
+            }
+
+            if (recurrentAppointments.length > 0) {
+                console.log('🔍 First recurrent appointment raw:', recurrentAppointments[0]);
+                console.log('🏷️ First recurrent appointment tags:', recurrentAppointments[0]?.tags);
+            }
+
+            const normalize = (appt) => {
+                console.log('🔄 Normalizing appointment:', appt.id, 'with tags:', appt.tags);
+                return {
+                    id: appt.id,
+                    title: appt.title,
+                    description: appt.description,
+                    startDate: new Date(appt.startDate),
+                    endDate: new Date(appt.endDate),
+                    date: new Date(appt.startDate).toDateString(),
+                    hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+                    time: `${new Date(appt.startDate).toLocaleTimeString('fr-FR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })} - ${new Date(appt.endDate).toLocaleTimeString('fr-FR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}`,
+                    color: calendar.color,
+                    calendarId: appt.calendarId,
+                    recursionRule: appt.recursionRule ?? null,
+                    tags: appt.tags || []
+                };
+            };
+
+            const allEvents = [
+                ...appointments.map(normalize),
+                ...recurrentAppointments.map(normalize)
+            ];
+
+            console.log('✅ Total normalized events:', allEvents.length);
+            if (allEvents.length > 0) {
+                console.log('🏷️ First normalized event tags:', allEvents[0].tags);
+            }
+
+            return allEvents;
+
         } catch (error) {
-            console.error('Erreur détaillée:', {
+            console.error('❌ Error fetching appointments:', {
                 message: error.message,
                 response: error.response?.data,
                 status: error.response?.status
@@ -79,6 +115,24 @@ export const calendarService = {
         }
     },
 
+    async createRecurrentAppointment(appointment) {
+        if(!appointment.calendarId) {
+            throw new Error('No calendarId provided');
+        }
+        try {
+            await axios.post(`/api/calendar/${appointment.calendarId}/appointments`, {
+                title: appointment.title,
+                description: appointment.description,
+                startDate: appointment.startDate.toISOString(),
+                endDate: appointment.endDate.toISOString(),
+                recursionRule: appointment.recursionRule
+            });
+        } catch (error) {
+            console.error('Erreur lors de la création récurrente:', error.response?.data || error);
+            throw error;
+        }
+    },
+
     // Modifier un rendez-vous
     async updateAppointment(appointment) {
         try {
@@ -86,7 +140,8 @@ export const calendarService = {
                 title: appointment.title,
                 description: appointment.description,
                 startDate: appointment.startDate.toISOString(),
-                endDate: appointment.endDate.toISOString()
+                endDate: appointment.endDate.toISOString(),
+                recursionRule: appointment.recursionRule ?? null
             });
         } catch (error) {
             console.error('Erreur lors de la modification:', error.response?.data || error);
@@ -95,9 +150,9 @@ export const calendarService = {
     },
 
     // Supprimer un rendez-vous
-    async deleteAppointment(appointmentId) {
+    async deleteAppointment(appointmentId, recursionRule) {
         try {
-            await axios.delete(`/api/calendar/appointments/${appointmentId}`);
+            await axios.delete(`/api/calendar/appointments/${appointmentId}?recurring=${recursionRule !== undefined && recursionRule !== null}`);
         } catch (error) {
             console.error('Erreur lors de la suppression:', error.response?.data || error);
             throw error;
@@ -156,6 +211,24 @@ export const calendarService = {
             console.error('Erreur lors de l update de l agenda 1 :', error.response.data || error);
             throw error;
         }
-    }
+    },
 
+    async getTags() {
+        const { data } = await axios.get('/api/tag');
+        return data.tags ?? [];
+    },
+
+    async createTag(tag) {
+        const { data } = await axios.post('/api/tag', tag);
+        return data;
+    },
+
+    async updateTag(tagId, tag) {
+        const { data } = await axios.put(`/api/tag/${tagId}`, tag);
+        return data;
+    },
+
+    async deleteTag(tagId) {
+        await axios.delete(`/api/tag/${tagId}`);
+    }
 };

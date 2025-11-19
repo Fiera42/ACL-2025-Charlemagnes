@@ -10,7 +10,8 @@ export interface IAppointmentService {
     title: string,
     description: string,
     startDate: Date,
-    endDate: Date
+    endDate: Date,
+    tags?: string[]
   ): Promise<Appointment>;
 
   createRecurrentAppointment(
@@ -20,10 +21,16 @@ export interface IAppointmentService {
     description: string,
     startDate: Date,
     endDate: Date,
-    recursionRule: RecursionRule
+    recursionRule: RecursionRule,
+    tags?: string[]
   ): Promise<RecurrentAppointment>;
 
   deleteAppointment(
+    ownerId: string,
+    appointmentId: string
+  ): Promise<ServiceResponse>;
+
+  deleteRecurrentAppointment(
     ownerId: string,
     appointmentId: string
   ): Promise<ServiceResponse>;
@@ -55,6 +62,10 @@ export interface IAppointmentService {
   getAppointmentById(id: string): Promise<Appointment | null>;
 
   getAppointmentsByCalendarId(calendarId: string): Promise<Appointment[]>;
+
+  getRecurrentAppointmentByCalendarId(calendarId: string): Promise<RecurrentAppointment[]>;
+
+  getAllAppointmentsByCalendarId(calendarId: string): Promise<{appointments: Appointment[], recurrentAppointments: RecurrentAppointment[]}>;
 
   getConflictsOfUser(
     ownerId: string

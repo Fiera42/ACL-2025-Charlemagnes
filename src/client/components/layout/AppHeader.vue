@@ -26,7 +26,7 @@
                   d="M15.6947 13.7H15.7037M15.6947 16.7H15.7037M11.9955 13.7H12.0045M11.9955 16.7H12.0045M8.29431 13.7H8.30329M8.29431 16.7H8.30329"
                   stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <h1 class="text-xl font-bold text-gray-900">Mon Calendrier</h1>
+            <h1 class="text-xl font-bold text-gray-900">Charl'endar</h1>
           </div>
         </div>
 
@@ -37,7 +37,7 @@
               class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"
               fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 3a7.5 7.5 0 006.15 13.65z" />
+                  d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 3a7.5 7.5 0 006.15 13.65z"/>
           </svg>
 
           <!-- Champ -->
@@ -47,6 +47,12 @@
               placeholder="Rechercher un rendez-vous..."
               class="w-full border border-gray-300 rounded-lg pl-9 pr-9 py-2 text-sm
            focus:ring-0 focus:border-indigo-500 outline-none transition-colors"
+          />
+
+          <SearchDropdown
+              :results="searchResults"
+              :visible="searchQuery.length > 0"
+              @select="handleSelectResult"
           />
 
           <!-- Croix à droite -->
@@ -78,6 +84,17 @@
               v-if="showFilters"
               class="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50"
           >
+
+            <h3 class="text-sm font-medium mb-2 text-gray-700">Mot-clé</h3>
+            <div class="flex items-center gap-2 mb-3">
+              <input
+                  type="text"
+                  v-model="keyword"
+                  placeholder="Titre, description..."
+                  class="border rounded p-1 text-sm w-full"
+              />
+            </div>
+
             <h3 class="text-sm font-medium mb-2 text-gray-700">Date de début</h3>
             <div class="flex items-center gap-2 mb-3">
               <select v-model="startOperator" class="border rounded p-1 text-sm">
@@ -96,16 +113,32 @@
               <input type="date" v-model="endDate" class="border rounded p-1 text-sm flex-1"/>
             </div>
 
+            <h3 class="text-sm font-medium mb-2 text-gray-700">Rendez-vous récurrents</h3>
+            <div class="flex items-center mb-3">
+              <input
+                  type="checkbox"
+                  id="showRecurring"
+                  v-model="showRecurring"
+                  class="mr-2"
+              />
+              <label for="showRecurring" class="text-sm text-gray-700">Afficher les rendez-vous récurrents</label>
+            </div>
+
             <div class="flex justify-between mt-4">
               <button @click="resetFilters" class="text-gray-500 text-sm hover:underline">Réinitialiser</button>
-              <button @click="applyFilters" class="bg-indigo-500 text-white text-sm px-3 py-1.5 rounded hover:bg-indigo-600">Appliquer</button>
+              <button @click="applyFilters"
+                      class="bg-indigo-500 text-white text-sm px-3 py-1.5 rounded hover:bg-indigo-600">Appliquer
+              </button>
             </div>
           </div>
         </div>
 
         <!-- Profil + Déconnexion (collés à droite) -->
         <div class="flex items-center gap-2">
-          <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+          <div
+              class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+              @click="goToProfile"
+          >
             <div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                    stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -115,6 +148,7 @@
             </div>
             <span class="text-sm font-medium text-gray-700 hidden sm:block">{{ userName }}</span>
           </div>
+
 
           <button
               @click="$emit('logout')"
@@ -136,25 +170,34 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import {ref, watch} from 'vue';
+import {useRouter} from 'vue-router';
+import SearchDropdown from './SearchDropdown.vue';
+
+const router = useRouter();
 
 const props = defineProps({
   userName: {
     type: String,
     default: 'Utilisateur'
   },
-  resetSearchKey: {  // Pour reset la barre de recherche
+  resetSearchKey: {
     type: Number,
     default: 0
   },
-  resetFiltersKey: {  // Pour reset les filtres
+  resetFiltersKey: {
     type: Number,
     default: 0
+  },
+  appointments: {
+    type: Array,
+    default: () => []
   }
 });
 
 const emit = defineEmits(['toggleSidebar', 'logout', 'search', 'filters-changed']);
 const searchQuery = ref('');
+const searchResults = ref([]);
 
 // Champs pour filtre
 const showFilters = ref(false);
@@ -162,20 +205,71 @@ const startDate = ref('');
 const endDate = ref('');
 const startOperator = ref('>');
 const endOperator = ref('>');
+const keyword = ref('');
+const showRecurring = ref(true);
+
+const goToProfile = () => {
+  router.push({name: 'profile'});
+};
 
 // On émet l'événement de recherche avec un délai pour éviter trop d'appels successifs
 let debounceTimeout;
 watch(searchQuery, (newValue) => {
   clearTimeout(debounceTimeout);
   debounceTimeout = setTimeout(() => {
-    emit('search', newValue);
-  }, 500);
+    if (!newValue) {
+      searchResults.value = [];
+      return;
+    }
+
+    if (!props.appointments?.length) return [];
+
+    searchResults.value = props.appointments.flatMap(a => {
+      const text = `${a.title ?? ''} ${a.description ?? ''}`.toLowerCase();
+      if (!text.includes(newValue.toLowerCase())) return [];
+
+      // Si récurrent et si on veut les inclure
+      if (a.recursionRule !== undefined && a.recursionRule !== null && showRecurring.value) {
+        const occurrences = [];
+        let start = new Date(a.startDate);
+        let end = new Date(a.endDate);
+        const duration = end - start;
+        const limitDate = new Date();
+        limitDate.setMonth(limitDate.getMonth() + 1); // 1 mois max dans la recherche
+
+        while (start <= limitDate) {
+          occurrences.push({...a, startDate: new Date(start), endDate: new Date(end)});
+          switch (a.recursionRule) {
+            case 0:
+              start.setDate(start.getDate() + 1);
+              break; // quotidien
+            case 1:
+              start.setDate(start.getDate() + 7);
+              break; // hebdomadaire
+            case 2:
+              start.setMonth(start.getMonth() + 1);
+              break; // mensuel
+            case 3:
+              start.setFullYear(start.getFullYear() + 1);
+              break; // annuel
+          }
+          end = new Date(start.getTime() + duration);
+        }
+
+        return occurrences;
+      }
+
+      return [a]; // non récurrent
+    })
+  }, 300);
 });
 
-// Réinitialisation depuis App.vue
-watch(() => props.resetSearchKey, () => {
-  searchQuery.value = '';
-});
+// Quand on clique sur un résultat
+const handleSelectResult = (appointment) => {
+  emit('selectAppointment', appointment);
+  searchQuery.value = ''; // on vide la barre
+  searchResults.value = [];
+};
 
 watch(() => props.resetFiltersKey, () => {
   // quand App.vue réinitialise les filtres globalement
@@ -188,6 +282,7 @@ watch(() => props.resetFiltersKey, () => {
 // Bouton pour vider localement
 const clearSearch = () => {
   searchQuery.value = '';
+  searchResults.value = [];
   emit('search', ''); // notifie App.vue pour réafficher tout
 };
 
@@ -195,20 +290,23 @@ const clearSearch = () => {
 const applyFilters = () => {
   showFilters.value = false;
   emit('filters-changed', {
+    keyword: keyword.value,
     startDate: startDate.value,
     startOperator: startOperator.value,
     endDate: endDate.value,
-    endOperator: endOperator.value
+    endOperator: endOperator.value,
+    showRecurring: showRecurring.value
   });
 };
 
 // Réinitialiser les filtres
 const resetFilters = () => {
+  keyword.value = '';
   startDate.value = '';
   endDate.value = '';
   startOperator.value = '>';
   endOperator.value = '>';
-  emit('filters-changed', {}); // envoie vide = plus de filtres
+  emit('filters-changed', {}); // envoie vide pour réinitialiser dans les composants parents
 };
 
 </script>

@@ -76,21 +76,21 @@ router.delete('/:id/share/:sharedToId', authenticateToken, async (req: Authentic
 });
 
 // Routes pour les rendez-vous d'un calendrier
-router.get('/:calendarId/appointments', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/:calendarId/appointments', async (req, res) => {
     try {
-        const appointments = await appointmentService.getAppointmentsByCalendarId(req.params.calendarId);
-        res.json({ appointments });
-    } catch (error) {
-        res.status(500).json({ error: 'Erreur lors de la récupération des rendez-vous' });
+        const data = await appointmentService.getAllAppointmentsByCalendarId(req.params.calendarId);
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
     }
 });
 
 router.post('/:calendarId/appointments', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const { title, description, startDate, endDate, recursionRule } = req.body;
+        const { title, description, startDate, endDate, recursionRule, tags = [] } = req.body;
         let appointment;
 
-        if (recursionRule) {
+        if (recursionRule !== undefined && recursionRule !== null) {
             appointment = await appointmentService.createRecurrentAppointment(
                 req.user!.userId,
                 req.params.calendarId,
@@ -98,7 +98,8 @@ router.post('/:calendarId/appointments', authenticateToken, async (req: Authenti
                 description,
                 new Date(startDate),
                 new Date(endDate),
-                recursionRule
+                recursionRule,
+                tags
             );
         } else {
             appointment = await appointmentService.createAppointment(
@@ -107,7 +108,8 @@ router.post('/:calendarId/appointments', authenticateToken, async (req: Authenti
                 title,
                 description,
                 new Date(startDate),
-                new Date(endDate)
+                new Date(endDate),
+                tags
             );
         }
 
@@ -132,24 +134,25 @@ router.get('/appointments/:id', authenticateToken, async (req: AuthenticatedRequ
 
 router.put('/appointments/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const { title, description, startDate, endDate, recursionRule } = req.body;
+        const { title, description, startDate, endDate, recursionRule, tags } = req.body;
         const appointmentId = req.params.id;
 
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+        const start = startDate ? new Date(startDate) : undefined;
+        const end = endDate ? new Date(endDate) : undefined;
 
         let updatedAppointment;
 
-        if (recursionRule) {
+        if (recursionRule !== undefined && recursionRule !== null) {
             updatedAppointment = await appointmentService.updateRecurrentAppointment(
                 req.user!.userId,
                 appointmentId,
                 {
                     title,
                     description,
-                    startDate: start,
-                    endDate: end,
-                    recursionRule
+                    ...(start && { startDate: start }),
+                    ...(end && { endDate: end }),
+                    recursionRule,
+                    ...(tags !== undefined && { tags })
                 }
             );
         } else {
@@ -159,8 +162,9 @@ router.put('/appointments/:id', authenticateToken, async (req: AuthenticatedRequ
                 {
                     title,
                     description,
-                    startDate: start,
-                    endDate: end
+                    ...(start && { startDate: start }),
+                    ...(end && { endDate: end }),
+                    ...(tags !== undefined && { tags })
                 }
             );
         }
@@ -175,8 +179,15 @@ router.put('/appointments/:id', authenticateToken, async (req: AuthenticatedRequ
 
 router.delete('/appointments/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        //const response = await appointmentService.deleteAppointment(req.user!.userId, req.params.id);
-        const response = await appointmentService.deleteAppointment(req.user!.userId, req.params.id);
+        const isRecurring = req.query.recurring === 'true';
+        let response;
+
+        if (isRecurring) {
+            response = await appointmentService.deleteRecurrentAppointment(req.user!.userId, req.params.id);
+        } else {
+            response = await appointmentService.deleteAppointment(req.user!.userId, req.params.id);
+        }
+
         res.json(response);
     } catch (error) {
         res.status(500).json({ error: 'Erreur lors de la suppression du rendez-vous' });

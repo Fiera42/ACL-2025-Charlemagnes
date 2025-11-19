@@ -21,7 +21,37 @@ db.pragma('journal_mode = WAL');
 db.exec('PRAGMA foreign_keys = ON');
 
 export async function initDatabase(): Promise<void> {
-  db.exec(`
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tags (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        color TEXT NOT NULL,
+        created_by TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(name, created_by)
+      );
+    
+      CREATE TABLE IF NOT EXISTS appointment_tags (
+        id TEXT PRIMARY KEY,
+        appointment_id TEXT NOT NULL,
+        tag_id TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
+        FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
+        UNIQUE(appointment_id, tag_id)
+      );
+    
+      CREATE TABLE IF NOT EXISTS recurrent_appointment_tags (
+        id TEXT PRIMARY KEY,
+        recurrent_appointment_id TEXT NOT NULL,
+        tag_id TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (recurrent_appointment_id) REFERENCES recurrent_appointments(id) ON DELETE CASCADE,
+        FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
+        UNIQUE(recurrent_appointment_id, tag_id)
+      );
+
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
@@ -60,6 +90,23 @@ export async function initDatabase(): Promise<void> {
       FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
     );
 
+    CREATE TABLE IF NOT EXISTS recurrent_appointments (
+      id TEXT PRIMARY KEY,
+      calendar_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      start_date DATETIME NOT NULL,
+      end_date DATETIME NOT NULL,
+      owner_id TEXT NOT NULL,
+      recursion_rule INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_by TEXT,
+      FOREIGN KEY (calendar_id) REFERENCES calendars(id) ON DELETE CASCADE,
+      FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+    );
+
     CREATE TABLE IF NOT EXISTS shares (
       id TEXT PRIMARY KEY,
       owner_id TEXT NOT NULL,
@@ -73,8 +120,9 @@ export async function initDatabase(): Promise<void> {
       FOREIGN KEY (user_share_id) REFERENCES users(id) ON DELETE CASCADE
     );
   `);
-  console.log('✓ Base de données SQLite initialisée');
+    console.log('✓ Base de données SQLite initialisée');
 }
+
 
 export async function closeDatabase(): Promise<void> {
   db.close();
