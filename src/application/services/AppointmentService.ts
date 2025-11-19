@@ -12,7 +12,8 @@ export class AppointmentService implements IAppointmentService {
     constructor(
         private calendarDB: ICalendarDB,
         private tagDB: ITagDB
-    ) {}
+    ) {
+    }
 
     createAppointment(
         ownerId: string,
@@ -46,7 +47,7 @@ export class AppointmentService implements IAppointmentService {
                     reject(reason);
                 });
 
-            if (calendar === undefined) return; // We already rejected in the catch
+            if (calendar === undefined) return;
             if (calendar === null) {
                 reject(new Error(`CalendarId (${calendarId}) does not exist`));
                 return;
@@ -68,13 +69,22 @@ export class AppointmentService implements IAppointmentService {
             const appointment = Appointment.create(calendarId, title, description, startDate, endDate, ownerId);
 
             this.calendarDB.createAppointment(appointment)
-                .then(async (appointment: Appointment) => {
-                    appointment.title = decode(appointment.title);
-                    appointment.description = decode(appointment.description);
-                    if (appointment.id) {
-                        appointment.tags = await this.syncTagsForAppointment(appointment.id, tags);
+                .then(async (createdAppointment: Appointment) => {
+                    createdAppointment.title = decode(createdAppointment.title);
+                    createdAppointment.description = decode(createdAppointment.description);
+
+                    // Synchroniser les tags
+                    if (createdAppointment.id) {
+                        const normalizedTags = this.normalizeTagIds(tags);
+                        await Promise.all(
+                            normalizedTags.map(tagId =>
+                                this.tagDB.addTagToAppointment(createdAppointment.id!, tagId)
+                            )
+                        );
+                        createdAppointment.tags = normalizedTags;
                     }
-                    resolve(appointment);
+
+                    resolve(createdAppointment);
                 })
                 .catch((reason: any) => {
                     reject(reason);
@@ -93,7 +103,6 @@ export class AppointmentService implements IAppointmentService {
         tags: string[] = []
     ): Promise<RecurrentAppointment> {
         return new Promise<RecurrentAppointment>(async (resolve, reject) => {
-
             if (Object.prototype.toString.call(startDate) !== '[object Date]' || isNaN(startDate.getTime())) {
                 reject(new Error(`StartDate (${startDate}) is not valid`));
                 return;
@@ -114,11 +123,12 @@ export class AppointmentService implements IAppointmentService {
                 reject(new Error(`RecursionRule (${recursionRule}) is invalid`));
                 return;
             }
+
             const calendar = await this.calendarDB.findCalendarById(calendarId)
                 .catch((reason) => {
                     reject(reason);
                 });
-            if (calendar === undefined) return; // We already rejected in the catch
+            if (calendar === undefined) return;
             if (calendar === null) {
                 reject(new Error(`CalendarId (${calendarId}) does not exist`));
                 return;
@@ -127,14 +137,16 @@ export class AppointmentService implements IAppointmentService {
                 reject(new Error(`User of id (${ownerId}) does not own calendar of id (${calendarId})`));
                 return;
             }
+
             title = encode(title, {mode: 'extensive'});
             description = encode(description, {mode: 'extensive'});
+
             if (endDate < startDate) {
                 let temp = endDate;
                 endDate = startDate;
                 startDate = temp;
             }
-            
+
             const recurrentAppointment = RecurrentAppointment.createRecurrent(
                 calendarId,
                 title,
@@ -145,15 +157,24 @@ export class AppointmentService implements IAppointmentService {
                 [],
                 recursionRule
             );
-            
+
             this.calendarDB.createRecurrentAppointment(recurrentAppointment)
-                .then(async (recurrentAppointment: RecurrentAppointment) => {
-                    recurrentAppointment.title = decode(recurrentAppointment.title);
-                    recurrentAppointment.description = decode(recurrentAppointment.description);
-                    if (recurrentAppointment.id) {
-                        recurrentAppointment.tags = await this.syncTagsForRecurrentAppointment(recurrentAppointment.id, tags);
+                .then(async (createdAppointment: RecurrentAppointment) => {
+                    createdAppointment.title = decode(createdAppointment.title);
+                    createdAppointment.description = decode(createdAppointment.description);
+
+                    // Synchroniser les tags
+                    if (createdAppointment.id) {
+                        const normalizedTags = this.normalizeTagIds(tags);
+                        await Promise.all(
+                            normalizedTags.map(tagId =>
+                                this.tagDB.addTagToRecurrentAppointment(createdAppointment.id!, tagId)
+                            )
+                        );
+                        createdAppointment.tags = normalizedTags;
                     }
-                    resolve(recurrentAppointment);
+
+                    resolve(createdAppointment);
                 })
                 .catch((reason: any) => {
                     reject(reason);
@@ -180,7 +201,7 @@ export class AppointmentService implements IAppointmentService {
                     reject(reason);
                 });
 
-            if (appointment === undefined) return; // We already rejected in the catch
+            if (appointment === undefined) return;
             if (appointment === null) {
                 resolve(ServiceResponse.RESOURCE_NOT_EXIST);
                 return;
@@ -190,12 +211,11 @@ export class AppointmentService implements IAppointmentService {
                 return;
             }
 
-            await this.syncTagsForAppointment(appointmentId, []);
             const deleteResult = await this.calendarDB.deleteAppointment(appointmentId)
                 .catch((reason) => {
                     reject(reason);
                 });
-            if (deleteResult === undefined) return; // We already rejected in the catch
+            if (deleteResult === undefined) return;
 
             if (deleteResult) {
                 resolve(ServiceResponse.SUCCESS)
@@ -224,7 +244,7 @@ export class AppointmentService implements IAppointmentService {
                     reject(reason);
                 });
 
-            if (appointment === undefined) return; // We already rejected in the catch
+            if (appointment === undefined) return;
             if (appointment === null) {
                 resolve(ServiceResponse.RESOURCE_NOT_EXIST);
                 return;
@@ -234,12 +254,11 @@ export class AppointmentService implements IAppointmentService {
                 return;
             }
 
-            await this.syncTagsForRecurrentAppointment(appointmentId, []);
             const deleteResult = await this.calendarDB.deleteRecurrentAppointment(appointmentId)
                 .catch((reason) => {
                     reject(reason);
                 });
-            if (deleteResult === undefined) return; // We already rejected in the catch
+            if (deleteResult === undefined) return;
 
             if (deleteResult) {
                 resolve(ServiceResponse.SUCCESS)
@@ -281,7 +300,7 @@ export class AppointmentService implements IAppointmentService {
                     reject(reason);
                 });
 
-            if (appointment === undefined) return; // We already rejected in the catch
+            if (appointment === undefined) return;
             if (appointment === null) {
                 resolve(ServiceResponse.RESOURCE_NOT_EXIST);
                 return;
@@ -294,13 +313,13 @@ export class AppointmentService implements IAppointmentService {
                 return;
             }
 
-            if(partialAppointment.calendarId) {
+            if (partialAppointment.calendarId) {
                 const calendar = await this.calendarDB.findCalendarById(partialAppointment.calendarId)
                     .catch((reason) => {
                         reject(reason);
                     });
 
-                if (calendar === undefined) return; // We already rejected in the catch
+                if (calendar === undefined) return;
                 if (calendar === null) {
                     resolve(ServiceResponse.RESOURCE_NOT_EXIST);
                     return;
@@ -329,7 +348,7 @@ export class AppointmentService implements IAppointmentService {
                 .catch((reason) => {
                     reject(reason);
                 });
-            if (updateResult === undefined) return; // We already rejected in the catch
+            if (updateResult === undefined) return;
 
             if (updateResult) {
                 resolve(ServiceResponse.SUCCESS)
@@ -352,7 +371,7 @@ export class AppointmentService implements IAppointmentService {
             if (appt.ownerId !== ownerId)
                 return resolve(ServiceResponse.FORBIDDEN);
 
-            if (partial.recursionRule && 
+            if (partial.recursionRule &&
                 !Object.values(RecursionRule).includes(partial.recursionRule)) {
                 return reject(new Error(`Invalid recursionRule`));
             }
@@ -370,7 +389,6 @@ export class AppointmentService implements IAppointmentService {
                 resolve(ServiceResponse.FAILED);
         });
     }
-
 
     shareAppointment(
         ownerId: string,
@@ -408,7 +426,7 @@ export class AppointmentService implements IAppointmentService {
 
             appointment.title = decode(appointment.title);
             appointment.description = decode(appointment.description);
-            
+
             if (appointment.id) {
                 await this.attachTagsToAppointment(appointment);
             }
@@ -435,7 +453,7 @@ export class AppointmentService implements IAppointmentService {
                 appointment.title = decode(appointment.title);
                 appointment.description = decode(appointment.description);
             });
-            
+
             await this.attachTagsToAppointments(appointments);
 
             resolve(appointments);
@@ -460,17 +478,20 @@ export class AppointmentService implements IAppointmentService {
                 appointment.title = decode(appointment.title);
                 appointment.description = decode(appointment.description);
             });
-            
+
             await this.attachTagsToRecurrentAppointments(appointments);
 
             resolve(appointments);
         });
     }
-    
-    async getAllAppointmentsByCalendarId(calendarId: string): Promise<{appointments: Appointment[], recurrentAppointments: RecurrentAppointment[]}> {
+
+    async getAllAppointmentsByCalendarId(calendarId: string): Promise<{
+        appointments: Appointment[],
+        recurrentAppointments: RecurrentAppointment[]
+    }> {
         const appointments = await this.getAppointmentsByCalendarId(calendarId);
         const recurrentAppointments = await this.getRecurrentAppointmentByCalendarId(calendarId);
-        return { appointments, recurrentAppointments };
+        return {appointments, recurrentAppointments};
     }
 
     getConflictsOfUser(
