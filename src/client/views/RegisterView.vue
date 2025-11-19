@@ -22,20 +22,6 @@
         </div>
 
         <div>
-          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-            Email
-          </label>
-          <input
-              id="email"
-              v-model="formData.email"
-              type="email"
-              required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="votre@email.com"
-          />
-        </div>
-
-        <div>
           <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
             Mot de passe
           </label>
@@ -98,7 +84,6 @@ const router = useRouter();
 
 const formData = ref({
   username: '',
-  email: '',
   password: ''
 });
 
@@ -121,12 +106,10 @@ const handleRegister = async () => {
     if (response.status === 201 && response.data) {
       const token = response.data;
 
-      // Configurer le token dans axios AVANT l'appel à createCalendar
       localStorage.setItem('token', token);
       localStorage.setItem('userName', formData.value.username);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-      // Maintenant createCalendar aura accès au token
       await calendarService.createCalendar({
         name: "Calendrier 1",
         description: "Calendrier par défaut",

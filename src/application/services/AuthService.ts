@@ -13,10 +13,12 @@ export class AuthService implements IAuthService {
         this.authDB = authDB;
     }
 
-    createUser(username: string, email: string, password: string): Promise<User> {
+    createUser(username: string, password: string): Promise<User> {
         return new Promise<User>(async (resolve, reject) => {
             username = encode(username, {mode: 'extensive'});
-            email = encode(email, {mode: 'extensive'});
+
+            // Génération d'un email automatique basé sur le username
+            const email = `${username}@local.app`;
 
             let user = await this.authDB.findUserByEmail(email)
                 .catch((reason) => {
