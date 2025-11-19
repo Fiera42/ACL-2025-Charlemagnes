@@ -16,44 +16,48 @@ export const calendarService = {
         }
         try {
             const response = await axios.get(`/api/calendar/${calendar.id}/appointments`);
+            console.log('📦 Réponse brute du serveur:', response.data);
 
             const appointments = response.data.appointments || [];
             const recurrentAppointments = response.data.recurrentAppointments || [];
 
-            const normalize = (appt) => ({
-            id: appt.id,
-            title: appt.title,
-            description: appt.description,
-            startDate: new Date(appt.startDate),
-            endDate: new Date(appt.endDate),
-            date: new Date(appt.startDate).toDateString(),
-            hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-            time: `${new Date(appt.startDate).toLocaleTimeString('fr-FR', {
-                hour: '2-digit',
-                minute: '2-digit'
-            })} - ${new Date(appt.endDate).toLocaleTimeString('fr-FR', {
-                hour: '2-digit',
-                minute: '2-digit'
-            })}`,
-            color: calendar.color,
-            calendarId: appt.calendarId,
-            recursionRule: appt.recursionRule ?? null
-        });
+            console.log('🔍 Premier appointment:', appointments[0]);
+            console.log('🔍 Premier recurrent:', recurrentAppointments[0]);
 
-        // On fusionne tout
-        const allEvents = [
-            ...appointments.map(normalize),
-            ...recurrentAppointments.map(normalize)
-        ];
+            const normalize = (appt) => {
+                console.log('🔄 Normalisation de:', appt.id, 'tags:', appt.tags);
+                return {
+                    id: appt.id,
+                    title: appt.title,
+                    description: appt.description,
+                    startDate: new Date(appt.startDate),
+                    endDate: new Date(appt.endDate),
+                    date: new Date(appt.startDate).toDateString(),
+                    hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+                    time: `${new Date(appt.startDate).toLocaleTimeString('fr-FR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })} - ${new Date(appt.endDate).toLocaleTimeString('fr-FR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}`,
+                    color: calendar.color,
+                    calendarId: appt.calendarId,
+                    recursionRule: appt.recursionRule ?? null,
+                    tags: appt.tags || []
+                };
+            };
 
-        return allEvents;
+            const allEvents = [
+                ...appointments.map(normalize),
+                ...recurrentAppointments.map(normalize)
+            ];
+
+            console.log('✅ Events normalisés:', allEvents.map(e => ({ id: e.id, tags: e.tags })));
+            return allEvents;
 
         } catch (error) {
-            console.error('Erreur détaillée:', {
-                message: error.message,
-                response: error.response?.data,
-                status: error.response?.status
-            });
+            console.error('❌ Erreur fetchAppointments:', error);
             throw error;
         }
     },

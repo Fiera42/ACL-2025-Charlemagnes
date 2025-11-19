@@ -41,6 +41,7 @@
         v-if="showForm"
         :appointment="editingAppointment"
         :calendars="calendars"
+        :tags="tags"
         @close="closeForm"
         @save="saveAppointment"
     />
@@ -89,6 +90,10 @@ const props = defineProps({
     default: () => []
   },
   appointments: {
+    type: Array,
+    default: () => []
+  },
+  tags: {
     type: Array,
     default: () => []
   },
@@ -167,6 +172,7 @@ const openNewEventForm = (date, hour) => {
     title: '',
     description: '',
     calendarId: props.calendars[0].id,
+    tags: [],
     startDate: startDate.toISOString().slice(0, 16),
     endDate: endDate.toISOString().slice(0, 16)
   };
@@ -191,6 +197,7 @@ const saveAppointment = async (appointment) => {
         startDate,
         endDate,
         calendarId: appointment.calendarId,
+        tags: appointment.tags,
         recursionRule: RecursionRule[appointment.recursionRule] ?? null
       });
     } else {
@@ -209,6 +216,7 @@ const saveAppointment = async (appointment) => {
           description: appointment.description,
           startDate,
           endDate,
+          tags: appointment.tags,
           calendarId: appointment.calendarId
         });
       }
@@ -276,7 +284,8 @@ const editAppointment = () => {
     startDate: DateSansDecalage(selectedAppointment.value.startDate),
     endDate: DateSansDecalage(selectedAppointment.value.endDate),
     isRecurring: selectedAppointment.value.recursionRule !== undefined && selectedAppointment.value.recursionRule !== null,
-    recursionRule: selectedAppointment.value.recursionRule ?? null
+    recursionRule: selectedAppointment.value.recursionRule ?? null,
+    tags: selectedAppointment.value.tags || []
   };
   showDetail.value = false;
   showForm.value = true;

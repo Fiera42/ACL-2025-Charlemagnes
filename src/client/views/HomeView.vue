@@ -46,12 +46,14 @@
               ref="calendarViewRef"
               :appointments="filteredAppointments"
               :calendars="calendars"
+              :tags="tags"
               :loading="loading"
               @appointments-updated="loadAppointments"
+              @calendars-updated="loadCalendars"
+              @tags-updated="loadTags"
               :editingCalendar="editingCalendar"
               :showCalendarForm="showCalendarForm"
               @closeCalendarForm="closeCalendarForm"
-              @calendarsUpdated="loadCalendars"
           />
         </div>
       </main>
@@ -69,7 +71,7 @@ import CalendarView from './CalendarView.vue';
 import {calendarService} from '../assets/calendar.js';
 
 const router = useRouter();
-const sidebarOpen = ref(false);
+const sidebarOpen = ref(true);
 const appointments = ref([]);
 const loading = ref(false);
 const userName = ref('');

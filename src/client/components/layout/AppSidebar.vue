@@ -185,16 +185,6 @@
 
                   <div class="flex items-center gap-1.5 flex-shrink-0">
                     <button
-                        class="p-2 bg-red-500 rounded-xl flex items-center justify-center text-white transition-all duration-300 hover:bg-red-600"
-                        @click.stop="$emit('deleteCalendar',calendar.id)"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">
-                        <path d="M20,6H16V5a3,3,0,0,0-3-3H11A3,3,0,0,0,8,5V6H4A1,1,0,0,0,4,8H5V19a3,3,0,0,0,3,3h8a3,3,0,0,0,3-3V8h1a1,1,0,0,0,0-2ZM10,5a1,1,0,0,1,1-1h2a1,1,0,0,1,1,1V6H10Zm7,14a1,1,0,0,1-1,1H8a1,1,0,0,1-1-1V8H17Z"/>
-                      </svg>
-                      <span class="sr-only">Supprimer</span>
-                    </button>
-
-                    <button
                         class="p-2 bg-indigo-600 rounded-xl flex items-center justify-center text-white transition-all duration-300 hover:bg-indigo-700"
                         @click.stop="$emit('editCalendar',calendar.id,calendar.name,calendar.description,calendar.color)"
                     >
@@ -202,6 +192,16 @@
                         <path d="M22,7.24a1,1,0,0,0-.29-.71L17.47,2.29A1,1,0,0,0,16.76,2a1,1,0,0,0-.71.29L13.22,5.12h0L2.29,16.05a1,1,0,0,0-.29.71V21a1,1,0,0,0,1,1H7.24A1,1,0,0,0,8,21.71L18.87,10.78h0L21.71,8a1.19,1.19,0,0,0,.22-.33,1,1,0,0,0,0-.24.7.7,0,0,0,0-.14ZM6.83,20H4V17.17l9.93-9.93,2.83,2.83ZM18.17,8.66,15.34,5.83l1.42-1.41,2.82,2.82Z"/>
                       </svg>
                       <span class="sr-only">Modifier</span>
+                    </button>
+
+                    <button
+                        class="p-2 bg-red-500 rounded-xl flex items-center justify-center text-white transition-all duration-300 hover:bg-red-600"
+                        @click.stop="$emit('deleteCalendar',calendar.id)"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">
+                        <path d="M20,6H16V5a3,3,0,0,0-3-3H11A3,3,0,0,0,8,5V6H4A1,1,0,0,0,4,8H5V19a3,3,0,0,0,3,3h8a3,3,0,0,0,3-3V8h1a1,1,0,0,0,0-2ZM10,5a1,1,0,0,1,1-1h2a1,1,0,0,1,1,1V6H10Zm7,14a1,1,0,0,1-1,1H8a1,1,0,0,1-1-1V8H17Z"/>
+                      </svg>
+                      <span class="sr-only">Supprimer</span>
                     </button>
                   </div>
                 </div>
@@ -267,17 +267,17 @@
                   :key="tag.id"
                   class="p-3 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all"
               >
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-2 min-w-0 flex-1">
                     <span
                         :style="{ backgroundColor: tag.color }"
-                        class="w-4 h-4 rounded-full border border-gray-300"
+                        class="w-4 h-4 rounded-full border border-gray-300 flex-shrink-0"
                     ></span>
-                    <h3 class="font-medium text-gray-900 text-sm truncate">{{ tag.name }}</h3>
+                    <h3 class="font-medium text-gray-900 text-sm truncate" :title="tag.name">{{ tag.name }}</h3>
                   </div>
-                  <div class="flex items-center justify-end gap-1.5 flex-nowrap">
+                  <div class="flex items-center justify-end gap-1.5 flex-shrink-0">
                     <button
-                        class="p-2 bg-indigo-600 rounded-lg flex items-center justify-center text-white hover:bg-indigo-700"
+                        class="p-2 bg-indigo-600 rounded-xl flex items-center justify-center text-white transition-all duration-300 hover:bg-indigo-700"
                         @click="handleEditTagClick(tag)"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">
@@ -286,7 +286,7 @@
                       <span class="sr-only">Modifier</span>
                     </button>
                     <button
-                        class="p-2 bg-red-500 rounded-lg flex items-center justify-center text-white hover:bg-red-600"
+                        class="p-2 bg-red-500 rounded-xl flex items-center justify-center text-white transition-all duration-300 hover:bg-red-600"
                         @click="$emit('deleteTag', tag.id)"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">

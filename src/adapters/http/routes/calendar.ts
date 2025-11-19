@@ -79,8 +79,11 @@ router.delete('/:id/share/:sharedToId', authenticateToken, async (req: Authentic
 router.get('/:calendarId/appointments', async (req, res) => {
     try {
         const data = await appointmentService.getAllAppointmentsByCalendarId(req.params.calendarId);
+        console.log('📅 Appointments récupérés:', data.appointments.map(a => ({ id: a.id, tags: a.tags })));
+        console.log('🔁 Recurrent appointments récupérés:', data.recurrentAppointments.map(a => ({ id: a.id, tags: a.tags })));
         res.json(data);
     } catch (err: any) {
+        console.error('❌ Erreur GET appointments:', err);
         res.status(500).json({ error: err.message });
     }
 });
