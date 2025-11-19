@@ -22,6 +22,36 @@ db.exec('PRAGMA foreign_keys = ON');
 
 export async function initDatabase(): Promise<void> {
     db.exec(`
+      CREATE TABLE IF NOT EXISTS tags (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        color TEXT NOT NULL,
+        created_by TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(name, created_by)
+      );
+    
+      CREATE TABLE IF NOT EXISTS appointment_tags (
+        id TEXT PRIMARY KEY,
+        appointment_id TEXT NOT NULL,
+        tag_id TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
+        FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
+        UNIQUE(appointment_id, tag_id)
+      );
+    
+      CREATE TABLE IF NOT EXISTS recurrent_appointment_tags (
+        id TEXT PRIMARY KEY,
+        recurrent_appointment_id TEXT NOT NULL,
+        tag_id TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (recurrent_appointment_id) REFERENCES recurrent_appointments(id) ON DELETE CASCADE,
+        FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
+        UNIQUE(recurrent_appointment_id, tag_id)
+      );
+
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
@@ -52,7 +82,6 @@ export async function initDatabase(): Promise<void> {
       end_date DATETIME NOT NULL,
       calendar_id TEXT NOT NULL,
       owner_id TEXT NOT NULL,
-      tags TEXT DEFAULT '[]',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_by TEXT,
@@ -69,7 +98,6 @@ export async function initDatabase(): Promise<void> {
       start_date DATETIME NOT NULL,
       end_date DATETIME NOT NULL,
       owner_id TEXT NOT NULL,
-      tags TEXT DEFAULT '[]',
       recursion_rule INTEGER NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,

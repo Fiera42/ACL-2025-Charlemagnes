@@ -10,7 +10,6 @@ export class RecurrentAppointment extends Appointment {
         public startDate: Date,
         public endDate: Date,
         public ownerId: string,
-        public tags: string[] = [],
         public recursionRule: RecursionRule = RecursionRule.WEEKLY,
         public createdAt: Date = new Date(),
         public updatedAt: Date = new Date(),
@@ -24,7 +23,6 @@ export class RecurrentAppointment extends Appointment {
             startDate,
             endDate,
             ownerId,
-            tags,
             createdAt,
             updatedAt,
             updatedBy
@@ -38,7 +36,6 @@ export class RecurrentAppointment extends Appointment {
         startDate: Date,
         endDate: Date,
         ownerId: string,
-        tags: string[] = [],
         recursionRule: RecursionRule
     ): RecurrentAppointment {
         return new RecurrentAppointment(
@@ -49,7 +46,6 @@ export class RecurrentAppointment extends Appointment {
             startDate,
             endDate,
             ownerId,
-            tags,
             recursionRule
         );
     }
