@@ -125,9 +125,9 @@ export class SQLiteCalendarDB implements ICalendarDB {
     async createAppointment(appointment: Appointment): Promise<Appointment> {
         const id = uuidv4();
         const stmt = this.db.prepare(`
-            INSERT INTO appointments (id, calendar_id, title, description, start_date, end_date, owner_id, tags,
+            INSERT INTO appointments (id, calendar_id, title, description, start_date, end_date, owner_id,
                                       created_at, updated_at, updated_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         stmt.run(
@@ -138,7 +138,6 @@ export class SQLiteCalendarDB implements ICalendarDB {
             appointment.startDate.toISOString(),
             appointment.endDate.toISOString(),
             appointment.ownerId,
-            JSON.stringify(appointment.tags),
             appointment.createdAt.toISOString(),
             appointment.updatedAt.toISOString(),
             appointment.updatedBy
@@ -152,7 +151,6 @@ export class SQLiteCalendarDB implements ICalendarDB {
             appointment.startDate,
             appointment.endDate,
             appointment.ownerId,
-            appointment.tags,
             appointment.createdAt,
             appointment.updatedAt,
             appointment.updatedBy
@@ -163,8 +161,8 @@ export class SQLiteCalendarDB implements ICalendarDB {
         const id = uuidv4();
         const stmt = this.db.prepare(`
             INSERT INTO recurrent_appointments (id, calendar_id, title, description, start_date, end_date, owner_id,
-                                                tags, recursion_rule, created_at, updated_at, updated_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                                recursion_rule, created_at, updated_at, updated_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         stmt.run(
@@ -175,7 +173,6 @@ export class SQLiteCalendarDB implements ICalendarDB {
             appointment.startDate.toISOString(),
             appointment.endDate.toISOString(),
             appointment.ownerId,
-            JSON.stringify(appointment.tags),
             appointment.recursionRule,
             appointment.createdAt.toISOString(),
             appointment.updatedAt.toISOString(),
@@ -190,7 +187,6 @@ export class SQLiteCalendarDB implements ICalendarDB {
             appointment.startDate,
             appointment.endDate,
             appointment.ownerId,
-            appointment.tags,
             appointment.recursionRule,
             appointment.createdAt,
             appointment.updatedAt,
@@ -212,7 +208,6 @@ export class SQLiteCalendarDB implements ICalendarDB {
             new Date(row.start_date),
             new Date(row.end_date),
             row.owner_id,
-            JSON.parse(row.tags || '[]'),
             new Date(row.created_at),
             new Date(row.updated_at),
             row.updated_by
@@ -233,7 +228,6 @@ export class SQLiteCalendarDB implements ICalendarDB {
             new Date(row.start_date),
             new Date(row.end_date),
             row.owner_id,
-            JSON.parse(row.tags || '[]'),
             row.recursion_rule,
             new Date(row.created_at),
             new Date(row.updated_at),
@@ -253,7 +247,6 @@ export class SQLiteCalendarDB implements ICalendarDB {
             new Date(row.start_date),
             new Date(row.end_date),
             row.owner_id,
-            JSON.parse(row.tags || '[]'),
             new Date(row.created_at),
             new Date(row.updated_at),
             row.updated_by
@@ -272,7 +265,6 @@ export class SQLiteCalendarDB implements ICalendarDB {
             new Date(row.start_date),
             new Date(row.end_date),
             row.owner_id,
-            JSON.parse(row.tags || '[]'),
             row.recursion_rule,
             new Date(row.created_at),
             new Date(row.updated_at),
@@ -299,10 +291,6 @@ export class SQLiteCalendarDB implements ICalendarDB {
         if (appointment.endDate) {
             updates.push('end_date = ?');
             values.push(appointment.endDate.toISOString());
-        }
-        if (appointment.tags !== undefined) {
-            updates.push('tags = ?');
-            values.push(JSON.stringify(appointment.tags));
         }
         if (appointment.updatedBy !== undefined) {
             updates.push('updated_by = ?');
@@ -345,10 +333,6 @@ export class SQLiteCalendarDB implements ICalendarDB {
         if (appointment.endDate) {
             updates.push('end_date = ?');
             values.push(appointment.endDate.toISOString());
-        }
-        if (appointment.tags !== undefined) {
-            updates.push('tags = ?');
-            values.push(JSON.stringify(appointment.tags));
         }
         if (appointment.recursionRule !== undefined && appointment.recursionRule !== null) {
             updates.push('recursion_rule = ?');
