@@ -72,9 +72,11 @@
               :key="event.id"
               :style="{
                 top: event.top + 'px',
-                height: event.height + 'px'
+                height: event.height + 'px',
+                left: (event.column * 100 / event.totalColumns) + '%',
+                width: (100 / event.totalColumns) + '%',
               }"
-              class="absolute left-0 right-0 px-1 pointer-events-auto"
+              class="absolute px-1 pointer-events-auto"
           >
             <div
                 :class="[
@@ -174,7 +176,7 @@ const getDayPositionedEvents = (date) => {
   const dayEnd = new Date(date);
   dayEnd.setHours(23, 59, 59, 999);
 
-  return expandedEvents.value
+  let dayEvents = expandedEvents.value
       .filter(event => {
         const eventStart = new Date(event.startDate);
         const eventEnd = new Date(event.endDate);
@@ -211,6 +213,8 @@ const getDayPositionedEvents = (date) => {
 
         return {
           ...event,
+          displayStart,
+          displayEnd,
           top,
           height,
           continuesBefore,
@@ -219,6 +223,36 @@ const getDayPositionedEvents = (date) => {
         };
       })
       .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+  const columns = [];
+  dayEvents.forEach(event => {
+    let placed = false;
+
+    for (let i = 0; i < columns.length; i++) {
+      const column = columns[i];
+      const hasOverlap = column.some(e => {
+        return event.displayStart < e.displayEnd && event.displayEnd > e.displayStart;
+      });
+
+      if (!hasOverlap) {
+        column.push(event);
+        event.column = i;
+        placed = true;
+        break;
+      }
+    }
+
+    if (!placed) {
+      columns.push([event]);
+      event.column = columns.length - 1;
+    }
+
+  });
+  
+  dayEvents.forEach(event => {
+    event.totalColumns = columns.length;
+  });
+  return dayEvents;
 };
 
 const isToday = (date) => {
