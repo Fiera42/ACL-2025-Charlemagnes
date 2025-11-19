@@ -7,7 +7,6 @@ import { decode, encode } from "html-entities";
 export class TagService implements ITagService {
     constructor(private tagDB: ITagDB) {}
 
-    /** Crée un nouveau tag pour un utilisateur */
     async createTag(
         ownerId: string,
         name: string,
@@ -29,7 +28,6 @@ export class TagService implements ITagService {
         return this.desanitizeTag(createdTag);
     }
 
-    /** Supprime un tag si l'utilisateur en est le propriétaire */
     async deleteTag(
         ownerId: string,
         tagId: string
@@ -49,8 +47,7 @@ export class TagService implements ITagService {
 
         return await this.tagDB.deleteTag(tagId);
     }
-
-    /** Met à jour un tag si l'utilisateur en est le propriétaire */
+    
     async updateTag(
         ownerId: string,
         tagId: string,
@@ -91,7 +88,6 @@ export class TagService implements ITagService {
         return true;
     }
 
-    /** Récupère un tag par son ID */
     async getTagById(id: string): Promise<Tag | null> {
         this.validateId("tagId", id);
 
@@ -104,7 +100,6 @@ export class TagService implements ITagService {
         return this.desanitizeTag(tag);
     }
 
-    /** Récupère tous les tags d'un utilisateur */
     async getTagsByOwnerId(ownerId: string): Promise<Tag[]> {
         this.validateId("ownerId", ownerId);
 

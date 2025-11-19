@@ -15,25 +15,41 @@
   >
     <div class="flex flex-col h-full">
       <!-- Header du sidebar -->
-      <div class="flex-shrink-0 flex gap-5 p-2 bg-white sticky top-0 z-10">
-        <button
-            class="py-2.5 pr-7 pl-5 bg-indigo-600 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
-            @click="$emit('toggleappointmentsdisplay')"
-        >
-          Rendez-vous
-        </button>
-
-        <button
-            class="py-2.5 pr-7 pl-5 bg-indigo-600 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
-            @click="$emit('togglecalendarsdisplay')"
-        >
-          Calendriers
-        </button>
+      <div class="flex-shrink-0 px-3 pt-3 pb-4 bg-white sticky top-0 z-10 border-b border-gray-100">
+        <div class="relative">
+          <div class="grid grid-cols-3 text-sm font-semibold text-center">
+            <button
+                :class="isAppointmentsView ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+                class="py-2 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 whitespace-nowrap leading-snug"
+                @click="selectTab('appointments','toggleappointmentsdisplay')"
+            >
+              Rendez-vous
+            </button>
+            <button
+                :class="isCalendarsView ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+                class="py-2 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 whitespace-nowrap leading-snug"
+                @click="selectTab('calendars','togglecalendarsdisplay')"
+            >
+              Calendriers
+            </button>
+            <button
+                :class="isTagsView ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+                class="py-2 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 whitespace-nowrap leading-snug"
+                @click="selectTab('tags','toggletagsdisplay')"
+            >
+              Tags
+            </button>
+          </div>
+          <span
+              class="absolute bottom-0 left-0 h-0.5 bg-indigo-600 rounded-full transition-all duration-300 ease-out"
+              :style="{ width: indicatorWidth, transform: indicatorTransform }"
+          ></span>
+        </div>
       </div>
       <!-- Contenu scrollable -->
       <div class="flex-1 overflow-y-auto p-4">
         <!-- Liste des rendez-vous -->
-        <div v-if="props.appointmentsdisplayed">
+        <div v-if="isAppointmentsView">
 
           <div class="flex items-center justify-between p-4 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Rendez-vous à venir</h2>
@@ -101,7 +117,7 @@
             </div>
           </div>
         </div>
-        <div v-else-if="props.calendarsdisplayed">
+        <div v-else-if="isCalendarsView">
 
           <div class="flex items-center justify-between p-4 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Liste des calendriers</h2>
@@ -153,43 +169,46 @@
                   class="p-3 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all cursor-pointer"
                   @click="$emit('selectCalendar', calendar)"
               >
-                <div class="flex items-center justify-between mb-2">
-                  <!-- Cercle de couleur -->
-                  <div class="flex items-center gap-2">
-        <span
-            :style="{ backgroundColor: calendar.color }"
-            class="w-4 h-4 rounded-full border border-gray-300"
-        ></span>
-                    <h3 class="font-medium text-gray-900 text-sm truncate">{{ calendar.name }}</h3>
+                <div class="flex items-center justify-between gap-3 mb-2">
+                  <label class="flex items-center gap-2 min-w-0 cursor-pointer" @click.stop>
+                    <input
+                        type="checkbox"
+                        class="w-4 h-4 rounded border-gray-300"
+                        :style="{ accentColor: calendar.color }"
+                        :checked="calendarService.visibleCalendars.has(calendar.id)"
+                        @change="$emit('calendarToggled', calendar.id, $event.target.checked)"
+                    />
+                    <span class="text-sm font-medium text-gray-900 truncate" :title="calendar.name">
+                      {{ calendar.name }}
+                    </span>
+                  </label>
+
+                  <div class="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                        class="p-2 bg-red-500 rounded-xl flex items-center justify-center text-white transition-all duration-300 hover:bg-red-600"
+                        @click.stop="$emit('deleteCalendar',calendar.id)"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">
+                        <path d="M20,6H16V5a3,3,0,0,0-3-3H11A3,3,0,0,0,8,5V6H4A1,1,0,0,0,4,8H5V19a3,3,0,0,0,3,3h8a3,3,0,0,0,3-3V8h1a1,1,0,0,0,0-2ZM10,5a1,1,0,0,1,1-1h2a1,1,0,0,1,1,1V6H10Zm7,14a1,1,0,0,1-1,1H8a1,1,0,0,1-1-1V8H17Z"/>
+                      </svg>
+                      <span class="sr-only">Supprimer</span>
+                    </button>
+
+                    <button
+                        class="p-2 bg-indigo-600 rounded-xl flex items-center justify-center text-white transition-all duration-300 hover:bg-indigo-700"
+                        @click.stop="$emit('editCalendar',calendar.id,calendar.name,calendar.description,calendar.color)"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">
+                        <path d="M22,7.24a1,1,0,0,0-.29-.71L17.47,2.29A1,1,0,0,0,16.76,2a1,1,0,0,0-.71.29L13.22,5.12h0L2.29,16.05a1,1,0,0,0-.29.71V21a1,1,0,0,0,1,1H7.24A1,1,0,0,0,8,21.71L18.87,10.78h0L21.71,8a1.19,1.19,0,0,0,.22-.33,1,1,0,0,0,0-.24.7.7,0,0,0,0-.14ZM6.83,20H4V17.17l9.93-9.93,2.83,2.83ZM18.17,8.66,15.34,5.83l1.42-1.41,2.82,2.82Z"/>
+                      </svg>
+                      <span class="sr-only">Modifier</span>
+                    </button>
                   </div>
                 </div>
 
                 <p v-if="calendar.description" class="text-xs text-gray-600 mb-2 line-clamp-2">
                   {{ calendar.description }}
                 </p>
-
-                <input
-                    type="checkbox"
-                    :checked="calendarService.visibleCalendars.has(calendar.id)"
-                    @change="$emit('calendarToggled', calendar.id, $event.target.checked)"
-                />
-
-                <div class="flex gap-2 mt-2">
-                  <button
-                      class="py-2.5 px-3 bg-red-500 rounded-xl flex items-center gap-2 text-xs font-semibold text-white transition-all duration-300 hover:bg-red-600"
-                      @click="$emit('deleteCalendar',calendar.id)"
-                  >
-                    Supprimer
-                  </button>
-
-                  <button
-                      class="py-2.5 px-3 bg-indigo-600 rounded-xl flex items-center gap-2 text-xs font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
-                      @click="$emit('editCalendar',calendar.id,calendar.name,calendar.description,calendar.color)"
-                  >
-                    Modifier
-                  </button>
-                </div>
-
 
 
             <!-- <div class="flex items-center gap-2 text-xs text-gray-500">
@@ -206,15 +225,104 @@
             </div>
           </div>
         </div>
+        <div v-else-if="isTagsView">
+          <div class="flex items-center justify-between p-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Liste des tags</h2>
+            <button
+                @click="$emit('close')"
+                class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          <div class="flex-1 overflow-y-auto p-4">
+            <div class="flex justify-center mb-6">
+              <button
+                  class="py-2.5 px-6 bg-indigo-600 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
+                  @click="handleNewTagClick"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 5V15M15 10H5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+                Nouveau tag
+              </button>
+            </div>
+
+            <div v-if="loadingTags" class="text-center text-gray-500 py-8">
+              Chargement...
+            </div>
+
+            <div v-else-if="tags.length === 0" class="text-center text-gray-500 py-8">
+              <p class="text-sm">Aucun tag</p>
+            </div>
+
+            <div v-else class="space-y-3">
+              <div
+                  v-for="tag in tags"
+                  :key="tag.id"
+                  class="p-3 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span
+                        :style="{ backgroundColor: tag.color }"
+                        class="w-4 h-4 rounded-full border border-gray-300"
+                    ></span>
+                    <h3 class="font-medium text-gray-900 text-sm truncate">{{ tag.name }}</h3>
+                  </div>
+                  <div class="flex items-center justify-end gap-1.5 flex-nowrap">
+                    <button
+                        class="p-2 bg-indigo-600 rounded-lg flex items-center justify-center text-white hover:bg-indigo-700"
+                        @click="handleEditTagClick(tag)"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">
+                        <path d="M22,7.24a1,1,0,0,0-.29-.71L17.47,2.29A1,1,0,0,0,16.76,2a1,1,0,0,0-.71.29L13.22,5.12h0L2.29,16.05a1,1,0,0,0-.29.71V21a1,1,0,0,0,1,1H7.24A1,1,0,0,0,8,21.71L18.87,10.78h0L21.71,8a1.19,1.19,0,0,0,.22-.33,1,1,0,0,0,0-.24.7.7,0,0,0,0-.14ZM6.83,20H4V17.17l9.93-9.93,2.83,2.83ZM18.17,8.66,15.34,5.83l1.42-1.41,2.82,2.82Z"/>
+                      </svg>
+                      <span class="sr-only">Modifier</span>
+                    </button>
+                    <button
+                        class="p-2 bg-red-500 rounded-lg flex items-center justify-center text-white hover:bg-red-600"
+                        @click="$emit('deleteTag', tag.id)"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">
+                        <path d="M20,6H16V5a3,3,0,0,0-3-3H11A3,3,0,0,0,8,5V6H4A1,1,0,0,0,4,8H5V19a3,3,0,0,0,3,3h8a3,3,0,0,0,3-3V8h1a1,1,0,0,0,0-2ZM10,5a1,1,0,0,1,1-1h2a1,1,0,0,1,1,1V6H10Zm7,14a1,1,0,0,1-1,1H8a1,1,0,0,1-1-1V8H17Z"/>
+                      </svg>
+                      <span class="sr-only">Supprimer</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>
   </aside>
 </template>
 
-<script setup>
-import {computed} from 'vue';
+<script setup lang="ts">
+import {computed, ref, watch} from 'vue';
 import {calendarService} from "../../assets/calendar.js";
+
+const emit = defineEmits([
+  'close',
+  'selectAppointment',
+  'toggleappointmentsdisplay',
+  'togglecalendarsdisplay',
+  'toggletagsdisplay',
+  'CalendarForm',
+  'TagForm',
+  'editCalendar',
+  'deleteCalendar',
+  'editTag',
+  'deleteTag'
+]);
 
 const props = defineProps({
   isOpen: {
@@ -229,11 +337,19 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  tagsdisplayed: {
+    type: Boolean,
+    default: false
+  },
   appointments: {
     type: Array,
     default: () => []
   },
   calendars: {
+    type: Array,
+    default: () => []
+  },
+  tags: {
     type: Array,
     default: () => []
   },
@@ -244,10 +360,12 @@ const props = defineProps({
   loadingCalendars: {
     type: Boolean,
     default: false
+  },
+  loadingTags: {
+    type: Boolean,
+    default: false
   }
 });
-
-defineEmits(['close', 'selectAppointment', 'toggleappointmentsdisplay', 'togglecalendarsdisplay', 'CalendarForm', 'editCalendar']);
 
 const upcomingAppointments = computed(() => {
   const now = new Date();
@@ -316,4 +434,43 @@ const upcomingAppointments = computed(() => {
         hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})
       }));
 });
+
+const tabOrder = ['appointments','calendars','tags'] as const;
+const forcedView = computed(() => {
+  if (props.tagsdisplayed) return 'tags';
+  if (props.calendarsdisplayed) return 'calendars';
+  if (props.appointmentsdisplayed) return 'appointments';
+  return null;
+});
+const internalView = ref<typeof tabOrder[number]>('appointments');
+watch(forcedView, (val) => { if (val) internalView.value = val; }, { immediate: true });
+
+const isAppointmentsView = computed(() => internalView.value === 'appointments');
+const isCalendarsView = computed(() => internalView.value === 'calendars');
+const isTagsView = computed(() => internalView.value === 'tags');
+
+const activeTabIndex = computed(() => tabOrder.indexOf(internalView.value));
+const indicatorWidth = computed(() => `${100 / tabOrder.length}%`);
+const indicatorTransform = computed(() => `translateX(${activeTabIndex.value * 100}%)`);
+
+const selectTab = (view: typeof tabOrder[number], emitName: string) => {
+  internalView.value = view;
+  emit(emitName);
+};
+
+const dispatchTagFormEvent = (payload: any = null) => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('open-tag-form', { detail: payload }));
+  }
+};
+
+const handleNewTagClick = () => {
+  dispatchTagFormEvent(null);
+  emit('TagForm');
+};
+
+const handleEditTagClick = (tag: any) => {
+  dispatchTagFormEvent(tag);
+  emit('editTag', tag);
+};
 </script>

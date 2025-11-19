@@ -16,7 +16,6 @@ export const calendarService = {
         }
         try {
             const response = await axios.get(`/api/calendar/${calendar.id}/appointments`);
-            console.log('Réponse API brute:', response.data);
 
             const appointments = response.data.appointments || [];
             const recurrentAppointments = response.data.recurrentAppointments || [];
@@ -189,6 +188,24 @@ export const calendarService = {
             console.error('Erreur lors de l update de l agenda 1 :', error.response.data || error);
             throw error;
         }
-    }
+    },
 
+    async getTags() {
+        const { data } = await axios.get('/api/tag');
+        return data.tags ?? [];
+    },
+
+    async createTag(tag) {
+        const { data } = await axios.post('/api/tag', tag);
+        return data;
+    },
+
+    async updateTag(tagId, tag) {
+        const { data } = await axios.put(`/api/tag/${tagId}`, tag);
+        return data;
+    },
+
+    async deleteTag(tagId) {
+        await axios.delete(`/api/tag/${tagId}`);
+    }
 };

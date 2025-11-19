@@ -15,36 +15,41 @@ router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Respon
     }
 });
 
-// Création d’un tag
-router.post('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
-    try {
-        const { name, color } = req.body;
-        const tag = await tagService.createTag(req.user!.userId, name, color);
-        res.status(201).json(tag);
-    } catch (error) {
-        res.status(500).json({ error: 'Erreur lors de la création du tag' });
-    }
-});
-
 // Récupération d’un tag par id
 router.get('/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const tag = await tagService.getTagById(req.params.id);
-        if (!tag) return res.status(404).json({ error: 'Tag non trouvé' });
+        if (!tag || tag.createdBy !== req.user!.userId) {
+            return res.status(404).json({ error: 'Tag introuvable' });
+        }
         res.json(tag);
     } catch (error) {
         res.status(500).json({ error: 'Erreur lors de la récupération du tag' });
     }
 });
 
+// Création d’un tag
+router.post('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const { name, color } = req.body;
+        const tag = await tagService.createTag(req.user!.userId, name, color);
+        res.status(201).json(tag);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || 'Erreur lors de la création du tag' });
+    }
+});
+
 // Mise à jour d’un tag
 router.put('/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        await tagService.updateTag(req.user!.userId, req.params.id, req.body);
+        console.log(`PUT /api/tag/${req.params.id} body:`, req.body);
+        const { name, color } = req.body;
+        await tagService.updateTag(req.user!.userId, req.params.id, { name, color });
         const updated = await tagService.getTagById(req.params.id);
         res.json(updated);
-    } catch (error) {
-        res.status(500).json({ error: 'Erreur lors de la mise à jour du tag' });
+    } catch (error: any) {
+        console.error(`PUT /api/tag/${req.params.id} error:`, error);
+        res.status(500).json({ error: error.message || 'Erreur lors de la mise à jour du tag' });
     }
 });
 

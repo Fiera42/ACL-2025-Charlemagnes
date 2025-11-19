@@ -45,6 +45,13 @@
         @save="saveAppointment"
     />
 
+    <TagForm
+        v-if="showTagForm"
+        :tag="editingTag"
+        @close="closeTagForm"
+        @save="saveTag"
+    />
+
     <CalendarCreationForm
         v-if="showCalendarForm"
         :calendar="props.editingCalendar"
@@ -63,8 +70,8 @@
   </section>
 </template>
 
-<script setup>
-import {ref, computed} from 'vue';
+<script setup lang="ts">
+import {ref, computed, onMounted, onBeforeUnmount} from 'vue';
 import CalendarHeader from '../components/calendar/CalendarHeader.vue';
 import CalendarDayView from '../components/calendar/CalendarDayView.vue';
 import CalendarWeekView from '../components/calendar/CalendarWeekView.vue';
@@ -73,7 +80,8 @@ import AppointmentForm from '../components/appointment/AppointmentForm.vue';
 import AppointmentDetail from '../components/appointment/AppointmentDetail.vue';
 import {calendarService} from '../assets/calendar.js';
 import CalendarCreationForm from '../components/calendar/CalendarCreationForm.vue';
-import { RecursionRule } from '../../domain/entities/RecursionRule.js';
+import { RecursionRule } from '../../domain/entities/RecursionRule.js'
+import TagForm from '../components/tag/TagForm.vue';
 
 const props = defineProps({
   calendars: {
@@ -98,7 +106,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['appointmentsUpdated','closeCalendarForm','calendarsUpdated']);
+const emit = defineEmits(['appointmentsUpdated','closeCalendarForm','calendarsUpdated','tagsUpdated']);
 
 const currentView = ref('day');
 const currentDate = ref(new Date());
@@ -109,6 +117,8 @@ const selectedAppointment = ref(null);
 const dayViewRef = ref(null);
 const weekViewRef = ref(null);
 const monthViewRef = ref(null);
+const showTagForm = ref(false);
+const editingTag = ref(null);
 
 const currentDateLabel = computed(() => {
   const options = {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'};
@@ -289,7 +299,53 @@ const goToAppointment = (appointment) => {
   }, 50);
 };
 
+const saveTag = async (tagData) => {
+  try {
+    console.log('CalendarView saveTag received:', tagData);
+    if (tagData.id) {
+      const { name, color } = tagData;
+      await calendarService.updateTag(tagData.id, { name, color });
+    } else {
+      const { name, color } = tagData;
+      await calendarService.createTag({ name, color });
+    }
+    emit('tagsUpdated');
+    closeTagForm();
+  } catch (error) {
+    console.error('Erreur lors de la sauvegarde du tag :', error);
+    alert('Erreur lors de la sauvegarde du tag');
+  }
+};
+
+const closeTagForm = () => {
+  showTagForm.value = false;
+  editingTag.value = null;
+};
+
+const openTagForm = (tag = null) => {
+  editingTag.value = tag;
+  showTagForm.value = true;
+};
+
+const handleGlobalTagForm = (event) => {
+  const customEvent = event as CustomEvent;
+  openTagForm(customEvent?.detail ?? null);
+};
+
+onMounted(() => {
+  if (typeof window !== 'undefined') {
+    window.addEventListener('open-tag-form', handleGlobalTagForm as EventListener);
+  }
+});
+
+onBeforeUnmount(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('open-tag-form', handleGlobalTagForm as EventListener);
+  }
+});
+
 defineExpose({
-  goToAppointment
+  goToAppointment,
+  openTagForm
 });
 </script>

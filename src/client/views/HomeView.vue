@@ -21,6 +21,7 @@
           :loadingCalendars="loadingCalendars"
           :calendars="calendars"
           :calendarsdisplayed="calendarsdisplayed"
+          :tags="tags"
           @toggleappointmentsdisplay="viewAppointments"
           @togglecalendarsdisplay="viewCalendars"
           @close="closeSidebar"
@@ -30,6 +31,8 @@
           @deleteCalendar="deleteCalendar"
           @editCalendar="openCalendarForm"
           @calendarToggled="calendarToggled"
+          @editTag="openTagForm"
+          @deleteTag="deleteTag"
       />
 
       <main
@@ -80,6 +83,8 @@ const resetFiltersKey = ref(0);
 const filters = ref({});
 const showCalendarForm = ref(false);
 const editingCalendar = ref(null);
+const tags = ref([]);
+const loadingTags = ref(false);
 
 onMounted(async () => {
   const token = localStorage.getItem('token');
@@ -94,6 +99,7 @@ onMounted(async () => {
   try {
     // Load all calendars, make them visible by default
     await loadCalendars();
+    await loadTags();
     calendars.value.forEach((calendar) => {
       const isVisible = localStorage.getItem(`isVisible_${calendar.id}`);
       if(isVisible === null || isVisible.toLowerCase() === "true"){
@@ -250,6 +256,7 @@ const closeCalendarForm = async () => {
   editingCalendar.value = null;
   await loadCalendars();
   await loadAppointments();
+  await loadTags();
   resetSearchKey.value++; // Réinitialise la barre de recherche
   resetFiltersKey.value++; // réinitialise les filtres
   filters.value = {}; // Réinitialise les filtres
@@ -284,6 +291,34 @@ const loadCalendars = async () => {
     throw error;
   } finally {
     loadingCalendars.value = false;
+  }
+};
+
+const loadTags = async () => {
+  loadingTags.value = true;
+  try {
+    tags.value = await calendarService.getTags();
+  } catch (error) {
+    console.error('Erreur lors du chargement des tags:', error);
+    throw error;
+  } finally {
+    loadingTags.value = false;
+  }
+};
+
+const openTagForm = (tag = null) => {
+  if (calendarViewRef.value) {
+    calendarViewRef.value.openTagForm(tag);
+  }
+};
+
+const deleteTag = async (tagId) => {
+  try {
+    await calendarService.deleteTag(tagId);
+    await loadTags();
+  } catch (error) {
+    console.error('Erreur lors de la suppression du tag:', error);
+    alert('Erreur lors de la suppression du tag');
   }
 };
 
