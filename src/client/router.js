@@ -2,6 +2,7 @@ import {createRouter, createWebHistory} from 'vue-router';
 import HomeView from './views/HomeView.vue';
 import LoginView from './views/LoginView.vue';
 import RegisterView from './views/RegisterView.vue';
+import ProfileView from './views/ProfileView.vue'; // <- ajout
 
 const routes = [
     {
@@ -21,6 +22,12 @@ const routes = [
         name: 'register',
         component: RegisterView,
         meta: {hideForAuth: true}
+    },
+    {
+        path: '/profile',
+        name: 'profile',
+        component: ProfileView,
+        meta: {requiresAuth: true}
     }
 ];
 
@@ -31,7 +38,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
     const token = localStorage.getItem('token');
-    console.log('Guard:', { to: to.path, hasToken: !!token }); // Pour déboguer
+    console.log('Guard:', {to: to.path, hasToken: !!token});
 
     if (to.meta.requiresAuth && !token) {
         next('/login');

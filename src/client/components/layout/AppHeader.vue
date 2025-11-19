@@ -37,7 +37,7 @@
               class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"
               fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 3a7.5 7.5 0 006.15 13.65z" />
+                  d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 3a7.5 7.5 0 006.15 13.65z"/>
           </svg>
 
           <!-- Champ -->
@@ -114,26 +114,31 @@
             </div>
 
             <h3 class="text-sm font-medium mb-2 text-gray-700">Rendez-vous récurrents</h3>
-              <div class="flex items-center mb-3">
-                <input
-                    type="checkbox"
-                    id="showRecurring"
-                    v-model="showRecurring"
-                    class="mr-2"
-                />
-                <label for="showRecurring" class="text-sm text-gray-700">Afficher les rendez-vous récurrents</label>
-              </div>
+            <div class="flex items-center mb-3">
+              <input
+                  type="checkbox"
+                  id="showRecurring"
+                  v-model="showRecurring"
+                  class="mr-2"
+              />
+              <label for="showRecurring" class="text-sm text-gray-700">Afficher les rendez-vous récurrents</label>
+            </div>
 
             <div class="flex justify-between mt-4">
               <button @click="resetFilters" class="text-gray-500 text-sm hover:underline">Réinitialiser</button>
-              <button @click="applyFilters" class="bg-indigo-500 text-white text-sm px-3 py-1.5 rounded hover:bg-indigo-600">Appliquer</button>
+              <button @click="applyFilters"
+                      class="bg-indigo-500 text-white text-sm px-3 py-1.5 rounded hover:bg-indigo-600">Appliquer
+              </button>
             </div>
           </div>
         </div>
 
         <!-- Profil + Déconnexion (collés à droite) -->
         <div class="flex items-center gap-2">
-          <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+          <div
+              class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+              @click="goToProfile"
+          >
             <div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                    stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -143,6 +148,7 @@
             </div>
             <span class="text-sm font-medium text-gray-700 hidden sm:block">{{ userName }}</span>
           </div>
+
 
           <button
               @click="$emit('logout')"
@@ -164,19 +170,22 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import {ref, watch} from 'vue';
+import {useRouter} from 'vue-router';
 import SearchDropdown from './SearchDropdown.vue';
+
+const router = useRouter();
 
 const props = defineProps({
   userName: {
     type: String,
     default: 'Utilisateur'
   },
-  resetSearchKey: {  // Pour reset la barre de recherche
+  resetSearchKey: {
     type: Number,
     default: 0
   },
-  resetFiltersKey: {  // Pour reset les filtres
+  resetFiltersKey: {
     type: Number,
     default: 0
   },
@@ -198,6 +207,10 @@ const startOperator = ref('>');
 const endOperator = ref('>');
 const keyword = ref('');
 const showRecurring = ref(true);
+
+const goToProfile = () => {
+  router.push({name: 'profile'});
+};
 
 // On émet l'événement de recherche avec un délai pour éviter trop d'appels successifs
 let debounceTimeout;
@@ -225,12 +238,20 @@ watch(searchQuery, (newValue) => {
         limitDate.setMonth(limitDate.getMonth() + 1); // 1 mois max dans la recherche
 
         while (start <= limitDate) {
-          occurrences.push({ ...a, startDate: new Date(start), endDate: new Date(end) });
+          occurrences.push({...a, startDate: new Date(start), endDate: new Date(end)});
           switch (a.recursionRule) {
-            case 0: start.setDate(start.getDate() + 1); break; // quotidien
-            case 1: start.setDate(start.getDate() + 7); break; // hebdomadaire
-            case 2: start.setMonth(start.getMonth() + 1); break; // mensuel
-            case 3: start.setFullYear(start.getFullYear() + 1); break; // annuel
+            case 0:
+              start.setDate(start.getDate() + 1);
+              break; // quotidien
+            case 1:
+              start.setDate(start.getDate() + 7);
+              break; // hebdomadaire
+            case 2:
+              start.setMonth(start.getMonth() + 1);
+              break; // mensuel
+            case 3:
+              start.setFullYear(start.getFullYear() + 1);
+              break; // annuel
           }
           end = new Date(start.getTime() + duration);
         }
