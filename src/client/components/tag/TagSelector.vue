@@ -134,17 +134,8 @@ const emit = defineEmits<{
 const selectedTags = ref<string[]>([...props.modelValue]);
 
 watch(() => props.modelValue, (newVal) => {
-  console.log('🏷️ TagSelector - nouveaux tags reçus:', newVal);
   selectedTags.value = [...newVal];
 });
-
-watch(() => props.availableTags, (newVal) => {
-  console.log('📋 TagSelector - tags disponibles:', newVal);
-}, { immediate: true });
-
-watch(selectedTags, (newVal) => {
-  console.log('✅ TagSelector - tags sélectionnés changés:', newVal);
-}, { deep: true });
 
 const isSelected = (tagId: string): boolean => {
   return selectedTags.value.includes(tagId);

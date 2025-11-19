@@ -400,15 +400,15 @@ export class AppointmentService implements IAppointmentService {
                     reject(reason);
                 });
 
-            if (appointment === undefined) return; // We already rejected in the catch
+            if (appointment === undefined) return;
             if (appointment === null) {
                 resolve(null);
                 return;
             }
 
-            // We sanitized at creation, so we have to sanitize when getting it back
             appointment.title = decode(appointment.title);
             appointment.description = decode(appointment.description);
+            
             if (appointment.id) {
                 await this.attachTagsToAppointment(appointment);
             }
@@ -429,13 +429,13 @@ export class AppointmentService implements IAppointmentService {
                     reject(reason);
                 });
 
-            if (appointments === undefined) return; // We already rejected in the catch
+            if (appointments === undefined) return;
 
-            // We sanitized at creation, so we have to sanitize when getting it back
             appointments.forEach((appointment) => {
                 appointment.title = decode(appointment.title);
                 appointment.description = decode(appointment.description);
-            })
+            });
+            
             await this.attachTagsToAppointments(appointments);
 
             resolve(appointments);
@@ -454,13 +454,13 @@ export class AppointmentService implements IAppointmentService {
                     reject(reason);
                 });
 
-            if (appointments === undefined) return; // We already rejected in the catch
+            if (appointments === undefined) return;
 
-            // We sanitized at creation, so we have to sanitize when getting it back
             appointments.forEach((appointment) => {
                 appointment.title = decode(appointment.title);
                 appointment.description = decode(appointment.description);
-            })
+            });
+            
             await this.attachTagsToRecurrentAppointments(appointments);
 
             resolve(appointments);

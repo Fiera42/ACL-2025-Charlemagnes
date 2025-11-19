@@ -1,68 +1,114 @@
 <template>
-  <BaseModal @close="$emit('close')">
-    <div class="flex items-start justify-between mb-4">
-      <h2 class="text-xl font-bold">{{ appointment.title }}</h2>
-      <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-
-    <div class="space-y-3 mb-6">
-      <div class="flex items-start gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" class="mt-0.5">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-          <line x1="16" y1="2" x2="16" y2="6"></line>
-          <line x1="8" y1="2" x2="8" y2="6"></line>
-          <line x1="3" y1="10" x2="21" y2="10"></line>
-        </svg>
-        <span class="text-sm text-gray-700">{{ formatDateRange(appointment.startDate, appointment.endDate) }}</span>
+  <BaseModal @close="$emit('close')" :maxWidth="'600px'">
+    <div class="flex flex-col max-h-[75vh]">
+      <div class="flex-shrink-0 pb-4 border-b border-gray-200">
+        <div class="flex items-start justify-between">
+          <h2 class="text-2xl font-bold text-gray-900 flex-1 pr-4">
+            {{ appointment.title }}
+          </h2>
+          <button 
+            @click="$emit('close')" 
+            class="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <div class="flex items-start gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" class="mt-0.5">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-        <span class="text-sm text-gray-700">{{ formatTimeRange(appointment.startDate, appointment.endDate) }}</span>
+      <div class="flex-1 overflow-y-auto py-6 px-1">
+        <div class="space-y-4">
+          <div class="flex items-start gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+            <div class="p-2 bg-white rounded-lg shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" class="text-blue-600">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-medium text-blue-600 mb-1">Date</p>
+              <p class="text-sm font-semibold text-gray-900">{{ formatDateRange(appointment.startDate, appointment.endDate) }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
+            <div class="p-2 bg-white rounded-lg shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" class="text-green-600">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-medium text-green-600 mb-1">Horaire</p>
+              <p class="text-sm font-semibold text-gray-900">{{ formatTimeRange(appointment.startDate, appointment.endDate) }}</p>
+            </div>
+          </div>
+
+          <div v-if="appointment.description" class="flex items-start gap-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+            <div class="p-2 bg-white rounded-lg shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" class="text-purple-600">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-medium text-purple-600 mb-1">Description</p>
+              <p class="text-sm text-gray-700 leading-relaxed">{{ appointment.description }}</p>
+            </div>
+          </div>
+
+          <div v-if="appointment.recursionRule !== undefined && appointment.recursionRule !== null" class="flex items-start gap-3 p-3 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-100">
+            <div class="p-2 bg-white rounded-lg shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-orange-600">
+                <polyline points="17 1 21 5 17 9"></polyline>
+                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                <polyline points="7 23 3 19 7 15"></polyline>
+                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-medium text-orange-600 mb-1">Récurrence</p>
+              <p class="text-sm font-semibold text-gray-900">{{ readableRecursionRule }}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div v-if="appointment.description" class="flex items-start gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" class="mt-0.5">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="16" y1="13" x2="8" y2="13"></line>
-          <line x1="16" y1="17" x2="8" y2="17"></line>
-          <polyline points="10 9 9 9 8 9"></polyline>
-        </svg>
-        <span class="text-sm text-gray-700">{{ appointment.description }}</span>
+      <div class="flex-shrink-0 pt-4 border-t border-gray-200">
+        <div class="flex gap-3">
+          <button 
+            @click="$emit('edit')" 
+            class="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Modifier
+          </button>
+          <button 
+            @click="$emit('delete')" 
+            class="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            Supprimer
+          </button>
+        </div>
       </div>
-
-      <div v-if="appointment.recursionRule !== undefined && appointment.recursionRule !== null" class="flex items-start gap-2 text-sm text-gray-500">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="17 1 21 5 17 9"></polyline>
-          <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-          <polyline points="7 23 3 19 7 15"></polyline>
-          <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-        </svg>
-        <span class="text-sm text-gray-700">Récurrence : {{ readableRecursionRule }}</span>
-      </div>
-    </div>
-
-    <div class="flex gap-2">
-      <button @click="$emit('edit')" class="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-        Modifier
-      </button>
-      <button @click="$emit('delete')" class="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
-        Supprimer
-      </button>
     </div>
   </BaseModal>
 </template>
@@ -129,5 +175,24 @@ const readableRecursionRule = computed(() => {
   if (props.appointment.recursionRule === null || props.appointment.recursionRule === undefined) return "Aucune";
   return ruleLabels[props.appointment.recursionRule];
 });
-
 </script>
+
+<style scoped>
+.overflow-y-auto::-webkit-scrollbar {
+  width: 8px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+</style>

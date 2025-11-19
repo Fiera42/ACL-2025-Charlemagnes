@@ -1,52 +1,180 @@
 <template>
-  <BaseModal @close="$emit('close')">
-    <h2 class="text-xl font-bold mb-4">Nouveau calendrier</h2>
-    <form @submit.prevent="handleSubmit">
-      <div class="mb-4">
-        <label class="block text-sm font-medium mb-1">Nom</label>
-        <input v-model="form.name" type="text" required class="w-full px-4 py-2 border rounded-lg" />
+  <BaseModal @close="$emit('close')" :maxWidth="'600px'">
+    <div class="flex flex-col max-h-[75vh]">
+      <div class="flex-shrink-0 pb-4 border-b border-gray-200">
+        <h2 class="text-2xl font-bold text-gray-900">
+          {{ calendar.id ? 'Modifier le' : 'Nouveau' }} calendrier
+        </h2>
       </div>
-      <div class="mb-4">
-        <label class="block text-sm font-medium mb-1">Description</label>
-        <textarea v-model="form.description" rows="3" class="w-full px-4 py-2 border rounded-lg"></textarea>
+
+      <div class="flex-1 overflow-y-auto py-6 px-1">
+        <form @submit.prevent="handleSubmit" class="space-y-5">
+          <div class="group">
+            <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Nom du calendrier
+            </label>
+            <input
+                v-model="form.name"
+                type="text"
+                required
+                placeholder="Travail, Personnel, Sport..."
+                class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
+            />
+          </div>
+
+          <div class="group">
+            <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+              </svg>
+              Description
+            </label>
+            <textarea
+                v-model="form.description"
+                rows="3"
+                placeholder="Ajouter une description..."
+                class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all resize-none"
+            ></textarea>
+          </div>
+
+          <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 border-2 border-purple-100">
+            <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+              </svg>
+              Couleur
+            </label>
+
+            <div class="flex items-center gap-4">
+              <div class="relative group">
+                <input
+                    v-model="form.color"
+                    type="color"
+                    required
+                    class="w-20 h-20 border-4 border-white rounded-2xl cursor-pointer shadow-lg hover:shadow-xl transition-all hover:scale-105"
+                />
+                <div class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div class="bg-gray-900 text-white text-xs px-2 py-1 rounded-md whitespace-nowrap">
+                    Choisir une couleur
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex-1">
+                <input
+                    v-model="form.color"
+                    type="text"
+                    required
+                    placeholder="#4F46E5"
+                    class="w-full px-4 py-2.5 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-mono uppercase"
+                    pattern="^#[0-9A-Fa-f]{6}$"
+                />
+                <p class="text-xs text-gray-500 mt-1.5 ml-1">Format: #RRGGBB</p>
+              </div>
+            </div>
+
+            <div class="mt-4 flex items-center gap-2 p-3 bg-white rounded-lg border border-purple-200">
+              <div
+                  class="w-10 h-10 rounded-lg shadow-inner flex-shrink-0 transition-all"
+                  :style="{ backgroundColor: form.color }"
+              ></div>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-medium text-gray-700">Aperçu du calendrier</p>
+                <div class="flex items-center gap-2 mt-1">
+                  <div
+                      class="w-3 h-3 rounded-full"
+                      :style="{ backgroundColor: form.color }"
+                  ></div>
+                  <span class="text-sm font-medium text-gray-800 truncate">
+                    {{ form.name || 'Nom du calendrier' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
       </div>
-      <div class="mb-4">
-        <label class="block text-sm font-medium mb-1">Couleur</label>
-        <input v-model="form.color" type="color" required class="w-full h-10 border rounded-lg p-1">
+
+      <div class="flex-shrink-0 pt-4 border-t border-gray-200">
+        <div class="flex gap-3">
+          <button
+              type="button"
+              @click="$emit('close')"
+              class="flex-1 px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all"
+          >
+            Annuler
+          </button>
+          <button
+              type="submit"
+              @click="handleSubmit"
+              class="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]"
+          >
+            {{ calendar.id ? '✓ Enregistrer' : '+ Créer' }}
+          </button>
+        </div>
       </div>
-      <button type="submit" class="w-full bg-blue-600 text-white px-6 py-2 rounded-lg">Créer</button>
-    </form>
+    </div>
   </BaseModal>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watchEffect } from 'vue';
 import BaseModal from '../common/BaseModal.vue';
 
 const props = defineProps({
-  calendar: Object
+  calendar: {
+    type: Object,
+    default: () => ({ name: '', description: '', color: '#4F46E5' })
+  }
 });
 
-const emit = defineEmits(['close', 'create']);
-
-const randomColor = () => {
-  const letters = '0123456789ABCDEF';
-  let color = '#';
-  for (let i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  return color;
-};
+const emit = defineEmits(['close', 'save']);
 
 const form = ref({
-  id: props.calendar?.id || '',
-  name: props.calendar?.name || '',
-  description: props.calendar?.description || '',
-  color: props.calendar?.color || randomColor()
+  id: null,
+  name: '',
+  description: '',
+  color: '#4F46E5'
+});
+
+watchEffect(() => {
+  if (props.calendar) {
+    form.value = {
+      id: props.calendar.id || null,
+      name: props.calendar.name || '',
+      description: props.calendar.description || '',
+      color: props.calendar.color || '#4F46E5'
+    };
+  }
 });
 
 const handleSubmit = () => {
-  emit('create', form.value);
+  emit('save', {
+    ...form.value,
+    color: form.value.color.toUpperCase()
+  });
 };
-
 </script>
+
+<style scoped>
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 12px;
+}
+
+input[type="color"]::-moz-color-swatch {
+  border: none;
+  border-radius: 12px;
+}
+
+input:focus, textarea:focus {
+  transform: scale(1.01);
+}
+</style>
