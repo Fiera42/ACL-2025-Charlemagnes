@@ -151,7 +151,7 @@ const openNewEventForm = (date, hour) => {
   }
 
   const endDate = new Date(startDate);
-  endDate.setHours(endDate.getHours() + 1);
+  endDate.setHours(endDate.getHours() + (-(new Date().getTimezoneOffset() /60)));
 
   editingAppointment.value = {
     title: '',
