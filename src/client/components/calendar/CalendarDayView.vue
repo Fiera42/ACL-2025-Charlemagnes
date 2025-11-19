@@ -30,7 +30,7 @@
           </div>
           <div
               class="flex-1 p-3.5 transition-all hover:bg-stone-100 cursor-pointer min-h-[80px] relative"
-              @click="$emit('newEvent', currentDate, hour)"
+              @click="$emit('newEvent', currentDate, hour + (-(new Date().getTimezoneOffset())))"
           >
           </div>
         </div>

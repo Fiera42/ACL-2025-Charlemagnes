@@ -51,7 +51,7 @@
                   'h-20 border-t border-gray-200 transition-all hover:bg-stone-100 cursor-pointer',
                   !day.isLastDay && 'border-r'
                 ]"
-                @click="$emit('newEvent', day.date, hour)"
+                @click="$emit('newEvent', day.date, hour + (-(new Date().getTimezoneOffset())))"
             >
             </div>
           </template>

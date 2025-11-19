@@ -151,6 +151,7 @@ export class SQLiteCalendarDB implements ICalendarDB {
             appointment.startDate,
             appointment.endDate,
             appointment.ownerId,
+            [],
             appointment.createdAt,
             appointment.updatedAt,
             appointment.updatedBy
@@ -187,6 +188,7 @@ export class SQLiteCalendarDB implements ICalendarDB {
             appointment.startDate,
             appointment.endDate,
             appointment.ownerId,
+            [],
             appointment.recursionRule,
             appointment.createdAt,
             appointment.updatedAt,
@@ -208,6 +210,7 @@ export class SQLiteCalendarDB implements ICalendarDB {
             new Date(row.start_date),
             new Date(row.end_date),
             row.owner_id,
+            [],
             new Date(row.created_at),
             new Date(row.updated_at),
             row.updated_by
@@ -228,6 +231,7 @@ export class SQLiteCalendarDB implements ICalendarDB {
             new Date(row.start_date),
             new Date(row.end_date),
             row.owner_id,
+            [],
             row.recursion_rule,
             new Date(row.created_at),
             new Date(row.updated_at),
@@ -247,6 +251,7 @@ export class SQLiteCalendarDB implements ICalendarDB {
             new Date(row.start_date),
             new Date(row.end_date),
             row.owner_id,
+            [],
             new Date(row.created_at),
             new Date(row.updated_at),
             row.updated_by
@@ -265,6 +270,7 @@ export class SQLiteCalendarDB implements ICalendarDB {
             new Date(row.start_date),
             new Date(row.end_date),
             row.owner_id,
+            [],
             row.recursion_rule,
             new Date(row.created_at),
             new Date(row.updated_at),
