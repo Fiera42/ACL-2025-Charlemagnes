@@ -15,42 +15,64 @@ export const calendarService = {
             throw new Error('No calendarId provided');
         }
         try {
+            console.log('📡 Fetching appointments for calendar:', calendar.id);
             const response = await axios.get(`/api/calendar/${calendar.id}/appointments`);
+            console.log('📦 Raw response from server:', response.data);
 
             const appointments = response.data.appointments || [];
             const recurrentAppointments = response.data.recurrentAppointments || [];
 
-            const normalize = (appt) => ({
-                id: appt.id,
-                title: appt.title,
-                description: appt.description,
-                startDate: new Date(appt.startDate),
-                endDate: new Date(appt.endDate),
-                date: new Date(appt.startDate).toDateString(),
-                hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-                time: `${new Date(appt.startDate).toLocaleTimeString('fr-FR', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })} - ${new Date(appt.endDate).toLocaleTimeString('fr-FR', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })}`,
-                color: calendar.color,
-                calendarId: appt.calendarId,
-                recursionRule: appt.recursionRule ?? null,
-                tags: appt.tags || []
-            });
+            console.log('📋 Appointments count:', appointments.length);
+            console.log('🔁 Recurrent appointments count:', recurrentAppointments.length);
 
-            // On fusionne tout
+            if (appointments.length > 0) {
+                console.log('🔍 First appointment raw:', appointments[0]);
+                console.log('🏷️ First appointment tags:', appointments[0]?.tags);
+            }
+
+            if (recurrentAppointments.length > 0) {
+                console.log('🔍 First recurrent appointment raw:', recurrentAppointments[0]);
+                console.log('🏷️ First recurrent appointment tags:', recurrentAppointments[0]?.tags);
+            }
+
+            const normalize = (appt) => {
+                console.log('🔄 Normalizing appointment:', appt.id, 'with tags:', appt.tags);
+                return {
+                    id: appt.id,
+                    title: appt.title,
+                    description: appt.description,
+                    startDate: new Date(appt.startDate),
+                    endDate: new Date(appt.endDate),
+                    date: new Date(appt.startDate).toDateString(),
+                    hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+                    time: `${new Date(appt.startDate).toLocaleTimeString('fr-FR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })} - ${new Date(appt.endDate).toLocaleTimeString('fr-FR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}`,
+                    color: calendar.color,
+                    calendarId: appt.calendarId,
+                    recursionRule: appt.recursionRule ?? null,
+                    tags: appt.tags || []
+                };
+            };
+
             const allEvents = [
                 ...appointments.map(normalize),
                 ...recurrentAppointments.map(normalize)
             ];
 
+            console.log('✅ Total normalized events:', allEvents.length);
+            if (allEvents.length > 0) {
+                console.log('🏷️ First normalized event tags:', allEvents[0].tags);
+            }
+
             return allEvents;
 
         } catch (error) {
-            console.error('Erreur détaillée:', {
+            console.error('❌ Error fetching appointments:', {
                 message: error.message,
                 response: error.response?.data,
                 status: error.response?.status
