@@ -17,6 +17,7 @@ class TwoWayMap {
 
 /**
  * @typedef {Object} Appointment
+ * @property {String} id
  * @property {String} title
  * @property {String} description
  * @property {String} calendarId
@@ -35,15 +36,32 @@ class TwoWayMap {
  * @property {String} color
  */
 
-const twoWayMap = new TwoWayMap({
-    // TODO: put real values instead of that example
-    '*' : '__asterisk__',
-    '%' : '__percent__',
+// We use this to map ICS keys to object keys
+// Format: [type]name
+const calendarKeys = new TwoWayMap( {
+    // TODO: ICS version ("VERSION") is mandatory
+    // TODO: ICS product owner ("PRODID") is mandatory
+    'UID' : '[String]id',
+    'NAME' : '[String]name',
+    'DESCRIPTION' : '[String]description',
+    'COLOR' : '[String]color',
+});
+
+const appointmentKeys = new TwoWayMap( {
+    'UID' : '[String]id',
+    'SUMMARY' : '[String]title',
+    'DESCRIPTION' : '[String]description',
+    '3' : '[String]calendarId', // TODO: get that from the parent agenda
+    'DTSTART' : '[String]startDate',
+    'DTEND' : '[String]endDate',
+    '6' : '[Boolean]isRecurring', // TODO: infer that from recursionRule
+    'RRULE' : '[String]recursionRule',
+    'CATEGORIES' : '[String[]]tags',
 });
 
 // ----------------------------------------------------------- CALENDAR
 // Useful doc:
-// https://icalendar.org/RFC-Specifications/iCalendar-RFC-5545/
+// https://icalendar.org/RFC-Specifications/iCalendar-RFC-7986/
 
 /**
  * Convert a calendar into an ICS file
