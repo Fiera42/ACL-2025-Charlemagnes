@@ -39,8 +39,6 @@ class TwoWayMap {
 // We use this to map ICS keys to object keys
 // Format: [type]name
 const calendarKeys = new TwoWayMap( {
-    // TODO: ICS version ("VERSION") is mandatory
-    // TODO: ICS product owner ("PRODID") is mandatory
     'UID' : '[String]id',
     'NAME' : '[String]name',
     'DESCRIPTION' : '[String]description',
@@ -59,6 +57,8 @@ const appointmentKeys = new TwoWayMap( {
     'CATEGORIES' : '[String[]]tags',
 });
 
+const objectTypeRegex = /^(\[.+\])[\s_\-]*(\w+)/m
+
 // ----------------------------------------------------------- CALENDAR
 // Useful doc:
 // https://icalendar.org/RFC-Specifications/iCalendar-RFC-7986/
@@ -70,7 +70,43 @@ const appointmentKeys = new TwoWayMap( {
  * @returns {String} An ICS representation of the calendar
  */
 export function calendarToICS(calendar, appointments) {
+    let icsFile = [];
 
+    // Header
+    icsFile.push("BEGIN:VCALENDAR");
+    icsFile.push("VERSION:2.0"); // Do not touch, it's the ICS version not our own version number :]
+    icsFile.push("PRODID:-//ACL 2025 CHARLEMAGNES//NONSGML Calendar//FR");
+
+    // Calendar metadata
+    calendarKeys.map.forEach((key, value) => {
+        // Extract the type of the target object field
+        const regexResult = objectTypeRegex.exec(value);
+        if(regexResult === null) throw new Error("Invalid calendar key");
+        let [, type, name] = regexResult;
+        type = type.replace(/(^\[|]$)/m, "").toLowerCase();
+
+        // Convert the value to the right type
+        switch (type) {
+            case "string":
+                value = name;
+                break;
+            default:
+                throw new Error("Unknown type in object keys");
+        }
+
+        // Add the converted result to the file
+        icsFile.push(`${key}:${value}`);
+    });
+
+    // Appointments
+    appointments.forEach(appointment => {
+        icsFile.push("BEGIN:VEVENT");
+        icsFile.push(appointmentToICS(appointment));
+        icsFile.push("END:VEVENT");
+    });
+
+    icsFile.push("END:VCALENDAR");
+    return icsFile.join("\n");
 }
 
 /**
@@ -79,7 +115,15 @@ export function calendarToICS(calendar, appointments) {
  * @returns {{calendar: Calendar, appointments: Appointment}} The decoded calendar
  */
 export function ICSToCalendar(icsCalendar) {
+    // Event states for every type of events, even if it's just to ignore unsupported types
+    let isInVEVENT = false,
+        isInALARM = false,
+        isInVTIMEZONE = false,
+        isInVFREEBUSY = false,
+        isInVJOURNAL = false,
+        isInVTODO = false;
 
+    // TODO
 }
 
 // ----------------------------------------------------------- APPOINTMENT
@@ -106,7 +150,7 @@ The following is an example of the "VEVENT" calendar component used to represent
  * @returns {String} An ICS representation of the appointment
  */
 function appointmentToICS(appointment) {
-
+    // TODO
 }
 
 /**
@@ -115,5 +159,5 @@ function appointmentToICS(appointment) {
  * @returns {Appointment} The decoded appointment
  */
 function ICSToAppointment(icsAppointment) {
-
+    // TODO
 }
