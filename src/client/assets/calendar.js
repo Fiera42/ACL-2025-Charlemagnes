@@ -15,28 +15,28 @@ export const calendarService = {
             throw new Error('No calendarId provided');
         }
         try {
-            console.log('📡 Fetching appointments for calendar:', calendar.id);
+            console.log('Fetching appointments for calendar:', calendar.id);
             const response = await axios.get(`/api/calendar/${calendar.id}/appointments`);
-            console.log('📦 Raw response from server:', response.data);
+            console.log('Raw response from server:', response.data);
 
             const appointments = response.data.appointments || [];
             const recurrentAppointments = response.data.recurrentAppointments || [];
 
-            console.log('📋 Appointments count:', appointments.length);
-            console.log('🔁 Recurrent appointments count:', recurrentAppointments.length);
+            console.log('Appointments count:', appointments.length);
+            console.log('Recurrent appointments count:', recurrentAppointments.length);
 
             if (appointments.length > 0) {
-                console.log('🔍 First appointment raw:', appointments[0]);
-                console.log('🏷️ First appointment tags:', appointments[0]?.tags);
+                console.log('First appointment raw:', appointments[0]);
+                console.log('First appointment tags:', appointments[0]?.tags);
             }
 
             if (recurrentAppointments.length > 0) {
-                console.log('🔍 First recurrent appointment raw:', recurrentAppointments[0]);
-                console.log('🏷️ First recurrent appointment tags:', recurrentAppointments[0]?.tags);
+                console.log('First recurrent appointment raw:', recurrentAppointments[0]);
+                console.log('First recurrent appointment tags:', recurrentAppointments[0]?.tags);
             }
 
             const normalize = (appt) => {
-                console.log('🔄 Normalizing appointment:', appt.id, 'with tags:', appt.tags);
+                console.log('Normalizing appointment:', appt.id, 'with tags:', appt.tags);
                 return {
                     id: appt.id,
                     title: appt.title,
@@ -55,6 +55,7 @@ export const calendarService = {
                     color: calendar.color,
                     calendarId: appt.calendarId,
                     recursionRule: appt.recursionRule ?? null,
+                    recursionEndDate: appt.recursionEndDate ? new Date(appt.recursionEndDate) : null,
                     tags: appt.tags || []
                 };
             };
@@ -64,15 +65,15 @@ export const calendarService = {
                 ...recurrentAppointments.map(normalize)
             ];
 
-            console.log('✅ Total normalized events:', allEvents.length);
+            console.log('Total normalized events:', allEvents.length);
             if (allEvents.length > 0) {
-                console.log('🏷️ First normalized event tags:', allEvents[0].tags);
+                console.log('First normalized event tags:', allEvents[0].tags);
             }
 
             return allEvents;
 
         } catch (error) {
-            console.error('❌ Error fetching appointments:', {
+            console.error('Error fetching appointments:', {
                 message: error.message,
                 response: error.response?.data,
                 status: error.response?.status
@@ -125,7 +126,8 @@ export const calendarService = {
                 description: appointment.description,
                 startDate: appointment.startDate.toISOString(),
                 endDate: appointment.endDate.toISOString(),
-                recursionRule: appointment.recursionRule
+                recursionRule: appointment.recursionRule,
+                recursionEndDate: appointment.recursionEndDate.toISOString()
             });
         } catch (error) {
             console.error('Erreur lors de la création récurrente:', error.response?.data || error);
@@ -141,7 +143,8 @@ export const calendarService = {
                 description: appointment.description,
                 startDate: appointment.startDate.toISOString(),
                 endDate: appointment.endDate.toISOString(),
-                recursionRule: appointment.recursionRule ?? null
+                recursionRule: appointment.recursionRule ?? null,
+                recursionEndDate: appointment.recursionEndDate ? appointment.recursionEndDate.toISOString() : null
             });
         } catch (error) {
             console.error('Erreur lors de la modification:', error.response?.data || error);

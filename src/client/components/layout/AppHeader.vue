@@ -235,9 +235,12 @@ watch(searchQuery, (newValue) => {
         let end = new Date(a.endDate);
         const duration = end - start;
         const limitDate = new Date();
-        limitDate.setMonth(limitDate.getMonth() + 1); // 1 mois max dans la recherche
+        limitDate.setMonth(limitDate.getMonth() + 1); // 1 mois max dans la recherche de récurrence
 
-        while (start <= limitDate) {
+        let recurrenceEnd = a.recursionEndDate ? new Date(a.recursionEndDate) : limitDate;
+        recurrenceEnd = recurrenceEnd < limitDate ? recurrenceEnd : limitDate;
+
+        while (end <= recurrenceEnd) {
           occurrences.push({...a, startDate: new Date(start), endDate: new Date(end)});
           switch (a.recursionRule) {
             case 0:

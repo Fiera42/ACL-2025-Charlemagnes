@@ -82,6 +82,25 @@
               <p class="text-sm font-semibold text-gray-900">{{ readableRecursionRule }}</p>
             </div>
           </div>
+          <!-- Date de fin de récurrence -->
+          <div
+              v-if="readableRecursionEnd"
+              class="flex items-start gap-3 p-3 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-amber-200"
+          >
+            <div class="p-2 bg-white rounded-lg shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   class="text-amber-600">
+                <path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-medium text-amber-600 mb-1">Fin de la récurrence</p>
+              <p class="text-sm font-semibold text-gray-900">
+                Jusqu’au {{ readableRecursionEnd }}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -175,6 +194,17 @@ const readableRecursionRule = computed(() => {
   if (props.appointment.recursionRule === null || props.appointment.recursionRule === undefined) return "Aucune";
   return ruleLabels[props.appointment.recursionRule];
 });
+
+const readableRecursionEnd = computed(() => {
+  if (!props.appointment.recursionEndDate) return null;
+
+  return new Date(props.appointment.recursionEndDate).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+});
+
 </script>
 
 <style scoped>

@@ -198,7 +198,8 @@ const saveAppointment = async (appointment) => {
         endDate,
         calendarId: appointment.calendarId,
         tags: appointment.tags,
-        recursionRule: RecursionRule[appointment.recursionRule] ?? null
+        recursionRule: RecursionRule[appointment.recursionRule] ?? null,
+        recursionEndDate: appointment.recursionEndDate ? new Date(appointment.recursionEndDate) : null
       });
     } else {
       if (appointment.isRecurring) {
@@ -208,7 +209,8 @@ const saveAppointment = async (appointment) => {
           startDate,
           endDate,
           calendarId: appointment.calendarId,
-          recursionRule: RecursionRule[appointment.recursionRule]
+          recursionRule: RecursionRule[appointment.recursionRule],
+          recursionEndDate: appointment.recursionEndDate ? new Date(appointment.recursionEndDate) : null
         });
       } else {
         await calendarService.createAppointment({
@@ -276,6 +278,7 @@ const DateSansDecalage = (date) => {
 
 
 const editAppointment = () => {
+  console.log("date fin récurrence passé au formulaire :", selectedAppointment.value.recursionEndDate);
   editingAppointment.value = {
     id: selectedAppointment.value.id,
     title: selectedAppointment.value.title,
@@ -285,6 +288,9 @@ const editAppointment = () => {
     endDate: DateSansDecalage(selectedAppointment.value.endDate),
     isRecurring: selectedAppointment.value.recursionRule !== undefined && selectedAppointment.value.recursionRule !== null,
     recursionRule: selectedAppointment.value.recursionRule ?? null,
+    recursionEndDate: selectedAppointment.value.recursionEndDate
+      ? DateSansDecalage(selectedAppointment.value.recursionEndDate)
+      : null,
     tags: selectedAppointment.value.tags || []
   };
   showDetail.value = false;

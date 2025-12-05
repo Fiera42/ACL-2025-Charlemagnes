@@ -22,6 +22,7 @@ export interface IAppointmentService {
     startDate: Date,
     endDate: Date,
     recursionRule: RecursionRule,
+    recursionEndDate: Date,
     tags?: string[]
   ): Promise<RecurrentAppointment>;
 

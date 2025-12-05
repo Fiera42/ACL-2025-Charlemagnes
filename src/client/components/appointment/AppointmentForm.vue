@@ -137,6 +137,24 @@
                 <option value="MONTHLY">Mensuel</option>
                 <option value="YEARLY">Annuel</option>
               </select>
+
+              <!-- Date de fin de récurrence -->
+              <div class="mt-4 animate-fadeIn">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  Fin de récurrence
+                </label>
+                <input
+                    v-model="form.recursionEndDate"
+                    type="datetime-local"
+                    required
+                    class="w-full px-4 py-2.5 border-2 border-purple-200 rounded-xl
+                           focus:outline-none focus:border-purple-500 focus:ring-2
+                           focus:ring-purple-100 transition-all bg-white"
+                />
+                <p class="text-xs text-gray-500 mt-1">
+                  L’événement s'arrêtera automatiquement après cette date.
+                </p>
+              </div>
             </div>
           </div>
         </form>
@@ -196,6 +214,7 @@ const form = ref({
   endDate: '',
   isRecurring: false,
   recursionRule: null,
+  recursionEndDate: '',
   tags: []
 });
 
@@ -214,9 +233,12 @@ watchEffect(() => {
   if (props.appointment.recursionRule !== null && props.appointment.recursionRule !== undefined) {
     form.value.isRecurring = true;
     form.value.recursionRule = RECCURRENCE_VALUES[props.appointment.recursionRule];
+    console.log("date fin recu " + props.appointment.recursionEndDate);
+    form.value.recursionEndDate = props.appointment.recursionEndDate?.slice(0, 16);
   } else {
     form.value.isRecurring = false;
     form.value.recursionRule = null;
+    form.value.recursionEndDate = null;
   }
 });
 
@@ -231,10 +253,17 @@ const handleSubmit = () => {
   const payload = {
     ...form.value,
     isRecurring: form.value.isRecurring,
+    recursionEndDate: form.value.recursionEndDate ? form.value.recursionEndDate : null
   };
 
   if (!form.value.isRecurring) {
     delete payload.recursionRule; // on supprime la règle de récurrence si ce n'est pas récurrent
+    delete payload.recursionEndDate;
+  }
+
+  if (form.value.isRecurring && !form.value.recursionEndDate) {
+    alert("La date de fin de récurrence est obligatoire.");
+    return;
   }
 
   emit('save', payload);

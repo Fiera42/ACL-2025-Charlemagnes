@@ -257,7 +257,10 @@ const expandedEvents = computed(() => {
       }
     }
 
-    while (cursor < viewEnd) {
+    let recurrenceEnd = event.recursionEndDate ? new Date(event.recursionEndDate) : viewEnd;
+    recurrenceEnd = recurrenceEnd < viewEnd ? recurrenceEnd : viewEnd;
+
+    while (cursor < recurrenceEnd) {
       const newStart = new Date(cursor);
       newStart.setHours(
         new Date(event.startDate).getHours(),
@@ -267,6 +270,9 @@ const expandedEvents = computed(() => {
       );
 
       const newEnd = new Date(newStart.getTime() + duration);
+
+      // Si la fin de récurrence est définie et que le nouvel événement la dépasse, on arrête
+      if (newEnd > recurrenceEnd) break;
 
       result.push({
         ...event,

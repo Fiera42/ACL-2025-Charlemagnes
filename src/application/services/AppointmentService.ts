@@ -100,6 +100,7 @@ export class AppointmentService implements IAppointmentService {
         startDate: Date,
         endDate: Date,
         recursionRule: RecursionRule,
+        recursionEndDate: Date,
         tags: string[] = []
     ): Promise<RecurrentAppointment> {
         return new Promise<RecurrentAppointment>(async (resolve, reject) => {
@@ -121,6 +122,10 @@ export class AppointmentService implements IAppointmentService {
             }
             if (!Object.values(RecursionRule).includes(recursionRule)) {
                 reject(new Error(`RecursionRule (${recursionRule}) is invalid`));
+                return;
+            }
+            if (Object.prototype.toString.call(recursionEndDate) !== '[object Date]' || isNaN(recursionEndDate.getTime())) {
+                reject(new Error(`RecursionEndDate (${recursionEndDate}) is not valid`));
                 return;
             }
 
@@ -155,7 +160,8 @@ export class AppointmentService implements IAppointmentService {
                 endDate,
                 ownerId,
                 [],
-                recursionRule
+                recursionRule,
+                recursionEndDate
             );
 
             this.calendarDB.createRecurrentAppointment(recurrentAppointment)
@@ -378,6 +384,15 @@ export class AppointmentService implements IAppointmentService {
 
             if (partial.tags !== undefined) {
                 await this.syncTagsForRecurrentAppointment(appointmentId, partial.tags);
+            }
+
+            if (partial.recursionEndDate !== undefined) {
+                if (partial.recursionEndDate !== null &&
+                    (Object.prototype.toString.call(partial.recursionEndDate) !== '[object Date]' ||
+                        isNaN(partial.recursionEndDate.getTime()))
+                ) {
+                    return reject(new Error(`The new recursionEndDate (${partial.recursionEndDate}) is not valid`));
+                }
             }
 
             const updateResult = await this.calendarDB.updateRecurrentAppointment(appointmentId, partial)

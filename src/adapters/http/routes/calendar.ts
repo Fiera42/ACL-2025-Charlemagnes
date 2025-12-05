@@ -87,7 +87,7 @@ router.get('/:calendarId/appointments', async (req, res) => {
 
 router.post('/:calendarId/appointments', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const { title, description, startDate, endDate, recursionRule, tags = [] } = req.body;
+        const { title, description, startDate, endDate, recursionRule, recursionEndDate, tags = [] } = req.body;
         let appointment;
 
         if (recursionRule !== undefined && recursionRule !== null) {
@@ -99,6 +99,7 @@ router.post('/:calendarId/appointments', authenticateToken, async (req: Authenti
                 new Date(startDate),
                 new Date(endDate),
                 recursionRule,
+                new Date(recursionEndDate),
                 tags
             );
         } else {
@@ -134,7 +135,7 @@ router.get('/appointments/:id', authenticateToken, async (req: AuthenticatedRequ
 
 router.put('/appointments/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const { title, description, startDate, endDate, recursionRule, tags } = req.body;
+        const { title, description, startDate, endDate, recursionRule, recursionEndDate, tags } = req.body;
         const appointmentId = req.params.id;
 
         const start = startDate ? new Date(startDate) : undefined;
@@ -152,6 +153,7 @@ router.put('/appointments/:id', authenticateToken, async (req: AuthenticatedRequ
                     ...(start && { startDate: start }),
                     ...(end && { endDate: end }),
                     recursionRule,
+                    ...(recursionEndDate && { recursionEndDate: new Date(recursionEndDate) }),
                     ...(tags !== undefined && { tags })
                 }
             );
