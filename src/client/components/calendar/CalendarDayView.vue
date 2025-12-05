@@ -23,7 +23,7 @@
             v-for="hour in hours"
             :key="hour"
             :ref="hour === '07:00' ? 'workStartRef' : undefined"
-            class="flex border-t border-gray-200"
+            class="flex border-t border-gray-200 h-[80px] box-border"
         >
           <div class="w-20 p-3.5 flex items-start text-xs font-semibold text-gray-400">
             {{ hour }}
