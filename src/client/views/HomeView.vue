@@ -30,6 +30,7 @@
           @CalendarForm="openCalendarForm"
           @deleteCalendar="deleteCalendar"
           @editCalendar="openCalendarForm"
+          @exportCalendar="exportCalendar"
           @calendarToggled="calendarToggled"
           @editTag="openTagForm"
           @deleteTag="deleteTag"
@@ -69,6 +70,7 @@ import AppHeader from '../components/layout/AppHeader.vue';
 import AppSidebar from '../components/layout/AppSidebar.vue';
 import CalendarView from './CalendarView.vue';
 import {calendarService} from '../assets/calendar.js';
+import {calendarToICS, ICSToCalendar} from "../components/import_export/ICSCalendarConverter.js";
 
 const router = useRouter();
 const sidebarOpen = ref(true);
@@ -283,6 +285,20 @@ const deleteCalendar = async (calendarId) => {
     }
   }
 };
+
+const exportCalendar = (calendar, appointments) => {
+  // TODO: remove
+  console.log({calendar:calendar, appointments: appointments});
+
+  const ICS1 = calendarToICS(calendar, appointments);
+  console.log(ICS1);
+
+  const res = ICSToCalendar(ICS1);
+  console.log(res);
+
+  const ICS2 = calendarToICS(res.calendar, res.appointments);
+  console.log(ICS2);
+}
 
 const loadCalendars = async () => {
   loadingCalendars.value = true;

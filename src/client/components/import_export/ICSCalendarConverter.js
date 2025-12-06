@@ -75,10 +75,10 @@ export function calendarToICS(calendar, appointments) {
     icsFile.push("PRODID:-//ACL 2025 CHARLEMAGNES//NONSGML Calendar//FR");
 
     // Calendar metadata
-    calendarKeys.forEach((key, value) => {
+    calendarKeys.forEach((value, key) => {
         // Extract the type of the target object field
         const regexResult = objectTypeRegex.exec(value);
-        if(regexResult === null) throw new Error("Invalid calendar key");
+        if(regexResult === null) throw new Error(`Invalid calendar key in exporter key:${key} value:${value}`);
         let [, type, name] = regexResult;
         type = type.toLowerCase();
 
@@ -88,7 +88,7 @@ export function calendarToICS(calendar, appointments) {
                 value = calendar[name];
                 break;
             default:
-                throw new Error("Unknown type in object keys");
+                throw new Error(`Unknown type "${type}" in object keys in exporter`);
         }
 
         // Add the converted result to the file
@@ -157,6 +157,8 @@ export function ICSToCalendar(icsCalendar) {
                     case "VTODO":
                         ICSToTODO(lineReader); // This just skip for now
                         break;
+                    case "VCALENDAR":
+                        break;
                     default:
                         console.warn(`Unknown "Begin" value found in ICS file: ${value}`)
                         unknownBEGINSkipper(lineReader);
@@ -169,7 +171,7 @@ export function ICSToCalendar(icsCalendar) {
 
                 // Extract the type of the target object field
                 const regexResult = objectTypeRegex.exec(targetObjectField);
-                if(regexResult === null) throw new Error("Invalid calendar key");
+                if(regexResult === null) throw new Error(`Invalid calendar key in exporter key:${key} value:${value}`);
                 let [, type, name] = regexResult;
                 type = type.toLowerCase();
 
@@ -179,7 +181,7 @@ export function ICSToCalendar(icsCalendar) {
                         calendar[name] = value.trim();
                         break;
                     default:
-                        throw new Error("Unknown type in object keys");
+                        throw new Error(`Unknown type "${type}" in object keys`);
                 }
         }
     }
@@ -191,7 +193,9 @@ export function ICSToCalendar(icsCalendar) {
 }
 
 function unknownBEGINSkipper(lineReader) {
-    for (const line of lineReader) {
+    let line;
+    while (!(line = lineReader.next()).done) {
+        line = line.value;
         // Extract the ics key and it's value from the line
         const regexResult = icsKeyRegex.exec(line);
 
@@ -240,10 +244,10 @@ function appointmentToICS(appointment) {
     icsFile.push("BEGIN:VEVENT");
 
     // Appointment metadata
-    appointmentKeys.forEach((key, value) => {
+    appointmentKeys.forEach((value, key) => {
         // Extract the type of the target object field
         const regexResult = objectTypeRegex.exec(value);
-        if(regexResult === null) throw new Error("Invalid appointment key");
+        if(regexResult === null) throw new Error(`Invalid appointment key in exporter key:${key} value:${value}`);
         let [, type, name] = regexResult;
         type = type.toLowerCase();
 
@@ -256,7 +260,7 @@ function appointmentToICS(appointment) {
                 value = appointment[name].join(",");
                 break;
             default:
-                throw new Error("Unknown type in object keys");
+                throw new Error(`Unknown type "${type}" in object keys`);
         }
 
         // Add the converted result to the file
@@ -278,7 +282,9 @@ function ICSToAppointment(lineReader) {
      */
     let appointment = {};
 
-    for (const line of lineReader) {
+    let line;
+    while (!(line = lineReader.next()).done) {
+        line = line.value;
         // Extract the ics key and it's value from the line
         const regexResult = icsKeyRegex.exec(line);
 
@@ -302,7 +308,7 @@ function ICSToAppointment(lineReader) {
 
                 // Extract the type of the target object field
                 const regexResult = objectTypeRegex.exec(targetObjectField);
-                if(regexResult === null) throw new Error("Invalid appointment key");
+                if(regexResult === null) throw new Error(`Invalid appointment key in exporter key:${key} value:${value}`);
                 let [, type, name] = regexResult;
                 type = type.toLowerCase();
 
@@ -315,7 +321,7 @@ function ICSToAppointment(lineReader) {
                         appointment[name] = value.trim().split(",");
                         break;
                     default:
-                        throw new Error("Unknown type in object keys");
+                        throw new Error(`Unknown type "${type}" in object keys`);
                 }
         }
     }
@@ -330,7 +336,9 @@ function ICSToAppointment(lineReader) {
  * @returns {void} The decoded TO-DO
  */
 function ICSToTODO(lineReader) {
-    for (const line of lineReader) {
+    let line;
+    while (!(line = lineReader.next()).done) {
+        line = line.value;
         // Extract the ics key and it's value from the line
         const regexResult = icsKeyRegex.exec(line);
 
@@ -355,7 +363,9 @@ function ICSToTODO(lineReader) {
  * @returns {void} The decoded journal
  */
 function ICSToJournal(lineReader) {
-    for (const line of lineReader) {
+    let line;
+    while (!(line = lineReader.next()).done) {
+        line = line.value;
         // Extract the ics key and it's value from the line
         const regexResult = icsKeyRegex.exec(line);
 
@@ -380,7 +390,9 @@ function ICSToJournal(lineReader) {
  * @returns {void} The decoded free-busy
  */
 function ICSToFreeBusy(lineReader) {
-    for (const line of lineReader) {
+    let line;
+    while (!(line = lineReader.next()).done) {
+        line = line.value;
         // Extract the ics key and it's value from the line
         const regexResult = icsKeyRegex.exec(line);
 
@@ -405,7 +417,9 @@ function ICSToFreeBusy(lineReader) {
  * @returns {void} The decoded timezone
  */
 function ICSToTimezone(lineReader) {
-    for (const line of lineReader) {
+    let line;
+    while (!(line = lineReader.next()).done) {
+        line = line.value;
         // Extract the ics key and it's value from the line
         const regexResult = icsKeyRegex.exec(line);
 
@@ -430,7 +444,9 @@ function ICSToTimezone(lineReader) {
  * @returns {void} The decoded alarm
  */
 function ICSToAlarm(lineReader) {
-    for (const line of lineReader) {
+    let line;
+    while (!(line = lineReader.next()).done) {
+        line = line.value;
         // Extract the ics key and it's value from the line
         const regexResult = icsKeyRegex.exec(line);
 
