@@ -9,6 +9,29 @@ export const calendarService = {
     // ID du calendrier par défaut (à adapter selon ton besoin)
     visibleCalendars: new Set(),
 
+    normalize(appt, calendar) {
+        return {
+            id: appt.id,
+            title: appt.title,
+            description: appt.description,
+            startDate: new Date(appt.startDate),
+            endDate: new Date(appt.endDate),
+            date: new Date(appt.startDate).toDateString(),
+            hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+            time: `${new Date(appt.startDate).toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            })} - ${new Date(appt.endDate).toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            })}`,
+            color: calendar.color,
+            calendarId: appt.calendarId,
+            recursionRule: appt.recursionRule ?? null,
+            tags: appt.tags || []
+        };
+    },
+
     // Récupérer tous les rendez-vous d'un calendrier
     async fetchAppointments(calendar) {
         if(!calendar.id) {
@@ -35,33 +58,9 @@ export const calendarService = {
                 console.log('🏷️ First recurrent appointment tags:', recurrentAppointments[0]?.tags);
             }
 
-            const normalize = (appt) => {
-                console.log('🔄 Normalizing appointment:', appt.id, 'with tags:', appt.tags);
-                return {
-                    id: appt.id,
-                    title: appt.title,
-                    description: appt.description,
-                    startDate: new Date(appt.startDate),
-                    endDate: new Date(appt.endDate),
-                    date: new Date(appt.startDate).toDateString(),
-                    hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-                    time: `${new Date(appt.startDate).toLocaleTimeString('fr-FR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })} - ${new Date(appt.endDate).toLocaleTimeString('fr-FR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })}`,
-                    color: calendar.color,
-                    calendarId: appt.calendarId,
-                    recursionRule: appt.recursionRule ?? null,
-                    tags: appt.tags || []
-                };
-            };
-
             const allEvents = [
-                ...appointments.map(normalize),
-                ...recurrentAppointments.map(normalize)
+                ...appointments.map((apt) => this.normalize(apt, calendar)),
+                ...recurrentAppointments.map((apt) => this.normalize(apt, calendar))
             ];
 
             console.log('✅ Total normalized events:', allEvents.length);
@@ -163,8 +162,7 @@ export const calendarService = {
     async getCalendarsByOwnerId() {
         try {
             const jsonCalendars = await axios.get('/api/calendar');
-            const extractedCalendars = jsonCalendars.data.calendars;
-            return extractedCalendars;
+            return jsonCalendars.data.calendars;
         } catch (error) {
             console.error('Erreur lors de la recuperation des agendas 1 :', error.response.data || error);
             throw error;
@@ -174,11 +172,12 @@ export const calendarService = {
     //creer un nouveau calendrier
     async createCalendar(calendar) {
         try {
-            await axios.post('/api/calendar', {
+            const jsonCalendar = await axios.post('/api/calendar', {
                 name: calendar.name,
                 description: calendar.description,
                 color: calendar.color
             });
+            return jsonCalendar.data;
         } catch (error) {
             console.error('Erreur lors de la creation de l agenda :', error.response.data || error);
             throw error;
@@ -195,8 +194,16 @@ export const calendarService = {
         }
     },
 
-    //obtenir les paramètres d'un seul calendrier
-    async getCalendarById() {
+    //obtenir les rdv d'un calendrier
+    async getAppointmentsByCalendarId(calendar) {
+        try {
+            const jsonCalendars = await axios.get(`/api/calendar/${calendar.id}/appointments`);
+            jsonCalendars.data.appointments.push(...jsonCalendars.data.recurrentAppointments);
+            return jsonCalendars.data.appointments.map((apt) => this.normalize(apt, calendar));
+        } catch (error) {
+            console.error('Erreur lors de la recuperation des rendez-vous d\'agenda :', error.response.data || error);
+            throw error;
+        }
     },
 
     //modifier les paramètres d'un seul calendrier

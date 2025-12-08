@@ -1,5 +1,7 @@
 // ----------------------------------------------------------- DEFINITIONS
 
+import {calendarService} from "../../assets/calendar.js";
+
 function* lineReader_cons(str) {
     let start = 0;
     while (true) {
@@ -19,10 +21,10 @@ function* lineReader_cons(str) {
  * @property {String} title
  * @property {String} description
  * @property {String} calendarId
- * @property {String} startDate
- * @property {String} endDate
+ * @property {Date} startDate
+ * @property {Date} endDate
  * @property {Boolean} isRecurring
- * @property {String} recursionRule
+ * @property {Number} recursionRule
  * @property {String[]} tags
  */
 
@@ -47,9 +49,9 @@ const appointmentKeys = new Map( [
     ['UID', '[String]id'],
     ['SUMMARY', '[String]title'],
     ['DESCRIPTION', '[String]description'],
-    ['DTSTART', '[String]startDate'],
-    ['DTEND', '[String]endDate'],
-    ['RRULE', '[String]recursionRule'],
+    ['DTSTART', '[Date]startDate'],
+    ['DTEND', '[Date]endDate'],
+    ['RRULE', '[Number]recursionRule'],
     ['CATEGORIES', '[String[]]tags'],
 ]);
 
@@ -114,9 +116,6 @@ export function ICSToCalendar(icsCalendar) {
      * @type {Calendar}
      */
     let calendar = {};
-    /**
-     * @type {Appointment[]}
-     */
     let appointments = [];
 
     const lineReader = lineReader_cons(icsCalendar);
@@ -140,6 +139,7 @@ export function ICSToCalendar(icsCalendar) {
                         let appointment = ICSToAppointment(lineReader);
                         appointment.calendarId = calendar.id;
                         appointment.isRecurring = !!appointment.recursionRule;
+                        appointment = calendarService.normalize(appointment, calendar);
                         appointments.push(appointment);
                         break;
                     case "VALARM":
@@ -251,6 +251,8 @@ function appointmentToICS(appointment) {
         let [, type, name] = regexResult;
         type = type.toLowerCase();
 
+        if(name === "recursionRule" && !appointment.recursionRule) return;
+
         // Convert the value to the right type
         switch (type) {
             case "string":
@@ -258,6 +260,9 @@ function appointmentToICS(appointment) {
                 break;
             case "string[]":
                 value = appointment[name].join(",");
+                break;
+            case "date":
+                value = appointment[name].toISOString();
                 break;
             default:
                 throw new Error(`Unknown type "${type}" in object keys`);
@@ -319,6 +324,12 @@ function ICSToAppointment(lineReader) {
                         break;
                     case "string[]":
                         appointment[name] = value.trim().split(",");
+                        break;
+                    case "date":
+                        appointment[name] = new Date(value.trim());
+                        break;
+                    case "number":
+                        appointment[name] = parseInt(value.trim());
                         break;
                     default:
                         throw new Error(`Unknown type "${type}" in object keys`);

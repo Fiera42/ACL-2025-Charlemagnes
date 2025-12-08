@@ -142,7 +142,17 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path d="M10 5V15M15 10H5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
                 </svg>
-                Nouveau calendrier
+                Nouveau
+              </button>
+
+              <button
+                  class="py-2.5 px-6 bg-indigo-600 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
+                  @click="$emit('ImportCalendar')"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 5V15M15 10H5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+                Importer
               </button>
             </div>
 
@@ -335,7 +345,8 @@ const emit = defineEmits([
   'deleteCalendar',
   'editTag',
   'deleteTag',
-  'exportCalendar'
+  'exportCalendar',
+  'ImportCalendar'
 ]);
 
 const props = defineProps({

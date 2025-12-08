@@ -31,6 +31,7 @@
           @deleteCalendar="deleteCalendar"
           @editCalendar="openCalendarForm"
           @exportCalendar="exportCalendar"
+          @import-calendar="importCalendar"
           @calendarToggled="calendarToggled"
           @editTag="openTagForm"
           @deleteTag="deleteTag"
@@ -71,6 +72,7 @@ import AppSidebar from '../components/layout/AppSidebar.vue';
 import CalendarView from './CalendarView.vue';
 import {calendarService} from '../assets/calendar.js';
 import {calendarToICS, ICSToCalendar} from "../components/import_export/ICSCalendarConverter.js";
+import {downloadTextFile, promptForFile} from "../components/import_export/FileHandler.js";
 
 const router = useRouter();
 const sidebarOpen = ref(true);
@@ -212,8 +214,6 @@ const handleFilters = (newFilters) => {
 
 // calcule les rdv avec les filtres appliqué
 const filteredAppointments = computed(() => {
-  const now = new Date();
-
   return appointments.value
     .filter((a) => {
       let matches = true;
@@ -286,18 +286,34 @@ const deleteCalendar = async (calendarId) => {
   }
 };
 
-const exportCalendar = (calendar, appointments) => {
-  // TODO: remove
-  console.log({calendar:calendar, appointments: appointments});
+const exportCalendar = async (calendar, appointments) => {
+  appointments = await calendarService.getAppointmentsByCalendarId(calendar);
+  let icsFile = calendarToICS(calendar, appointments);
+  downloadTextFile(`${calendar.name}.ics`, icsFile);
+}
 
-  const ICS1 = calendarToICS(calendar, appointments);
-  console.log(ICS1);
+const importCalendar = async () => {
+  try {
+    let file = await (await promptForFile(".ics, .ical, .icalendar"))[0].text();
 
-  const res = ICSToCalendar(ICS1);
-  console.log(res);
+    const res = ICSToCalendar(file);
+    res.calendar = await calendarService.createCalendar(res.calendar);
 
-  const ICS2 = calendarToICS(res.calendar, res.appointments);
-  console.log(ICS2);
+    res.appointments.forEach((appointment) => {
+      appointment.calendarId = res.calendar.id;
+      if(appointment.recursionRule) {
+        calendarService.createRecurrentAppointment(appointment);
+      }
+      else {
+        calendarService.createAppointment(appointment);
+      }
+    });
+
+    await calendarToggled(res.calendar.id, true);
+  }
+  catch (error) {
+    console.error('Erreur lors de l\'import du calendrier:', error);
+  }
 }
 
 const loadCalendars = async () => {
