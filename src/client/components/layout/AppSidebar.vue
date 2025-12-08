@@ -411,6 +411,10 @@ const upcomingAppointments = computed(() => {
       return;
     }
 
+    // Si il y a une récurrence on prend la valeur la plus petite parmis la limitDate ou la date de fin de récurrence
+    let recurrenceEnd = appt.recursionEndDate ? new Date(appt.recursionEndDate) : limitDate;
+    recurrenceEnd = recurrenceEnd < limitDate ? recurrenceEnd : limitDate;
+
     // Calculer la première occurrence après maintenant
     let cursor = new Date(start);
 
@@ -430,7 +434,7 @@ const upcomingAppointments = computed(() => {
     }
 
     // Ajouter toutes les occurrences jusqu'à la limite
-    while (cursor <= limitDate) {
+    while (cursor <= recurrenceEnd) {
       result.push({
         ...appt,
         startDate: new Date(cursor),

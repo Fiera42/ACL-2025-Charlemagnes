@@ -99,6 +99,7 @@ export async function initDatabase(): Promise<void> {
       end_date DATETIME NOT NULL,
       owner_id TEXT NOT NULL,
       recursion_rule INTEGER NOT NULL,
+      recursion_end_date DATETIME NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_by TEXT,

@@ -159,12 +159,17 @@ export class SQLiteCalendarDB implements ICalendarDB {
     }
 
     async createRecurrentAppointment(appointment: RecurrentAppointment): Promise<RecurrentAppointment> {
+
+        console.log('Creating recurrent appointment:', appointment);
+
         const id = uuidv4();
         const stmt = this.db.prepare(`
             INSERT INTO recurrent_appointments (id, calendar_id, title, description, start_date, end_date, owner_id,
-                                                recursion_rule, created_at, updated_at, updated_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                                recursion_rule, recursion_end_date, created_at, updated_at, updated_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
         `);
+
+        console.log('Confirmed');
 
         stmt.run(
             id,
@@ -175,6 +180,7 @@ export class SQLiteCalendarDB implements ICalendarDB {
             appointment.endDate.toISOString(),
             appointment.ownerId,
             appointment.recursionRule,
+            appointment.recursionEndDate.toISOString(),
             appointment.createdAt.toISOString(),
             appointment.updatedAt.toISOString(),
             appointment.updatedBy
@@ -190,6 +196,7 @@ export class SQLiteCalendarDB implements ICalendarDB {
             appointment.ownerId,
             [],
             appointment.recursionRule,
+            appointment.recursionEndDate,
             appointment.createdAt,
             appointment.updatedAt,
             appointment.updatedBy
@@ -233,6 +240,7 @@ export class SQLiteCalendarDB implements ICalendarDB {
             row.owner_id,
             [],
             row.recursion_rule,
+            new Date(row.recursion_end_date),
             new Date(row.created_at),
             new Date(row.updated_at),
             row.updated_by
@@ -272,6 +280,7 @@ export class SQLiteCalendarDB implements ICalendarDB {
             row.owner_id,
             [],
             row.recursion_rule,
+            new Date(row.recursion_end_date),
             new Date(row.created_at),
             new Date(row.updated_at),
             row.updated_by
@@ -344,6 +353,11 @@ export class SQLiteCalendarDB implements ICalendarDB {
             updates.push('recursion_rule = ?');
             values.push(appointment.recursionRule);
         }
+        if (appointment.recursionEndDate !== undefined && appointment.recursionEndDate !== null) {
+            updates.push('recursion_end_date = ?');
+            values.push(appointment.recursionEndDate.toISOString());
+        }
+
         if (appointment.updatedBy !== undefined) {
             updates.push('updated_by = ?');
             values.push(appointment.updatedBy);
