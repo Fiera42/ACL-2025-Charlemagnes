@@ -25,6 +25,7 @@ function* lineReader_cons(str) {
  * @property {Date} endDate
  * @property {Boolean} isRecurring
  * @property {Number} recursionRule
+ * @property {Date} recursionEndDate
  * @property {String[]} tags
  */
 
@@ -57,6 +58,12 @@ const appointmentKeys = new Map( [
 
 const icsKeyRegex = /^([\w\s]+):(.*)$/m
 const objectTypeRegex = /^\[(.+)][\s_\-]*(\w+)/m
+
+// Wanna cry
+const DAILY = {index:0, value:"DAILY"};
+const WEEKLY = {index:1, value:"WEEKLY"};
+const MONTHLY = {index:2, value:"MONTHLY"};
+const YEARLY = {index:3, value:"YEARLY"};
 
 // ----------------------------------------------------------- CALENDAR
 // Useful doc:
@@ -251,7 +258,28 @@ function appointmentToICS(appointment) {
         let [, type, name] = regexResult;
         type = type.toLowerCase();
 
-        if(name === "recursionRule" && !appointment.recursionRule) return;
+        if(name === "recursionRule") {
+            if(appointment.recursionRule) {
+                let recursionRule;
+                // I dont give a shit anymore
+                switch (appointment.recursionRule) {
+                    case 0:
+                        recursionRule = DAILY.value;
+                        break;
+                    case 1:
+                        recursionRule = WEEKLY.value;
+                        break;
+                    case 2:
+                        recursionRule = MONTHLY.value;
+                        break;
+                    case 3:
+                        recursionRule = YEARLY.value;
+                        break;
+                }
+                icsFile.push(`RRULE:FREQ=${recursionRule};UNTIL=${appointment.recursionEndDate.toISOString()}`);
+            }
+            return;
+        }
 
         // Convert the value to the right type
         switch (type) {
@@ -305,6 +333,34 @@ function ICSToAppointment(lineReader) {
         switch (icsKey) {
             case "END" :
                 if(value === "VEVENT") return appointment;
+                break;
+            case "RRULE":
+                // I dont give a shit anymore
+                value = value.split(";");
+                value.forEach((string) => {
+                    const bro = string.split("=");
+                    if(bro[0] === "FREQ") {
+                        let recursionRule;
+                        switch (bro[1]) {
+                            case DAILY.value:
+                                recursionRule = DAILY.index;
+                                break;
+                            case WEEKLY.value:
+                                recursionRule = WEEKLY.index;
+                                break;
+                            case MONTHLY.value:
+                                recursionRule = MONTHLY.index;
+                                break;
+                            case YEARLY.value:
+                                recursionRule = YEARLY.index;
+                                break;
+                        }
+                        appointment.recursionRule = recursionRule;
+                    }
+                    else if(bro[0] === "UNTIL") {
+                        appointment.recursionEndDate = new Date(bro[1]);
+                    }
+                });
                 break;
             default:
                 // Get the according ICS to Object mapping
