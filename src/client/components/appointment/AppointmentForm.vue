@@ -100,7 +100,7 @@
 
           <!-- Tag Selector -->
           <div class="bg-gray-50 rounded-xl p-4 border-2 border-gray-100">
-            <TagSelector v-model="form.tags" :available-tags="tags" />
+            <TagSelector v-model="form.tags" :available-tags="tags" @create="handleCreateTag"/>
           </div>
 
           <!-- Récurrence -->
@@ -187,7 +187,6 @@
 import { ref, watch, onMounted } from 'vue';
 import BaseModal from '../common/BaseModal.vue';
 import TagSelector from '../tag/TagSelector.vue';
-import { format } from 'path';
 
 const props = defineProps({
   appointment: Object,
@@ -220,7 +219,7 @@ const form = ref({
 
 // Fonction pour charger les données du RDV
 const loadAppointment = (appointment) => {
-  if (! appointment) return;
+  if (!appointment) return;
 
   form.value.title = appointment.title;
   form.value.description = appointment.description;
@@ -233,7 +232,7 @@ const loadAppointment = (appointment) => {
   validateEndDate();
 
   if (appointment.recursionRule !== null && appointment.recursionRule !== undefined) {
-    form. value.isRecurring = true;
+    form.value.isRecurring = true;
     form.value.recursionRule = RECCURRENCE_VALUES[appointment.recursionRule];
     form.value.recursionEndDate = appointment.recursionEndDate?.slice(0, 16);
   } else {
@@ -252,8 +251,8 @@ const validateEndDate = () => {
   
   if (end <= start) {
     const newEnd = new Date(start);
-    newEnd.setHours(newEnd. getHours() + 1);
-    form.value.endDate = newEnd. toISOString().slice(0, 16);
+    newEnd.setHours(newEnd.getHours() + 1);
+    form.value.endDate = newEnd.toISOString().slice(0, 16);
   }
 };
 
@@ -280,10 +279,10 @@ watch(
     const end = form.value.endDate ? new Date(form.value.endDate) : null;
     
     // Si pas de endDate ou endDate <= startDate, on ajoute 1 heure
-    if (! end || end <= start) {
+    if (!end || end <= start) {
       const newEnd = new Date(start);
       newEnd.setHours(start.getHours() + 1);
-        form.value.endDate = formatDateLocal(newEnd);
+      form.value.endDate = formatDateLocal(newEnd);
     }
   }
 );
@@ -292,7 +291,7 @@ watch(
 watch(
   () => form.value.endDate,
   (newEndDate, oldEndDate) => {
-    if (! form.value.startDate || !newEndDate) return;
+    if (!form.value.startDate || !newEndDate) return;
     
     const start = new Date(form.value.startDate);
     const end = new Date(newEndDate);
@@ -302,6 +301,7 @@ watch(
       if (oldEndDate && new Date(oldEndDate) > start) {
         form.value.endDate = oldEndDate;
       } else {
+        const newEnd = new Date(start);
         newEnd.setHours(start.getHours() + 1);
         form.value.endDate = formatDateLocal(newEnd);
       }
@@ -310,8 +310,8 @@ watch(
 );
 
 watch(() => form.value.isRecurring, (isRec) => {
-  if (isRec && ! form.value.recursionRule) {
-    form.value. recursionRule = 'WEEKLY';
+  if (isRec && !form.value.recursionRule) {
+    form.value.recursionRule = 'WEEKLY';
   }
 });
 
@@ -335,12 +335,18 @@ const handleSubmit = () => {
   emit('save', payload);
 };
 
+const handleCreateTag = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('open-tag-form', { detail: null }));
+  }
+};
+
 // Helper pour formater une date pour datetime-local
 const formatDateLocal = (date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date. getDate()).padStart(2, '0');
-  const hours = String(date. getHours()).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };

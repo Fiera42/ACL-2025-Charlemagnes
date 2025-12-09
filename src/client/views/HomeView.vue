@@ -1,65 +1,28 @@
 <template>
   <div id="app" class="min-h-screen bg-stone-50 flex flex-col">
-    <AppHeader
-        :user-name="userName"
-        :appointments="appointments"
-        :reset-search-key="resetSearchKey"
-        :reset-filters-key="resetFiltersKey"
-        @toggle-sidebar="toggleSidebar"
-        @logout="handleLogout"
-        @search="handleSearch"
-        @selectAppointment="handleSelectAppointment"
-        @filters-changed="handleFilters"
-    />
+    <AppHeader :user-name="userName" :appointments="appointments" :reset-search-key="resetSearchKey"
+      :reset-filters-key="resetFiltersKey" :tags="tags" @toggle-sidebar="toggleSidebar" @logout="handleLogout"
+      @search="handleSearch" @selectAppointment="handleSelectAppointment" @filters-changed="handleFilters" />
 
     <div class="flex flex-1 relative">
-      <AppSidebar
-          :is-open="sidebarOpen"
-          :appointments="appointments"
-          :appointmentsdisplayed="appointmentsdisplayed"
-          :loading="loading"
-          :loadingCalendars="loadingCalendars"
-          :calendars="calendars"
-          :shared-calendars="sharedCalendars"
-          :calendarsdisplayed="calendarsdisplayed"
-          :tags="tags"
-          @toggleappointmentsdisplay="viewAppointments"
-          @togglecalendarsdisplay="viewCalendars"
-          @close="closeSidebar"
-          @select-appointment="handleSelectAppointment"
-          @selectCalendar="handleSelectCalendar"
-          @CalendarForm="openCalendarForm"
-          @deleteCalendar="deleteCalendar"
-          @editCalendar="openCalendarForm"
-          @exportCalendar="exportCalendar"
-          @import-calendar="importCalendar"
-          @calendarToggled="calendarToggled"
-          @editTag="openTagForm"
-          @deleteTag="deleteTag"
-          @removeSharedCalendar="handleRemoveSharedCalendar"
-      />
+      <AppSidebar :is-open="sidebarOpen" :appointments="appointments" :appointmentsdisplayed="appointmentsdisplayed"
+        :loading="loading" :loadingCalendars="loadingCalendars" :calendars="calendars"
+        :shared-calendars="sharedCalendars" :calendarsdisplayed="calendarsdisplayed" :tags="tags"
+        @toggleappointmentsdisplay="viewAppointments" @togglecalendarsdisplay="viewCalendars" @close="closeSidebar"
+        @select-appointment="handleSelectAppointment" @selectCalendar="handleSelectCalendar"
+        @CalendarForm="openCalendarForm" @deleteCalendar="deleteCalendar" @editCalendar="openCalendarForm"
+        @exportCalendar="exportCalendar" @import-calendar="importCalendar" @calendarToggled="calendarToggled"
+        @editTag="openTagForm" @deleteTag="deleteTag" @removeSharedCalendar="handleRemoveSharedCalendar" />
 
-      <main
-          :class="[
-                    'flex-1 transition-all duration-300',
-                    sidebarOpen ? 'ml-80' : 'ml-0'
-                  ]"
-      >
+      <main :class="[
+        'flex-1 transition-all duration-300',
+        sidebarOpen ? 'ml-80' : 'ml-0'
+      ]">
         <div class="p-6 lg:p-8 max-w-[1600px] mx-auto">
-          <CalendarView
-              ref="calendarViewRef"
-              :appointments="filteredAppointments"
-              :calendars="calendars"
-              :shared-calendars="sharedCalendars"
-              :tags="tags"
-              :loading="loading"
-              @appointments-updated="loadAppointments"
-              @calendars-updated="loadCalendars"
-              @tags-updated="loadTags"
-              :editingCalendar="editingCalendar"
-              :showCalendarForm="showCalendarForm"
-              @closeCalendarForm="closeCalendarForm"
-          />
+          <CalendarView ref="calendarViewRef" :appointments="filteredAppointments" :calendars="calendars"
+            :shared-calendars="sharedCalendars" :tags="tags" :loading="loading" @appointments-updated="loadAppointments"
+            @calendars-updated="loadCalendars" @tags-updated="loadTags" :editingCalendar="editingCalendar"
+            :showCalendarForm="showCalendarForm" @closeCalendarForm="closeCalendarForm" />
         </div>
       </main>
     </div>
@@ -67,15 +30,15 @@
 </template>
 
 <script setup>
-import {ref, onMounted, computed} from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
-import {useRouter} from 'vue-router';
+import { useRouter } from 'vue-router';
 import AppHeader from '../components/layout/AppHeader.vue';
 import AppSidebar from '../components/layout/AppSidebar.vue';
 import CalendarView from './CalendarView.vue';
-import {calendarService} from '../assets/calendar.js';
-import {calendarToICS, ICSToCalendar} from "../components/import_export/ICSCalendarConverter.js";
-import {downloadTextFile, promptForFile} from "../components/import_export/FileHandler.js";
+import { calendarService } from '../assets/calendar.js';
+import { calendarToICS, ICSToCalendar } from "../components/import_export/ICSCalendarConverter.js";
+import { downloadTextFile, promptForFile } from "../components/import_export/FileHandler.js";
 
 const router = useRouter();
 const sidebarOpen = ref(true);
@@ -270,43 +233,51 @@ const handleFilters = (newFilters) => {
 // calcule les rdv avec les filtres appliqué
 const filteredAppointments = computed(() => {
   return appointments.value
-      .filter((a) => {
-        let matches = true;
+    .filter((a) => {
+      let matches = true;
 
-        // Filtre mot-clé
-        if (filters.value.keyword) {
-          const q = filters.value.keyword.toLowerCase();
-          const text = `${a.title ?? ''} ${a.description ?? ''} ${a.location ?? ''}`.toLowerCase();
-          matches = text.includes(q);
-        }
+      // Filtre mot-clé
+      if (filters.value.keyword) {
+        const q = filters.value.keyword.toLowerCase();
+        const text = `${a.title ?? ''} ${a.description ?? ''} ${a.location ?? ''}`.toLowerCase();
+        matches = text.includes(q);
+      }
 
-        // Filtre date début
-        if (matches && filters.value.startDate) {
-          const start = new Date(a.startDate);
-          const filterStart = new Date(filters.value.startDate);
-          matches = filters.value.startOperator === '>' ? start > filterStart : start < filterStart;
-        }
+      // Filtre date début
+      if (matches && filters.value.startDate) {
+        const start = new Date(a.startDate);
+        const filterStart = new Date(filters.value.startDate);
+        matches = filters.value.startOperator === '>' ? start > filterStart : start < filterStart;
+      }
 
-        // Filtre date fin
-        if (matches && filters.value.endDate) {
-          const end = new Date(a.endDate);
-          const filterEnd = new Date(filters.value.endDate);
-          matches = filters.value.endOperator === '>' ? end > filterEnd : end < filterEnd;
-        }
+      // Filtre date fin
+      if (matches && filters.value.endDate) {
+        const end = new Date(a.endDate);
+        const filterEnd = new Date(filters.value.endDate);
+        matches = filters.value.endOperator === '>' ? end > filterEnd : end < filterEnd;
+      }
 
-        // Filtre récurrence
-        if (matches && filters.value.showRecurring === false) {
-          matches = !(a.recursionRule !== undefined && a.recursionRule !== null);
-        }
+      if (matches && filters.value.selectedTags && filters.value.selectedTags.length > 0) {
+        const appointmentTags = a.tags || [];
+        // Vérifie si au moins un tag du RDV correspond aux tags sélectionnés
+        matches = filters.value.selectedTags.some(tagId =>
+          appointmentTags.map(String).includes(String(tagId))
+        );
+      }
 
-        return matches;
-      })
-      .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+      // Filtre récurrence
+      if (matches && filters.value.showRecurring === false) {
+        matches = !(a.recursionRule !== undefined && a.recursionRule !== null);
+      }
+
+      return matches;
+    })
+    .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
 });
 
 
 const openCalendarForm = (id, name, description, color) => {
-  editingCalendar.value = {id, name, description, color};
+  editingCalendar.value = { id, name, description, color };
   showCalendarForm.value = true;
 };
 
