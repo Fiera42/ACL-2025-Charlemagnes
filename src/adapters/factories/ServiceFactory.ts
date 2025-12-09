@@ -1,20 +1,22 @@
-import { IAuthDB } from '../../domain/interfaces/IAuthDB';
-import { ICalendarDB } from '../../domain/interfaces/ICalendarDB';
-import { IShareDB } from '../../domain/interfaces/IShareDB';
-import { IAppointmentService } from '../../domain/interfaces/IAppointmentService';
-import { ICalendarService } from '../../domain/interfaces/ICalendarService';
-import { AppointmentService } from '../../application/services/AppointmentService';
-import { CalendarService } from '../../application/services/CalendarService';
-import { SQLiteAuthDB } from '../../infrastructure/database/SQLiteAuthDB';
-import { SQLiteCalendarDB } from '../../infrastructure/database/SQLiteCalendarDB';
-import { SQLiteShareDB } from '../../infrastructure/database/SQLiteShareDB';
-import { SQLiteTagDB } from '../../infrastructure/database/SQLiteTagDB';
-import { db } from '../../infrastructure/config/sqliteAdapter';
-import {AuthService} from "../../application/services/AuthService.ts";
-import {IAuthService} from "../../domain/interfaces/IAuthService.ts";
-import { ITagDB } from '../../domain/interfaces/ITagDB';
-import { ITagService } from '../../domain/interfaces/ITagService';
-import { TagService } from '../../application/services/TagService';
+import {IAuthDB} from '../../domain/interfaces/IAuthDB';
+import {ICalendarDB} from '../../domain/interfaces/ICalendarDB';
+import {IShareDB} from '../../domain/interfaces/IShareDB';
+import {IAppointmentService} from '../../domain/interfaces/IAppointmentService';
+import {ICalendarService} from '../../domain/interfaces/ICalendarService';
+import {IShareService} from '../../domain/interfaces/IShareService';
+import {AppointmentService} from '../../application/services/AppointmentService';
+import {CalendarService} from '../../application/services/CalendarService';
+import {ShareService} from '../../application/services/ShareService';
+import {SQLiteAuthDB} from '../../infrastructure/database/SQLiteAuthDB';
+import {SQLiteCalendarDB} from '../../infrastructure/database/SQLiteCalendarDB';
+import {SQLiteShareDB} from '../../infrastructure/database/SQLiteShareDB';
+import {SQLiteTagDB} from '../../infrastructure/database/SQLiteTagDB';
+import {db} from '../../infrastructure/config/sqliteAdapter';
+import {AuthService} from "../../application/services/AuthService";
+import {IAuthService} from "../../domain/interfaces/IAuthService";
+import {ITagDB} from '../../domain/interfaces/ITagDB';
+import {ITagService} from '../../domain/interfaces/ITagService';
+import {TagService} from '../../application/services/TagService';
 
 export class ServiceFactory {
     private static authDB: IAuthDB;
@@ -25,6 +27,7 @@ export class ServiceFactory {
     private static calendarService: ICalendarService;
     private static appointmentService: IAppointmentService;
     private static tagService: ITagService;
+    private static shareService: IShareService;
 
     private static initializeDatabases(): void {
         if (!this.authDB) {
@@ -42,21 +45,21 @@ export class ServiceFactory {
     }
 
     private static initializeAppointmentService(): void {
-        if(!this.appointmentService) {
+        if (!this.appointmentService) {
             this.initializeDatabases();
             this.appointmentService = new AppointmentService(this.calendarDB, this.tagDB);
         }
     }
 
     private static initializeCalendarService(): void {
-        if(!this.calendarService) {
+        if (!this.calendarService) {
             this.initializeDatabases();
             this.calendarService = new CalendarService(this.calendarDB, this.authDB);
         }
     }
 
     private static initializeAuthService(): void {
-        if(!this.authService) {
+        if (!this.authService) {
             this.initializeDatabases();
             this.authService = new AuthService(this.authDB);
         }
@@ -66,6 +69,13 @@ export class ServiceFactory {
         if (!this.tagService) {
             this.initializeDatabases();
             this.tagService = new TagService(this.tagDB);
+        }
+    }
+
+    private static initializeShareService(): void {
+        if (!this.shareService) {
+            this.initializeDatabases();
+            this.shareService = new ShareService(this.shareDB, this.calendarDB);
         }
     }
 
@@ -102,5 +112,10 @@ export class ServiceFactory {
     static getTagService(): ITagService {
         this.initializeTagService();
         return this.tagService;
+    }
+
+    static getShareService(): IShareService {
+        this.initializeShareService();
+        return this.shareService;
     }
 }
