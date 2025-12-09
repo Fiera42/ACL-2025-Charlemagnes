@@ -91,6 +91,7 @@
 
 <script setup>
 import {ref, computed, onMounted, nextTick} from 'vue';
+import {calendarService} from "../../assets/calendar.js";
 
 const props = defineProps({
   events: {
@@ -270,6 +271,18 @@ const expandedEvents = computed(() => {
       );
 
       const newEnd = new Date(newStart.getTime() + duration);
+
+      // Si pauses n’est pas vide
+      if (event.pauses.length > 0) {
+        for (const pause of event.pauses) {
+          const pauseStart = new Date(pause.pauseStartDate);
+          const pauseEnd = new Date(pause.pauseEndDate);
+
+          if (newEnd < pauseEnd && newStart >= pauseStart) {
+            return; // on masque l’occurrence
+          }
+        }
+      }
 
       // Si la fin de récurrence est définie et que le nouvel événement la dépasse, on arrête
       if (newEnd > recurrenceEnd) break;

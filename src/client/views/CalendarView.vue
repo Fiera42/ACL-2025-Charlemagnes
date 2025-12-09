@@ -69,6 +69,12 @@
         @edit="editAppointment"
         @delete="deleteAppointment"
     />
+
+    <PopupEditRecursive
+        ref="popupRef"
+        v-if="showRecurrenceModal"
+        @choice="handleRecurrenceChoice"
+        @close="closePopupEditRecursive"/>
   </section>
 </template>
 
@@ -84,6 +90,8 @@ import {calendarService} from '../assets/calendar.js';
 import CalendarCreationForm from '../components/calendar/CalendarCreationForm.vue';
 import { RecursionRule } from '../../domain/entities/RecursionRule.js'
 import TagForm from '../components/tag/TagForm.vue';
+import {RecurrentAppointment} from "../../domain/entities/ReccurentAppointment";
+import PopupEditRecursive from "../components/appointment/PopupEditRecursive.vue";
 
 const props = defineProps({
   calendars: {
@@ -125,6 +133,8 @@ const weekViewRef = ref(null);
 const monthViewRef = ref(null);
 const showTagForm = ref(false);
 const editingTag = ref(null);
+const pendingAction = ref(null);
+const showRecurrenceModal = ref(false);
 
 const currentDateLabel = computed(() => {
   const options = {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'};
@@ -189,6 +199,37 @@ const saveAppointment = async (appointment) => {
   try {
     const startDate = new Date(appointment.startDate);
     const endDate = new Date(appointment.endDate);
+
+    if (pendingAction.value === "single-edit") {
+      // On crée une occurrence selon les valeurs du formulaire
+      if (appointment.isRecurring){
+        await calendarService.createRecurrentAppointment({
+          title: appointment.title,
+          description: appointment.description,
+          startDate,
+          endDate,
+          calendarId: appointment.calendarId,
+          recursionRule: RecursionRule[appointment.recursionRule],
+          recursionEndDate: appointment.recursionEndDate ? new Date(appointment.recursionEndDate) : null
+        });
+      } else {
+        await calendarService.createAppointment({
+          title: appointment.title,
+          description: appointment.description,
+          startDate,
+          endDate,
+          calendarId: appointment.calendarId,
+          tags: appointment.tags
+        });
+      }
+
+      await createPause();
+
+      emit('appointmentsUpdated');
+      closeForm();
+      pendingAction.value = null;
+      return;
+    }
 
     if (editingAppointment.value?.id) {
       await calendarService.updateAppointment({
@@ -270,6 +311,10 @@ const closeDetail = () => {
   selectedAppointment.value = null;
 };
 
+const closePopupEditRecursive = () => {
+  showRecurrenceModal.value = false;
+};
+
 // Méthode pour convertir une date en ISO sans décalage horaire
 const DateSansDecalage = (date) => {
   const d = new Date(date);
@@ -279,7 +324,53 @@ const DateSansDecalage = (date) => {
 
 
 const editAppointment = () => {
-  console.log("date fin récurrence passé au formulaire :", selectedAppointment.value.recursionEndDate);
+
+  if (selectedAppointment.value.recursionRule !== undefined && selectedAppointment.value.recursionRule !== null) {
+    pendingAction.value = "edit";
+    showRecurrenceModal.value = true;
+    return;
+  }
+
+  openEditForm();
+};
+
+const createPause = async () => {
+  const app = selectedAppointment.value;
+  // On crée la date de fin de pause basé sur la date de début de pause + la durée entre les occurrences (Quotidien, etc ...)
+  let endPause = new Date(app.startDate);
+  switch(app.recursionRule) {
+    case RecursionRule.DAILY:
+      endPause.setDate(endPause.getDate() + 1);
+      break;
+    case RecursionRule.WEEKLY:
+      endPause.setDate(endPause.getDate() + 7);
+      break;
+    case RecursionRule.MONTHLY:
+      endPause.setMonth(endPause.getMonth() + 1);
+      break;
+    case RecursionRule.YEARLY:
+      endPause.setFullYear(endPause.getFullYear() + 1);
+      break;
+    default:
+      endPause.setDate(endPause.getDate() + 1);
+  }
+
+
+  await calendarService.createPause({
+    recurrentAppointmentId: app.id,
+    pauseStartDate: app.startDate,
+    pauseEndDate: endPause
+  });
+}
+
+
+const openEditForm = async () => {
+  // Si le rendez-vous est récurrent, on récupère en base de donnée les infos du premier rdv de la récurrence
+  if (selectedAppointment.value.recursionRule !== undefined && selectedAppointment.value.recursionRule !== null) {
+    await calendarService.getRecurrentAppointmentById(selectedAppointment.value.id).then((recApp) => {
+      selectedAppointment.value = recApp;
+    });
+  }
   editingAppointment.value = {
     id: selectedAppointment.value.id,
     title: selectedAppointment.value.title,
@@ -298,8 +389,75 @@ const editAppointment = () => {
   showForm.value = true;
 };
 
+const openEditFormSingle = () => {
+  const occ = selectedAppointment.value;
+
+  // on crée une occurrence indépendante
+  editingAppointment.value = {
+    id: null, // On crée une nouvelle occurrence
+    isRecurring: false, // qui n'est pas récurrente par default
+    title: occ.title,
+    description: occ.description,
+    calendarId: occ.calendarId,
+    startDate: DateSansDecalage(occ.startDate),
+    endDate: DateSansDecalage(occ.endDate),
+    tags: occ.tags || []
+  };
+
+  showDetail.value = false;
+  showForm.value = true;
+};
+
+
+const handleRecurrenceChoice = async (choice: "single" | "all") => {
+
+  if (pendingAction.value === "edit") {
+    if (choice === "single") {
+      pendingAction.value = "single-edit";
+      // modifier une seule occurrence
+      openEditFormSingle();
+    } else {
+      // modifier toute la série
+      pendingAction.value = null;
+      openEditForm();
+    }
+  }
+
+  if (pendingAction.value === "delete") {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce rendez-vous ?')) {
+      if (choice === "single") {
+        // cacher une seule occurrence
+        pendingAction.value = null;
+        await createPause();
+        emit('appointmentsUpdated');
+        closeDetail();
+      } else {
+        // supprimer toute la récurrence
+        pendingAction.value = null;
+        try {
+          await calendarService.deleteAppointment(selectedAppointment.value.id, selectedAppointment.value.recursionRule);
+          emit('appointmentsUpdated');
+          closeDetail();
+        } catch (error) {
+          console.error('Erreur lors de la suppression:', error);
+          alert('Erreur lors de la suppression du rendez-vous');
+        }
+      }
+
+    }
+  }
+
+  showRecurrenceModal.value = false;
+};
+
+
 const deleteAppointment = async () => {
-  if (confirm('Êtes-vous sûr de vouloir supprimer ce rendez-vous ?')) {
+    if (selectedAppointment.value.recursionRule !== undefined && selectedAppointment.value.recursionRule !== null) {
+      pendingAction.value = "delete";
+      showRecurrenceModal.value = true;
+      return;
+    }
+
     try {
       await calendarService.deleteAppointment(selectedAppointment.value.id, selectedAppointment.value.recursionRule);
       emit('appointmentsUpdated');
@@ -308,7 +466,6 @@ const deleteAppointment = async () => {
       console.error('Erreur lors de la suppression:', error);
       alert('Erreur lors de la suppression du rendez-vous');
     }
-  }
 };
 
 const goToAppointment = (appointment) => {

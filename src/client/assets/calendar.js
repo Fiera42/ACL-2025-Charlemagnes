@@ -29,6 +29,7 @@ export const calendarService = {
             calendarId: appt.calendarId,
             recursionRule: appt.recursionRule ?? null,
             recursionEndDate: appt.recursionEndDate ? new Date(appt.recursionEndDate) : null,
+            pauses: appt.pauses ? appt.pauses : [],
             tags: appt.tags || []
         };
     },
@@ -63,6 +64,20 @@ export const calendarService = {
                 ...appointments.map((apt) => this.normalize(apt, calendar)),
                 ...recurrentAppointments.map((apt) => this.normalize(apt, calendar))
             ];
+
+            // Charger les pauses pour chaque rendez-vous récurrent
+            for (const event of allEvents) {
+                if (event.recursionRule !== null && event.recursionRule !== undefined) {
+                    try {
+                        const pauses = await this.getPauses(event.id);
+                        event.pauses = pauses;
+                    } catch (e) {
+                        console.error("Erreur de récupération des pauses pour", event.id, e);
+                        event.pauses = [];
+                    }
+                }
+            }
+
 
             console.log('Total normalized events:', allEvents.length);
             if (allEvents.length > 0) {
@@ -139,6 +154,7 @@ export const calendarService = {
     // Modifier un rendez-vous
     async updateAppointment(appointment) {
         try {
+            console.log('Updating appointment:', appointment);
             await axios.put(`/api/calendar/appointments/${appointment.id}`, {
                 title: appointment.title,
                 description: appointment.description,
@@ -226,6 +242,11 @@ export const calendarService = {
         }
     },
 
+    async getRecurrentAppointmentById(recurrentAppointmentId) {
+        const { data } = await axios.get(`/api/calendar/appointmentsRecurrent/${recurrentAppointmentId}`);
+        return data;
+    },
+
     async getTags() {
         const { data } = await axios.get('/api/tag');
         return data.tags ?? [];
@@ -243,5 +264,31 @@ export const calendarService = {
 
     async deleteTag(tagId) {
         await axios.delete(`/api/tag/${tagId}`);
+    },
+
+    async getPauses(recurrentAppointmentId) {
+        const { data } = await axios.get(`api/pause/recurrent/${recurrentAppointmentId}`);
+        console.log('Fetched pauses:', data);
+        return data.pauses ?? [];
+    },
+
+    async createPause(pause) {
+        const { data } = await axios.post('/api/pause', pause);
+        return data;
+    },
+
+    async deletePause(pauseId) {
+        await axios.delete(`/api/pause/${pauseId}`);
+    },
+
+    async updatePause(pauseId, pause) {
+        const { data } = await axios.put(`/api/pause/${pauseId}`, pause);
+        return data;
+    },
+
+    // Méthode pour check si une date est comprise dans une pause
+    async isDateInPause(recurrentAppointmentId, date) {
+        const data = await axios.get(`/api/pause/isInPause/${recurrentAppointmentId}/${date.toISOString()}`);
+        return data.data.isInPause;
     }
 };
