@@ -2,7 +2,7 @@
   <BaseModal @close="$emit('close')" :maxWidth="'600px'">
     <div class="flex flex-col max-h-[75vh]">
       <div class="flex-shrink-0 pb-4 border-b border-gray-200">
-        <h2 class="text-2xl font-bold text-gray-900">
+        <h2 class="section-title">
           {{ form.id ? 'Modifier le' : 'Nouveau' }} tag
         </h2>
       </div>
@@ -10,7 +10,7 @@
       <div class="flex-1 overflow-y-auto py-6 px-1">
         <form @submit.prevent="handleSubmit" class="space-y-5">
           <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <label class="form-label-enhanced">
               <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
               </svg>
@@ -21,7 +21,7 @@
                 type="text"
                 required
                 placeholder="Travail, Personnel, Urgent..."
-                class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
+                class="form-input-enhanced"
             />
           </div>
 

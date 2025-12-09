@@ -3,7 +3,7 @@
     <div class="flex flex-col max-h-[85vh]">
       <!-- Header fixe -->
       <div class="flex-shrink-0 pb-4 border-b border-gray-200">
-        <h2 class="text-2xl font-bold text-gray-900">
+        <h2 class="section-title">
           {{ form.title ? 'Modifier le' : 'Nouveau' }} rendez-vous
         </h2>
       </div>
@@ -13,7 +13,7 @@
         <form @submit.prevent="handleSubmit" class="space-y-5">
           <!-- Titre -->
           <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <label class="form-label-enhanced">
               <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
               </svg>
@@ -24,13 +24,13 @@
               type="text" 
               required 
               placeholder="Réunion d'équipe..."
-              class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
+              class="form-input-enhanced"
             />
           </div>
 
           <!-- Description -->
           <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <label class="form-label-enhanced">
               <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
               </svg>
@@ -40,13 +40,13 @@
               v-model="form.description" 
               rows="3" 
               placeholder="Ajouter des détails..."
-              class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all resize-none"
+              class="form-input-enhanced resize-none"
             ></textarea>
           </div>
 
           <!-- Calendrier -->
           <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <label class="form-label-enhanced">
               <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
@@ -55,7 +55,7 @@
             <select 
               v-model="form.calendarId" 
               required 
-              class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all appearance-none bg-white cursor-pointer"
+              class="form-input-enhanced appearance-none bg-white cursor-pointer"
             >
               <option v-for="calendar in calendars" :key="calendar.id" :value="calendar.id">
                 {{ calendar.name }}
@@ -67,7 +67,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Date début -->
             <div class="group">
-              <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <label class="form-label-enhanced">
                 <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -77,13 +77,13 @@
                 v-model="form.startDate" 
                 type="datetime-local" 
                 required 
-                class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
+                class="form-input-enhanced"
               />
             </div>
 
             <!-- Date fin -->
             <div class="group">
-              <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <label class="form-label-enhanced">
                 <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -93,7 +93,7 @@
                 v-model="form.endDate" 
                 type="datetime-local" 
                 required 
-                class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
+                class="form-input-enhanced"
               />
             </div>
           </div>

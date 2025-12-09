@@ -2,8 +2,8 @@
   <BaseModal @close="$emit('close')" :maxWidth="'600px'">
     <div class="flex flex-col max-h-[75vh]">
       <div class="flex-shrink-0 pb-4 border-b border-gray-200">
-        <div class="flex items-start justify-between">
-          <h2 class="text-2xl font-bold text-gray-900 flex-1 pr-4">
+        <div class="flex-between">
+          <h2 class="section-title flex-1 pr-4">
             {{ appointment.title }}
           </h2>
           <button 

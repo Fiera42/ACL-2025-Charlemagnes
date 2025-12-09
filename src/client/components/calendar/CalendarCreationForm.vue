@@ -2,7 +2,7 @@
   <BaseModal @close="$emit('close')" :maxWidth="'600px'">
     <div class="flex flex-col max-h-[75vh]">
       <div class="flex-shrink-0 pb-4 border-b border-gray-200">
-        <h2 class="text-2xl font-bold text-gray-900">
+        <h2 class="section-title">
           {{ calendar.id ? 'Modifier le' : 'Nouveau' }} calendrier
         </h2>
       </div>
@@ -10,7 +10,7 @@
       <div class="flex-1 overflow-y-auto py-6 px-1">
         <form @submit.prevent="handleSubmit" class="space-y-5">
           <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <label class="form-label-enhanced">
               <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
@@ -21,12 +21,12 @@
                 type="text"
                 required
                 placeholder="Travail, Personnel, Sport..."
-                class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
+                class="form-input-enhanced"
             />
           </div>
 
           <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <label class="form-label-enhanced">
               <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
               </svg>
@@ -36,7 +36,7 @@
                 v-model="form.description"
                 rows="3"
                 placeholder="Ajouter une description..."
-                class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all resize-none"
+                class="form-input-enhanced resize-none"
             ></textarea>
           </div>
 
