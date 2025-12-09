@@ -116,6 +116,7 @@ router.post('/:calendarId/appointments', authenticateToken, async (req: Authenti
 
         res.status(201).json(appointment);
     } catch (error) {
+        console.log(error);
         res.status(500).json({ error: 'Erreur lors de la création du rendez-vous' });
     }
 });
