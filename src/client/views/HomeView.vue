@@ -20,6 +20,7 @@
           :loading="loading"
           :loadingCalendars="loadingCalendars"
           :calendars="calendars"
+          :shared-calendars="sharedCalendars"
           :calendarsdisplayed="calendarsdisplayed"
           :tags="tags"
           @toggleappointmentsdisplay="viewAppointments"
@@ -39,15 +40,16 @@
 
       <main
           :class="[
-                  'flex-1 transition-all duration-300',
-                  sidebarOpen ? 'ml-80' : 'ml-0'
-                ]"
+                    'flex-1 transition-all duration-300',
+                    sidebarOpen ? 'ml-80' : 'ml-0'
+                  ]"
       >
         <div class="p-6 lg:p-8 max-w-[1600px] mx-auto">
           <CalendarView
               ref="calendarViewRef"
               :appointments="filteredAppointments"
               :calendars="calendars"
+              :shared-calendars="sharedCalendars"
               :tags="tags"
               :loading="loading"
               @appointments-updated="loadAppointments"
@@ -81,6 +83,7 @@ const loading = ref(false);
 const userName = ref('');
 const calendarViewRef = ref(null);
 const calendars = ref([]);
+const sharedCalendars = ref([]);
 const loadingCalendars = ref(false);
 const appointmentsdisplayed = ref(true);
 const calendarsdisplayed = ref(false);
@@ -105,10 +108,17 @@ onMounted(async () => {
   try {
     // Load all calendars, make them visible by default
     await loadCalendars();
+    await loadSharedCalendars();
     await loadTags();
     calendars.value.forEach((calendar) => {
       const isVisible = localStorage.getItem(`isVisible_${calendar.id}`);
-      if(isVisible === null || isVisible.toLowerCase() === "true"){
+      if (isVisible === null || isVisible.toLowerCase() === "true") {
+        calendarService.visibleCalendars.add(calendar.id);
+      }
+    });
+    sharedCalendars.value.forEach((calendar) => {
+      const isVisible = localStorage.getItem(`isVisible_${calendar.id}`);
+      if (isVisible === null || isVisible.toLowerCase() === "true") {
         calendarService.visibleCalendars.add(calendar.id);
       }
     });
@@ -150,8 +160,17 @@ const loadAppointments = async () => {
   loading.value = true;
   try {
     appointments.value = [];
+    // Charger les rendez-vous des calendriers personnels
     calendars.value.forEach((calendar) => {
-      if(calendarService.visibleCalendars.has(calendar.id)) {
+      if (calendarService.visibleCalendars.has(calendar.id)) {
+        calendarService.fetchAppointments(calendar).then((result) => {
+          appointments.value.push(...result);
+        });
+      }
+    });
+    // Charger les rendez-vous des calendriers partagés
+    sharedCalendars.value.forEach((calendar) => {
+      if (calendarService.visibleCalendars.has(calendar.id)) {
         calendarService.fetchAppointments(calendar).then((result) => {
           appointments.value.push(...result);
         });
@@ -162,6 +181,34 @@ const loadAppointments = async () => {
     throw error;
   } finally {
     loading.value = false;
+  }
+};
+
+const loadSharedCalendars = async () => {
+  try {
+    const response = await axios.get('/api/share/shared-with-me');
+    const shares = response.data.shares || [];
+
+    // Récupérer les détails de chaque calendrier partagé
+    const calendarPromises = shares.map(async (share) => {
+      try {
+        const calendarResponse = await axios.get(`/api/calendar/${share.calendarId}`);
+        return {
+          ...calendarResponse.data,
+          isShared: true,
+          ownerId: share.ownerId
+        };
+      } catch (error) {
+        console.error(`Erreur lors de la récupération du calendrier ${share.calendarId}:`, error);
+        return null;
+      }
+    });
+
+    const results = await Promise.all(calendarPromises);
+    sharedCalendars.value = results.filter(cal => cal !== null);
+  } catch (error) {
+    console.error('Erreur lors du chargement des calendriers partagés:', error);
+    sharedCalendars.value = [];
   }
 };
 
@@ -193,7 +240,14 @@ const handleSearch = async (query) => {
     } else {
       appointments.value = [];
       calendars.value.forEach((calendar) => {
-        if(calendarService.visibleCalendars.has(calendar.id)) {
+        if (calendarService.visibleCalendars.has(calendar.id)) {
+          calendarService.searchAppointments(query, calendar).then((result) => {
+            appointments.value.push(...result);
+          });
+        }
+      });
+      sharedCalendars.value.forEach((calendar) => {
+        if (calendarService.visibleCalendars.has(calendar.id)) {
           calendarService.searchAppointments(query, calendar).then((result) => {
             appointments.value.push(...result);
           });
@@ -215,38 +269,38 @@ const handleFilters = (newFilters) => {
 // calcule les rdv avec les filtres appliqué
 const filteredAppointments = computed(() => {
   return appointments.value
-    .filter((a) => {
-      let matches = true;
+      .filter((a) => {
+        let matches = true;
 
-      // Filtre mot-clé
-      if (filters.value.keyword) {
-        const q = filters.value.keyword.toLowerCase();
-        const text = `${a.title ?? ''} ${a.description ?? ''} ${a.location ?? ''}`.toLowerCase();
-        matches = text.includes(q);
-      }
+        // Filtre mot-clé
+        if (filters.value.keyword) {
+          const q = filters.value.keyword.toLowerCase();
+          const text = `${a.title ?? ''} ${a.description ?? ''} ${a.location ?? ''}`.toLowerCase();
+          matches = text.includes(q);
+        }
 
-      // Filtre date début
-      if (matches && filters.value.startDate) {
-        const start = new Date(a.startDate);
-        const filterStart = new Date(filters.value.startDate);
-        matches = filters.value.startOperator === '>' ? start > filterStart : start < filterStart;
-      }
+        // Filtre date début
+        if (matches && filters.value.startDate) {
+          const start = new Date(a.startDate);
+          const filterStart = new Date(filters.value.startDate);
+          matches = filters.value.startOperator === '>' ? start > filterStart : start < filterStart;
+        }
 
-      // Filtre date fin
-      if (matches && filters.value.endDate) {
-        const end = new Date(a.endDate);
-        const filterEnd = new Date(filters.value.endDate);
-        matches = filters.value.endOperator === '>' ? end > filterEnd : end < filterEnd;
-      }
+        // Filtre date fin
+        if (matches && filters.value.endDate) {
+          const end = new Date(a.endDate);
+          const filterEnd = new Date(filters.value.endDate);
+          matches = filters.value.endOperator === '>' ? end > filterEnd : end < filterEnd;
+        }
 
-      // Filtre récurrence
-      if (matches && filters.value.showRecurring === false) {
-        matches = !(a.recursionRule !== undefined && a.recursionRule !== null);
-      }
+        // Filtre récurrence
+        if (matches && filters.value.showRecurring === false) {
+          matches = !(a.recursionRule !== undefined && a.recursionRule !== null);
+        }
 
-      return matches;
-    })
-    .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+        return matches;
+      })
+      .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
 });
 
 
@@ -259,6 +313,7 @@ const closeCalendarForm = async () => {
   showCalendarForm.value = false;
   editingCalendar.value = null;
   await loadCalendars();
+  await loadSharedCalendars();
   await loadAppointments();
   await loadTags();
   resetSearchKey.value++; // Réinitialise la barre de recherche
@@ -301,17 +356,15 @@ const importCalendar = async () => {
 
     res.appointments.forEach((appointment) => {
       appointment.calendarId = res.calendar.id;
-      if(appointment.recursionRule) {
+      if (appointment.recursionRule) {
         calendarService.createRecurrentAppointment(appointment);
-      }
-      else {
+      } else {
         calendarService.createAppointment(appointment);
       }
     });
 
     await calendarToggled(res.calendar.id, true);
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Erreur lors de l\'import du calendrier:', error);
   }
 }
@@ -358,14 +411,14 @@ const deleteTag = async (tagId) => {
 
 const calendarToggled = async (calendarId, value) => {
   localStorage.setItem(`isVisible_${calendarId}`, value);
-  if(value) {
+  if (value) {
     calendarService.visibleCalendars.add(calendarId);
-  }
-  else {
+  } else {
     calendarService.visibleCalendars.delete(calendarId);
   }
 
   await loadCalendars();
+  await loadSharedCalendars();
   await loadAppointments();
 }
 </script>
