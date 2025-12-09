@@ -136,10 +136,14 @@
   const handleRemoveSharedCalendar = async (calendarId: string) => {
     try {
       const token = localStorage.getItem('token');
-      // Trouver le share correspondant et le supprimer
+      if (!token) {
+        console.error('Token non trouvé');
+        return;
+      }
+
       const calendar = props.sharedCalendars.find((c: any) => c.id === calendarId);
       if (calendar) {
-        await axios.delete(`/api/share/calendar/${calendarId}/user/${localStorage.getItem('userId')}`, {
+        await axios.delete(`/api/share/leave/${calendarId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         emit('removeSharedCalendar', calendarId);
@@ -282,6 +286,16 @@
   const handleEditTagClick = (tag: any) => {
     dispatchTagFormEvent(tag);
     emit('editTag', tag);
+  };
+
+  const handleRemoveAccess = async (calendarId: string, userId: string) => {
+    try {
+      await axios.delete(`/api/share/calendar/${calendarId}/user/${userId}`);
+      // Optionnel : rafraîchir la liste des partages
+      emit('calendarsUpdated');
+    } catch (error) {
+      console.error('Erreur lors de la suppression du partage:', error);
+    }
   };
 
   const getTagById = (id: string) => props.tags.find((t: any) => t.id === id);
@@ -799,5 +813,6 @@
         v-if="isShareModalOpen"
         :calendar="shareModalCalendar"
         @close="closeShareModal"
+        @removeAccess="handleRemoveAccess"
     />
   </template>

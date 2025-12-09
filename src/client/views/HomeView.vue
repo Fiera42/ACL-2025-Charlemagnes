@@ -36,6 +36,7 @@
           @calendarToggled="calendarToggled"
           @editTag="openTagForm"
           @deleteTag="deleteTag"
+          @removeSharedCalendar="handleRemoveSharedCalendar"
       />
 
       <main
@@ -421,4 +422,16 @@ const calendarToggled = async (calendarId, value) => {
   await loadSharedCalendars();
   await loadAppointments();
 }
+
+const handleRemoveSharedCalendar = async (calendarId) => {
+  // Retirer le calendrier de la liste locale immédiatement
+  sharedCalendars.value = sharedCalendars.value.filter(c => c.id !== calendarId);
+
+  // Retirer de la visibilité
+  localStorage.removeItem(`isVisible_${calendarId}`);
+  calendarService.visibleCalendars.delete(calendarId);
+
+  // Recharger les rendez-vous pour exclure ceux du calendrier supprimé
+  await loadAppointments();
+};
 </script>

@@ -168,6 +168,29 @@ export class ShareService implements IShareService {
         return await this.shareDB.deleteShare(shareId);
     }
 
+    async removeMyAccess(
+        userShareId: string,
+        calendarId: string
+    ): Promise<void> {
+        this.validateId("userShareId", userShareId);
+        this.validateId("calendarId", calendarId);
+
+        const calendar = await this.calendarDB.findCalendarById(calendarId);
+        if (!calendar) {
+            throw new Error(`Calendar with id ${calendarId} not found`);
+        }
+
+        const shares = await this.shareDB.findSharesByCalendarId(calendarId);
+        const shareToDelete = shares.find(s => s.userShareId === userShareId);
+
+        if (!shareToDelete) {
+            throw new Error(`Share not found for user ${userShareId} on calendar ${calendarId}`);
+        }
+
+        await this.shareDB.deleteShare(shareToDelete.id!);
+    }
+
+
     private validateId(fieldName: string, id: string): void {
         if (!id || id.trim().length === 0) {
             throw new Error(`${fieldName} cannot be empty`);
