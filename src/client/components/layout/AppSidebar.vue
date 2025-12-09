@@ -1,3 +1,282 @@
+<script setup lang="ts">
+import {computed, ref, watch, onMounted, onBeforeUnmount} from 'vue';
+import {calendarService} from "../../assets/calendar.js";
+import CalendarShareModal from "../calendar/CalendarShareModal.vue";
+
+const emit = defineEmits([
+  'close',
+  'selectAppointment',
+  'toggleappointmentsdisplay',
+  'togglecalendarsdisplay',
+  'toggletagsdisplay',
+  'CalendarForm',
+  'TagForm',
+  'editCalendar',
+  'deleteCalendar',
+  'editTag',
+  'deleteTag',
+  'exportCalendar',
+  'ImportCalendar',
+  'calendarToggled'
+]);
+
+const props = defineProps({
+  isOpen: {
+    type: Boolean,
+    default: false
+  },
+  appointmentsdisplayed: {
+    type: Boolean,
+    default: false
+  },
+  calendarsdisplayed: {
+    type: Boolean,
+    default: false
+  },
+  tagsdisplayed: {
+    type: Boolean,
+    default: false
+  },
+  appointments: {
+    type: Array,
+    default: () => []
+  },
+  calendars: {
+    type: Array,
+    default: () => []
+  },
+  tags: {
+    type: Array,
+    default: () => []
+  },
+  loading: {
+    type: Boolean,
+    default: false
+  },
+  loadingCalendars: {
+    type: Boolean,
+    default: false
+  },
+  loadingTags: {
+    type: Boolean,
+    default: false
+  }
+});
+
+const openDropdownId = ref<string | null>(null);
+const dropdownPosition = ref({top: 0, left: 0});
+const dropdownButtonRefs = ref<Record<string, HTMLElement | null>>({});
+
+const setDropdownButtonRef = (calendarId: string, el: HTMLElement | null) => {
+  dropdownButtonRefs.value[calendarId] = el;
+};
+
+const dropdownStyle = computed(() => ({
+  top: `${dropdownPosition.value.top}px`,
+  left: `${dropdownPosition.value.left}px`
+}));
+
+const getCalendarById = (id: string | null) => {
+  if (!id) return null;
+  return props.calendars.find((c: any) => c.id === id) || null;
+};
+
+const toggleDropdown = (calendarId: string, event: MouseEvent) => {
+  if (openDropdownId.value === calendarId) {
+    openDropdownId.value = null;
+  } else {
+    const button = event.currentTarget as HTMLElement;
+    const rect = button.getBoundingClientRect();
+
+    // Positionner le dropdown en dessous du bouton, aligné à droite
+    dropdownPosition.value = {
+      top: rect.bottom + 4,
+      left: rect.right - 160 // 160px = largeur du dropdown (w-40)
+    };
+
+    openDropdownId.value = calendarId;
+  }
+};
+
+const closeDropdown = () => {
+  openDropdownId.value = null;
+};
+
+const handleEdit = (calendar: any) => {
+  if (!calendar) return;
+  emit('editCalendar', calendar.id, calendar.name, calendar.description, calendar.color);
+  closeDropdown();
+};
+
+const handleExport = (calendar: any) => {
+  if (!calendar) return;
+  emit('exportCalendar', calendar, props.appointments);
+  closeDropdown();
+};
+
+const handleDelete = (calendarId: string) => {
+  emit('deleteCalendar', calendarId);
+  closeDropdown();
+};
+
+const handleClickOutside = (event: MouseEvent) => {
+  if (openDropdownId.value !== null) {
+    const target = event.target as HTMLElement;
+    // Vérifier si le clic est en dehors du dropdown et du bouton
+    if (!target.closest('.fixed.w-40') && !target.closest('button[title="Options"]')) {
+      closeDropdown();
+    }
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
+
+const upcomingAppointments = computed(() => {
+  const now = new Date();
+  const limitDate = new Date();
+  limitDate.setMonth(limitDate.getMonth() + 1);
+
+  const result: any[] = [];
+
+  props.appointments.forEach((appt: any) => {
+    const start = new Date(appt.startDate);
+    const end = new Date(appt.endDate);
+    const duration = end.getTime() - start.getTime();
+    const rule = appt.recursionRule;
+
+    // Pas de récurrence
+    if (rule === undefined || rule === null) {
+      if (start > now && start <= limitDate) result.push(appt);
+      return;
+    }
+
+    // Si il y a une récurrence on prend la valeur la plus petite parmis la limitDate ou la date de fin de récurrence
+    let recurrenceEnd = appt.recursionEndDate ? new Date(appt.recursionEndDate) : limitDate;
+    recurrenceEnd = recurrenceEnd < limitDate ? recurrenceEnd : limitDate;
+
+    // Calculer la première occurrence après maintenant
+    let cursor = new Date(start);
+
+    switch (rule) {
+      case 0: // quotidien
+        while (cursor < now) cursor.setDate(cursor.getDate() + 1);
+        break;
+      case 1: // hebdomadaire
+        while (cursor < now) cursor.setDate(cursor.getDate() + 7);
+        break;
+      case 2: // mensuel
+        while (cursor < now) cursor.setMonth(cursor.getMonth() + 1);
+        break;
+      case 3: // annuel
+        while (cursor < now) cursor.setFullYear(cursor.getFullYear() + 1);
+        break;
+    }
+
+    // Ajouter toutes les occurrences jusqu'à la limite
+    while (cursor <= recurrenceEnd) {
+      result.push({
+        ...appt,
+        startDate: new Date(cursor),
+        endDate: new Date(cursor.getTime() + duration),
+        isOccurrence: true
+      });
+
+      switch (rule) {
+        case 0:
+          cursor.setDate(cursor.getDate() + 1);
+          break;
+        case 1:
+          cursor.setDate(cursor.getDate() + 7);
+          break;
+        case 2:
+          cursor.setMonth(cursor.getMonth() + 1);
+          break;
+        case 3:
+          cursor.setFullYear(cursor.getFullYear() + 1);
+          break;
+      }
+    }
+  });
+
+  return result
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+      .map(appt => ({
+        ...appt,
+        dateLabel: new Date(appt.startDate).toLocaleDateString('fr-FR', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short'
+        }),
+        hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})
+      }));
+});
+
+const tabOrder = ['appointments', 'calendars', 'tags'] as const;
+const forcedView = computed(() => {
+  if (props.tagsdisplayed) return 'tags';
+  if (props.calendarsdisplayed) return 'calendars';
+  if (props.appointmentsdisplayed) return 'appointments';
+  return null;
+});
+const internalView = ref<typeof tabOrder[number]>('appointments');
+watch(forcedView, (val) => {
+  if (val) internalView.value = val;
+}, {immediate: true});
+
+const isAppointmentsView = computed(() => internalView.value === 'appointments');
+const isCalendarsView = computed(() => internalView.value === 'calendars');
+const isTagsView = computed(() => internalView.value === 'tags');
+
+const activeTabIndex = computed(() => tabOrder.indexOf(internalView.value));
+const indicatorWidth = computed(() => `${100 / tabOrder.length}%`);
+const indicatorTransform = computed(() => `translateX(${activeTabIndex.value * 100}%)`);
+
+const selectTab = (view: typeof tabOrder[number], emitName: string) => {
+  internalView.value = view;
+  emit(emitName);
+};
+
+const dispatchTagFormEvent = (payload: any = null) => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('open-tag-form', {detail: payload}));
+  }
+};
+
+const handleNewTagClick = () => {
+  dispatchTagFormEvent(null);
+  emit('TagForm');
+};
+
+const handleEditTagClick = (tag: any) => {
+  dispatchTagFormEvent(tag);
+  emit('editTag', tag);
+};
+
+const getTagById = (id: string) => props.tags.find((t: any) => t.id === id);
+const getTagColor = (id: string) => getTagById(id)?.color || '#ccc';
+const getTagName = (id: string) => getTagById(id)?.name || 'Inconnu';
+
+// --- Ajout pour le partage de calendrier ---
+const shareModalCalendar = ref<any | null>(null);
+const isShareModalOpen = computed(() => shareModalCalendar.value !== null);
+
+const handleShare = (calendar: any) => {
+  if (!calendar) return;
+  shareModalCalendar.value = calendar;
+  closeDropdown();
+};
+
+const closeShareModal = () => {
+  shareModalCalendar.value = null;
+};
+</script>
+
 <template>
   <!-- Overlay -->
   <div
@@ -8,9 +287,9 @@
   <!-- Sidebar -->
   <aside
       :class="[
-                            'fixed top-16 left-0 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ease-in-out w-80 flex flex-col',
-                            isOpen ? 'translate-x-0' : '-translate-x-full'
-                          ]"
+                                        'fixed top-16 left-0 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ease-in-out w-80 flex flex-col',
+                                        isOpen ? 'translate-x-0' : '-translate-x-full'
+                                      ]"
       :style="{ overflow: 'hidden' }"
   >
     <div class="flex flex-col h-full">
@@ -190,8 +469,8 @@
                         @change="$emit('calendarToggled', calendar.id, $event.target.checked)"
                     />
                     <span class="text-sm font-medium text-gray-900 truncate" :title="calendar.name">
-                                          {{ calendar.name }}
-                                        </span>
+                                                      {{ calendar.name }}
+                                                    </span>
                   </label>
 
                   <div class="flex-shrink-0">
@@ -262,10 +541,10 @@
               >
                 <div class="flex items-center justify-between gap-2">
                   <div class="flex items-center gap-2 min-w-0 flex-1">
-                                        <span
-                                            :style="{ backgroundColor: tag.color }"
-                                            class="w-4 h-4 rounded-full border border-gray-300 flex-shrink-0"
-                                        ></span>
+                                                    <span
+                                                        :style="{ backgroundColor: tag.color }"
+                                                        class="w-4 h-4 rounded-full border border-gray-300 flex-shrink-0"
+                                                    ></span>
                     <h3 class="font-medium text-gray-900 text-sm truncate" :title="tag.name">{{ tag.name }}</h3>
                   </div>
                   <div class="flex items-center justify-end gap-1.5 flex-shrink-0">
@@ -328,6 +607,17 @@
         </svg>
         Exporter .ics
       </button>
+      <!-- Ligne ajoutée pour le partage -->
+      <button
+          class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+          @click="handleShare(getCalendarById(openDropdownId))"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 fill-gray-600" viewBox="0 0 24 24">
+          <path
+              d="M18 8a3 3 0 0 0-2.82 2H9.82A3 3 0 0 0 7 9L4 7a3 3 0 1 0 0 4l3-2a3 3 0 0 0 2.82 1H15.18A3 3 0 1 0 18 8Z"/>
+        </svg>
+        Partager
+      </button>
       <hr class="my-1 border-gray-200"/>
       <button
           class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
@@ -341,268 +631,11 @@
       </button>
     </div>
   </Teleport>
+
+  <!-- Modal de partage du calendrier -->
+  <CalendarShareModal
+      v-if="isShareModalOpen"
+      :calendar="shareModalCalendar"
+      @close="closeShareModal"
+  />
 </template>
-
-<script setup lang="ts">
-import {computed, ref, watch, onMounted, onBeforeUnmount} from 'vue';
-import {calendarService} from "../../assets/calendar.js";
-
-const emit = defineEmits([
-  'close',
-  'selectAppointment',
-  'toggleappointmentsdisplay',
-  'togglecalendarsdisplay',
-  'toggletagsdisplay',
-  'CalendarForm',
-  'TagForm',
-  'editCalendar',
-  'deleteCalendar',
-  'editTag',
-  'deleteTag',
-  'exportCalendar',
-  'ImportCalendar',
-  'calendarToggled'
-]);
-
-const props = defineProps({
-  isOpen: {
-    type: Boolean,
-    default: false
-  },
-  appointmentsdisplayed: {
-    type: Boolean,
-    default: false
-  },
-  calendarsdisplayed: {
-    type: Boolean,
-    default: false
-  },
-  tagsdisplayed: {
-    type: Boolean,
-    default: false
-  },
-  appointments: {
-    type: Array,
-    default: () => []
-  },
-  calendars: {
-    type: Array,
-    default: () => []
-  },
-  tags: {
-    type: Array,
-    default: () => []
-  },
-  loading: {
-    type: Boolean,
-    default: false
-  },
-  loadingCalendars: {
-    type: Boolean,
-    default: false
-  },
-  loadingTags: {
-    type: Boolean,
-    default: false
-  }
-});
-
-const openDropdownId = ref<string | null>(null);
-const dropdownPosition = ref({top: 0, left: 0});
-const dropdownButtonRefs = ref<Record<string, HTMLElement | null>>({});
-
-const setDropdownButtonRef = (calendarId: string, el: HTMLElement | null) => {
-  dropdownButtonRefs.value[calendarId] = el;
-};
-
-const dropdownStyle = computed(() => ({
-  top: `${dropdownPosition.value.top}px`,
-  left: `${dropdownPosition.value.left}px`
-}));
-
-const getCalendarById = (id: string | null) => {
-  if (!id) return null;
-  return props.calendars.find((c: any) => c.id === id) || null;
-};
-
-const toggleDropdown = (calendarId: string, event: MouseEvent) => {
-  if (openDropdownId.value === calendarId) {
-    openDropdownId.value = null;
-  } else {
-    const button = event.currentTarget as HTMLElement;
-    const rect = button.getBoundingClientRect();
-
-    // Positionner le dropdown en dessous du bouton, aligné à droite
-    dropdownPosition.value = {
-      top: rect.bottom + 4,
-      left: rect.right - 160 // 160px = largeur du dropdown (w-40)
-    };
-
-    openDropdownId.value = calendarId;
-  }
-};
-
-const closeDropdown = () => {
-  openDropdownId.value = null;
-};
-
-const handleEdit = (calendar: any) => {
-  if (!calendar) return;
-  emit('editCalendar', calendar.id, calendar.name, calendar.description, calendar.color);
-  closeDropdown();
-};
-
-const handleExport = (calendar: any) => {
-  if (!calendar) return;
-  emit('exportCalendar', calendar, props.appointments);
-  closeDropdown();
-};
-
-const handleDelete = (calendarId: string) => {
-  emit('deleteCalendar', calendarId);
-  closeDropdown();
-};
-
-const handleClickOutside = (event: MouseEvent) => {
-  if (openDropdownId.value !== null) {
-    const target = event.target as HTMLElement;
-    // Vérifier si le clic est en dehors du dropdown et du bouton
-    if (!target.closest('.fixed.w-40') && !target.closest('button[title="Options"]')) {
-      closeDropdown();
-    }
-  }
-};
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
-
-const upcomingAppointments = computed(() => {
-  const now = new Date();
-  const limitDate = new Date();
-  limitDate.setMonth(limitDate.getMonth() + 1);
-
-  const result = [];
-
-  props.appointments.forEach(appt => {
-    const start = new Date(appt.startDate);
-    const end = new Date(appt.endDate);
-    const duration = end - start;
-    const rule = appt.recursionRule;
-
-    // Pas de récurrence
-    if (rule === undefined || rule === null) {
-      if (start > now && start <= limitDate) result.push(appt);
-      return;
-    }
-
-    // Si il y a une récurrence on prend la valeur la plus petite parmis la limitDate ou la date de fin de récurrence
-    let recurrenceEnd = appt.recursionEndDate ? new Date(appt.recursionEndDate) : limitDate;
-    recurrenceEnd = recurrenceEnd < limitDate ? recurrenceEnd : limitDate;
-
-    // Calculer la première occurrence après maintenant
-    let cursor = new Date(start);
-
-    switch (rule) {
-      case 0: // quotidien
-        while (cursor < now) cursor.setDate(cursor.getDate() + 1);
-        break;
-      case 1: // hebdomadaire
-        while (cursor < now) cursor.setDate(cursor.getDate() + 7);
-        break;
-      case 2: // mensuel
-        while (cursor < now) cursor.setMonth(cursor.getMonth() + 1);
-        break;
-      case 3: // annuel
-        while (cursor < now) cursor.setFullYear(cursor.getFullYear() + 1);
-        break;
-    }
-
-    // Ajouter toutes les occurrences jusqu'à la limite
-    while (cursor <= recurrenceEnd) {
-      result.push({
-        ...appt,
-        startDate: new Date(cursor),
-        endDate: new Date(cursor.getTime() + duration),
-        isOccurrence: true
-      });
-
-      switch (rule) {
-        case 0:
-          cursor.setDate(cursor.getDate() + 1);
-          break;
-        case 1:
-          cursor.setDate(cursor.getDate() + 7);
-          break;
-        case 2:
-          cursor.setMonth(cursor.getMonth() + 1);
-          break;
-        case 3:
-          cursor.setFullYear(cursor.getFullYear() + 1);
-          break;
-      }
-    }
-  });
-
-  return result
-      .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
-      .map(appt => ({
-        ...appt,
-        dateLabel: new Date(appt.startDate).toLocaleDateString('fr-FR', {
-          weekday: 'short',
-          day: 'numeric',
-          month: 'short'
-        }),
-        hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})
-      }));
-});
-
-const tabOrder = ['appointments', 'calendars', 'tags'] as const;
-const forcedView = computed(() => {
-  if (props.tagsdisplayed) return 'tags';
-  if (props.calendarsdisplayed) return 'calendars';
-  if (props.appointmentsdisplayed) return 'appointments';
-  return null;
-});
-const internalView = ref<typeof tabOrder[number]>('appointments');
-watch(forcedView, (val) => {
-  if (val) internalView.value = val;
-}, {immediate: true});
-
-const isAppointmentsView = computed(() => internalView.value === 'appointments');
-const isCalendarsView = computed(() => internalView.value === 'calendars');
-const isTagsView = computed(() => internalView.value === 'tags');
-
-const activeTabIndex = computed(() => tabOrder.indexOf(internalView.value));
-const indicatorWidth = computed(() => `${100 / tabOrder.length}%`);
-const indicatorTransform = computed(() => `translateX(${activeTabIndex.value * 100}%)`);
-
-const selectTab = (view: typeof tabOrder[number], emitName: string) => {
-  internalView.value = view;
-  emit(emitName);
-};
-
-const dispatchTagFormEvent = (payload: any = null) => {
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('open-tag-form', {detail: payload}));
-  }
-};
-
-const handleNewTagClick = () => {
-  dispatchTagFormEvent(null);
-  emit('TagForm');
-};
-
-const handleEditTagClick = (tag: any) => {
-  dispatchTagFormEvent(tag);
-  emit('editTag', tag);
-};
-
-const getTagById = (id: string) => props.tags.find((t: any) => t.id === id);
-const getTagColor = (id: string) => getTagById(id)?.color || '#ccc';
-const getTagName = (id: string) => getTagById(id)?.name || 'Inconnu';
-</script>
