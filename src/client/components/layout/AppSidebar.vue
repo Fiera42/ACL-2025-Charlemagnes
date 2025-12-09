@@ -8,9 +8,9 @@
   <!-- Sidebar -->
   <aside
       :class="[
-        'fixed top-16 left-0 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ease-in-out w-80 flex flex-col',
-        isOpen ? 'translate-x-0' : '-translate-x-full'
-      ]"
+                            'fixed top-16 left-0 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ease-in-out w-80 flex flex-col',
+                            isOpen ? 'translate-x-0' : '-translate-x-full'
+                          ]"
       :style="{ overflow: 'hidden' }"
   >
     <div class="flex flex-col h-full">
@@ -104,9 +104,10 @@
                   </svg>
                   <span>{{ appointment.dateLabel }}</span>
                 </div>
-                <div v-if="appointment.recursionRule !== undefined && appointment.recursionRule !== null" class="absolute bottom-1 right-1">
+                <div v-if="appointment.recursionRule !== undefined && appointment.recursionRule !== null"
+                     class="absolute bottom-1 right-1">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="17 1 21 5 17 9"></polyline>
                     <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
                     <polyline points="7 23 3 19 7 15"></polyline>
@@ -189,42 +190,23 @@
                         @change="$emit('calendarToggled', calendar.id, $event.target.checked)"
                     />
                     <span class="text-sm font-medium text-gray-900 truncate" :title="calendar.name">
-                      {{ calendar.name }}
-                    </span>
+                                          {{ calendar.name }}
+                                        </span>
                   </label>
 
-                  <div class="flex items-center gap-1.5 flex-shrink-0">
+                  <div class="flex-shrink-0">
                     <button
-                        title="Modifier"
-                        class="p-2 bg-indigo-600 rounded-xl flex items-center justify-center text-white transition-all duration-300 hover:bg-indigo-700"
-                        @click.stop="$emit('editCalendar',calendar.id,calendar.name,calendar.description,calendar.color)"
+                        :ref="el => setDropdownButtonRef(calendar.id, el)"
+                        title="Options"
+                        class="p-2 bg-gray-100 rounded-xl flex items-center justify-center text-gray-600 transition-all duration-300 hover:bg-gray-200"
+                        @click.stop="toggleDropdown(calendar.id, $event)"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">
-                        <path d="M22,7.24a1,1,0,0,0-.29-.71L17.47,2.29A1,1,0,0,0,16.76,2a1,1,0,0,0-.71.29L13.22,5.12h0L2.29,16.05a1,1,0,0,0-.29.71V21a1,1,0,0,0,1,1H7.24A1,1,0,0,0,8,21.71L18.87,10.78h0L21.71,8a1.19,1.19,0,0,0,.22-.33,1,1,0,0,0,0-.24.7.7,0,0,0,0-.14ZM6.83,20H4V17.17l9.93-9.93,2.83,2.83ZM18.17,8.66,15.34,5.83l1.42-1.41,2.82,2.82Z"/>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
                       </svg>
-                      <span class="sr-only">Modifier</span>
-                    </button>
-
-                    <button
-                        title="Exporter"
-                        class="p-2 bg-indigo-600 rounded-xl flex items-center justify-center text-white transition-all duration-300 hover:bg-indigo-700"
-                        @click.stop="emit('exportCalendar', calendar, appointments)"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">
-                        <path d="M22,7.24a1,1,0,0,0-.29-.71L17.47,2.29A1,1,0,0,0,16.76,2a1,1,0,0,0-.71.29L13.22,5.12h0L2.29,16.05a1,1,0,0,0-.29.71V21a1,1,0,0,0,1,1H7.24A1,1,0,0,0,8,21.71L18.87,10.78h0L21.71,8a1.19,1.19,0,0,0,.22-.33,1,1,0,0,0,0-.24.7.7,0,0,0,0-.14ZM6.83,20H4V17.17l9.93-9.93,2.83,2.83ZM18.17,8.66,15.34,5.83l1.42-1.41,2.82,2.82Z"/>
-                      </svg>
-                      <span class="sr-only">Exporter</span>
-                    </button>
-
-                    <button
-                        title="Supprimer"
-                        class="p-2 bg-red-500 rounded-xl flex items-center justify-center text-white transition-all duration-300 hover:bg-red-600"
-                        @click.stop="$emit('deleteCalendar',calendar.id)"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">
-                        <path d="M20,6H16V5a3,3,0,0,0-3-3H11A3,3,0,0,0,8,5V6H4A1,1,0,0,0,4,8H5V19a3,3,0,0,0,3,3h8a3,3,0,0,0,3-3V8h1a1,1,0,0,0,0-2ZM10,5a1,1,0,0,1,1-1h2a1,1,0,0,1,1,1V6H10Zm7,14a1,1,0,0,1-1,1H8a1,1,0,0,1-1-1V8H17Z"/>
-                      </svg>
-                      <span class="sr-only">Supprimer</span>
                     </button>
                   </div>
                 </div>
@@ -232,18 +214,6 @@
                 <p v-if="calendar.description" class="text-xs text-gray-600 mb-2 line-clamp-2">
                   {{ calendar.description }}
                 </p>
-
-
-            <!-- <div class="flex items-center gap-2 text-xs text-gray-500">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-              <span>{{ appointment.dateLabel }}</span>
-            </div> -->
               </div>
             </div>
           </div>
@@ -292,10 +262,10 @@
               >
                 <div class="flex items-center justify-between gap-2">
                   <div class="flex items-center gap-2 min-w-0 flex-1">
-                    <span
-                        :style="{ backgroundColor: tag.color }"
-                        class="w-4 h-4 rounded-full border border-gray-300 flex-shrink-0"
-                    ></span>
+                                        <span
+                                            :style="{ backgroundColor: tag.color }"
+                                            class="w-4 h-4 rounded-full border border-gray-300 flex-shrink-0"
+                                        ></span>
                     <h3 class="font-medium text-gray-900 text-sm truncate" :title="tag.name">{{ tag.name }}</h3>
                   </div>
                   <div class="flex items-center justify-end gap-1.5 flex-shrink-0">
@@ -304,7 +274,8 @@
                         @click="handleEditTagClick(tag)"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">
-                        <path d="M22,7.24a1,1,0,0,0-.29-.71L17.47,2.29A1,1,0,0,0,16.76,2a1,1,0,0,0-.71.29L13.22,5.12h0L2.29,16.05a1,1,0,0,0-.29.71V21a1,1,0,0,0,1,1H7.24A1,1,0,0,0,8,21.71L18.87,10.78h0L21.71,8a1.19,1.19,0,0,0,.22-.33,1,1,0,0,0,0-.24.7.7,0,0,0,0-.14ZM6.83,20H4V17.17l9.93-9.93,2.83,2.83ZM18.17,8.66,15.34,5.83l1.42-1.41,2.82,2.82Z"/>
+                        <path
+                            d="M22,7.24a1,1,0,0,0-.29-.71L17.47,2.29A1,1,0,0,0,16.76,2a1,1,0,0,0-.71.29L13.22,5.12h0L2.29,16.05a1,1,0,0,0-.29.71V21a1,1,0,0,0,1,1H7.24A1,1,0,0,0,8,21.71L18.87,10.78h0L21.71,8a1.19,1.19,0,0,0,.22-.33,1,1,0,0,0,0-.24.7.7,0,0,0,0-.14ZM6.83,20H4V17.17l9.93-9.93,2.83,2.83ZM18.17,8.66,15.34,5.83l1.42-1.41,2.82,2.82Z"/>
                       </svg>
                       <span class="sr-only">Modifier</span>
                     </button>
@@ -313,7 +284,8 @@
                         @click="$emit('deleteTag', tag.id)"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">
-                        <path d="M20,6H16V5a3,3,0,0,0-3-3H11A3,3,0,0,0,8,5V6H4A1,1,0,0,0,4,8H5V19a3,3,0,0,0,3,3h8a3,3,0,0,0,3-3V8h1a1,1,0,0,0,0-2ZM10,5a1,1,0,0,1,1-1h2a1,1,0,0,1,1,1V6H10Zm7,14a1,1,0,0,1-1,1H8a1,1,0,0,1-1-1V8H17Z"/>
+                        <path
+                            d="M20,6H16V5a3,3,0,0,0-3-3H11A3,3,0,0,0,8,5V6H4A1,1,0,0,0,4,8H5V19a3,3,0,0,0,3,3h8a3,3,0,0,0,3-3V8h1a1,1,0,0,0,0-2ZM10,5a1,1,0,0,1,1-1h2a1,1,0,0,1,1,1V6H10Zm7,14a1,1,0,0,1-1,1H8a1,1,0,0,1-1-1V8H17Z"/>
                       </svg>
                       <span class="sr-only">Supprimer</span>
                     </button>
@@ -327,10 +299,52 @@
 
     </div>
   </aside>
+
+  <!-- Dropdown Menu (Teleported outside sidebar) -->
+  <Teleport to="body">
+    <div
+        v-if="openDropdownId !== null"
+        class="fixed w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[9999]"
+        :style="dropdownStyle"
+        @click.stop
+    >
+      <button
+          class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+          @click="handleEdit(getCalendarById(openDropdownId))"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-gray-600">
+          <path
+              d="M22,7.24a1,1,0,0,0-.29-.71L17.47,2.29A1,1,0,0,0,16.76,2a1,1,0,0,0-.71.29L13.22,5.12h0L2.29,16.05a1,1,0,0,0-.29.71V21a1,1,0,0,0,1,1H7.24A1,1,0,0,0,8,21.71L18.87,10.78h0L21.71,8a1.19,1.19,0,0,0,.22-.33,1,1,0,0,0,0-.24.7.7,0,0,0,0-.14ZM6.83,20H4V17.17l9.93-9.93,2.83,2.83ZM18.17,8.66,15.34,5.83l1.42-1.41,2.82,2.82Z"/>
+        </svg>
+        Modifier
+      </button>
+      <button
+          class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+          @click="handleExport(getCalendarById(openDropdownId))"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-gray-600">
+          <path
+              d="M21,14a1,1,0,0,0-1,1v4a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1V15a1,1,0,0,0-2,0v4a3,3,0,0,0,3,3H19a3,3,0,0,0,3-3V15A1,1,0,0,0,21,14Zm-9.71,1.71a1,1,0,0,0,.33.21.94.94,0,0,0,.76,0,1,1,0,0,0,.33-.21l4-4a1,1,0,0,0-1.42-1.42L13,12.59V3a1,1,0,0,0-2,0v9.59l-2.29-2.3a1,1,0,1,0-1.42,1.42Z"/>
+        </svg>
+        Exporter .ics
+      </button>
+      <hr class="my-1 border-gray-200"/>
+      <button
+          class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+          @click="handleDelete(openDropdownId)"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-red-600">
+          <path
+              d="M20,6H16V5a3,3,0,0,0-3-3H11A3,3,0,0,0,8,5V6H4A1,1,0,0,0,4,8H5V19a3,3,0,0,0,3,3h8a3,3,0,0,0,3-3V8h1a1,1,0,0,0,0-2ZM10,5a1,1,0,0,1,1-1h2a1,1,0,0,1,1,1V6H10Zm7,14a1,1,0,0,1-1,1H8a1,1,0,0,1-1-1V8H17Z"/>
+        </svg>
+        Supprimer
+      </button>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import {computed, ref, watch} from 'vue';
+import {computed, ref, watch, onMounted, onBeforeUnmount} from 'vue';
 import {calendarService} from "../../assets/calendar.js";
 
 const emit = defineEmits([
@@ -346,7 +360,8 @@ const emit = defineEmits([
   'editTag',
   'deleteTag',
   'exportCalendar',
-  'ImportCalendar'
+  'ImportCalendar',
+  'calendarToggled'
 ]);
 
 const props = defineProps({
@@ -390,6 +405,80 @@ const props = defineProps({
     type: Boolean,
     default: false
   }
+});
+
+const openDropdownId = ref<string | null>(null);
+const dropdownPosition = ref({top: 0, left: 0});
+const dropdownButtonRefs = ref<Record<string, HTMLElement | null>>({});
+
+const setDropdownButtonRef = (calendarId: string, el: HTMLElement | null) => {
+  dropdownButtonRefs.value[calendarId] = el;
+};
+
+const dropdownStyle = computed(() => ({
+  top: `${dropdownPosition.value.top}px`,
+  left: `${dropdownPosition.value.left}px`
+}));
+
+const getCalendarById = (id: string | null) => {
+  if (!id) return null;
+  return props.calendars.find((c: any) => c.id === id) || null;
+};
+
+const toggleDropdown = (calendarId: string, event: MouseEvent) => {
+  if (openDropdownId.value === calendarId) {
+    openDropdownId.value = null;
+  } else {
+    const button = event.currentTarget as HTMLElement;
+    const rect = button.getBoundingClientRect();
+
+    // Positionner le dropdown en dessous du bouton, aligné à droite
+    dropdownPosition.value = {
+      top: rect.bottom + 4,
+      left: rect.right - 160 // 160px = largeur du dropdown (w-40)
+    };
+
+    openDropdownId.value = calendarId;
+  }
+};
+
+const closeDropdown = () => {
+  openDropdownId.value = null;
+};
+
+const handleEdit = (calendar: any) => {
+  if (!calendar) return;
+  emit('editCalendar', calendar.id, calendar.name, calendar.description, calendar.color);
+  closeDropdown();
+};
+
+const handleExport = (calendar: any) => {
+  if (!calendar) return;
+  emit('exportCalendar', calendar, props.appointments);
+  closeDropdown();
+};
+
+const handleDelete = (calendarId: string) => {
+  emit('deleteCalendar', calendarId);
+  closeDropdown();
+};
+
+const handleClickOutside = (event: MouseEvent) => {
+  if (openDropdownId.value !== null) {
+    const target = event.target as HTMLElement;
+    // Vérifier si le clic est en dehors du dropdown et du bouton
+    if (!target.closest('.fixed.w-40') && !target.closest('button[title="Options"]')) {
+      closeDropdown();
+    }
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside);
 });
 
 const upcomingAppointments = computed(() => {
@@ -443,10 +532,18 @@ const upcomingAppointments = computed(() => {
       });
 
       switch (rule) {
-        case 0: cursor.setDate(cursor.getDate() + 1); break;
-        case 1: cursor.setDate(cursor.getDate() + 7); break;
-        case 2: cursor.setMonth(cursor.getMonth() + 1); break;
-        case 3: cursor.setFullYear(cursor.getFullYear() + 1); break;
+        case 0:
+          cursor.setDate(cursor.getDate() + 1);
+          break;
+        case 1:
+          cursor.setDate(cursor.getDate() + 7);
+          break;
+        case 2:
+          cursor.setMonth(cursor.getMonth() + 1);
+          break;
+        case 3:
+          cursor.setFullYear(cursor.getFullYear() + 1);
+          break;
       }
     }
   });
@@ -460,11 +557,11 @@ const upcomingAppointments = computed(() => {
           day: 'numeric',
           month: 'short'
         }),
-        hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})
+        hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})
       }));
 });
 
-const tabOrder = ['appointments','calendars','tags'] as const;
+const tabOrder = ['appointments', 'calendars', 'tags'] as const;
 const forcedView = computed(() => {
   if (props.tagsdisplayed) return 'tags';
   if (props.calendarsdisplayed) return 'calendars';
@@ -472,7 +569,9 @@ const forcedView = computed(() => {
   return null;
 });
 const internalView = ref<typeof tabOrder[number]>('appointments');
-watch(forcedView, (val) => { if (val) internalView.value = val; }, { immediate: true });
+watch(forcedView, (val) => {
+  if (val) internalView.value = val;
+}, {immediate: true});
 
 const isAppointmentsView = computed(() => internalView.value === 'appointments');
 const isCalendarsView = computed(() => internalView.value === 'calendars');
@@ -489,7 +588,7 @@ const selectTab = (view: typeof tabOrder[number], emitName: string) => {
 
 const dispatchTagFormEvent = (payload: any = null) => {
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('open-tag-form', { detail: payload }));
+    window.dispatchEvent(new CustomEvent('open-tag-form', {detail: payload}));
   }
 };
 
