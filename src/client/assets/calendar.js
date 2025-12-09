@@ -26,6 +26,7 @@ export const calendarService = {
                 minute: '2-digit'
             })}`,
             color: calendar.color,
+            calendarId: appt.calendarId,
             recursionRule: appt.recursionRule ?? null,
             recursionEndDate: appt.recursionEndDate ? new Date(appt.recursionEndDate) : null,
             tags: appt.tags || []
@@ -106,7 +107,8 @@ export const calendarService = {
                 title: appointment.title,
                 description: appointment.description,
                 startDate: appointment.startDate.toISOString(),
-                endDate: appointment.endDate.toISOString()
+                endDate: appointment.endDate.toISOString(),
+                tags: appointment.tags || []
             });
         } catch (error) {
             console.error('Erreur lors de la création:', error.response?.data || error);
@@ -125,7 +127,8 @@ export const calendarService = {
                 startDate: appointment.startDate.toISOString(),
                 endDate: appointment.endDate.toISOString(),
                 recursionRule: appointment.recursionRule,
-                recursionEndDate: appointment.recursionEndDate.toISOString()
+                recursionEndDate: appointment.recursionEndDate.toISOString(),
+                tags: appointment.tags || []
             });
         } catch (error) {
             console.error('Erreur lors de la création récurrente:', error.response?.data || error);
@@ -142,7 +145,8 @@ export const calendarService = {
                 startDate: appointment.startDate.toISOString(),
                 endDate: appointment.endDate.toISOString(),
                 recursionRule: appointment.recursionRule ?? null,
-                recursionEndDate: appointment.recursionEndDate ? appointment.recursionEndDate.toISOString() : null
+                recursionEndDate: appointment.recursionEndDate ? appointment.recursionEndDate.toISOString() : null,
+                tags: appointment.tags || []
             });
         } catch (error) {
             console.error('Erreur lors de la modification:', error.response?.data || error);

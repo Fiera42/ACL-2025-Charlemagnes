@@ -47,7 +47,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-xs font-medium text-green-600 mb-1">Horaire</p>
-              <p class="text-sm font-semibold text-gray-900">{{ formatTimeRange(appointment.startDate, appointment.endDate) }}</p>
+              <p class="text-sm font-semibold text-gray-900">{{ formatTimeRange(appointment. startDate, appointment.endDate) }}</p>
             </div>
           </div>
 
@@ -67,7 +67,31 @@
             </div>
           </div>
 
-          <div v-if="appointment.recursionRule !== undefined && appointment.recursionRule !== null" class="flex items-start gap-3 p-3 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-100">
+          <div v-if="appointmentTags.length > 0" class="flex items-start gap-3 p-3 bg-gradient-to-r from-cyan-50 to-teal-50 rounded-xl border border-cyan-100">
+            <div class="p-2 bg-white rounded-lg shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" class="text-cyan-600">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"></path>
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-medium text-cyan-600 mb-2">Tags</p>
+              <div class="flex flex-wrap gap-2">
+                <span 
+                  v-for="tag in appointmentTags" 
+                  :key="tag.id"
+                  class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white shadow-sm"
+                  :style="{ backgroundColor: tag.color }"
+                >
+                  <span class="opacity-80">@</span>
+                  {{ tag.name }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="appointment. recursionRule !== undefined && appointment.recursionRule !== null" class="flex items-start gap-3 p-3 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-100">
             <div class="p-2 bg-white rounded-lg shadow-sm">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-orange-600">
@@ -82,7 +106,7 @@
               <p class="text-sm font-semibold text-gray-900">{{ readableRecursionRule }}</p>
             </div>
           </div>
-          <!-- Date de fin de récurrence -->
+
           <div
               v-if="readableRecursionEnd"
               class="flex items-start gap-3 p-3 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-amber-200"
@@ -97,7 +121,7 @@
             <div class="flex-1 min-w-0">
               <p class="text-xs font-medium text-amber-600 mb-1">Fin de la récurrence</p>
               <p class="text-sm font-semibold text-gray-900">
-                Jusqu’au {{ readableRecursionEnd }}
+                Jusqu'au {{ readableRecursionEnd }}
               </p>
             </div>
           </div>
@@ -108,11 +132,11 @@
         <div class="flex gap-3">
           <button 
             @click="$emit('edit')" 
-            class="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
+            class="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:from-indigo-700 hover: to-purple-700 shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              <path d="M18. 5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
             Modifier
           </button>
@@ -140,7 +164,19 @@ const props = defineProps({
   appointment: {
     type: Object,
     required: true
+  },
+  tags: {
+    type: Array,
+    default: () => []
   }
+});
+
+const appointmentTags = computed(() => {
+  if (!props.appointment.tags || props.appointment.tags.length === 0) return [];
+  
+  return props.appointment.tags
+    .map(tagId => props.tags.find(t => t.id === tagId))
+    .filter(tag => tag !== undefined);
 });
 
 defineEmits(['close', 'edit', 'delete']);
@@ -152,7 +188,7 @@ const formatDateRange = (start, end) => {
   const startDay = new Date(startDate);
   startDay.setHours(0, 0, 0, 0);
   const endDay = new Date(endDate);
-  endDay.setHours(0, 0, 0, 0);
+  endDay. setHours(0, 0, 0, 0);
 
   if (startDay.getTime() === endDay.getTime()) {
     return startDate.toLocaleDateString('fr-FR', {
@@ -163,7 +199,7 @@ const formatDateRange = (start, end) => {
     });
   } else {
     const startFormatted = startDate.toLocaleDateString('fr-FR', {
-      day: 'numeric',
+      day:  'numeric',
       month: 'long',
       year: 'numeric'
     });
@@ -179,7 +215,7 @@ const formatDateRange = (start, end) => {
 const formatTimeRange = (start, end) => {
   const startTime = new Date(start).toLocaleTimeString('fr-FR', {
     hour: '2-digit',
-    minute: '2-digit'
+    minute:  '2-digit'
   });
   const endTime = new Date(end).toLocaleTimeString('fr-FR', {
     hour: '2-digit',
@@ -200,11 +236,10 @@ const readableRecursionEnd = computed(() => {
 
   return new Date(props.appointment.recursionEndDate).toLocaleDateString("fr-FR", {
     day: "numeric",
-    month: "long",
+    month:  "long",
     year: "numeric"
   });
 });
-
 </script>
 
 <style scoped>

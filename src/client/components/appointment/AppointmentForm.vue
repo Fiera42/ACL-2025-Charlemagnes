@@ -184,9 +184,10 @@
 </template>
 
 <script setup>
-import { ref, watch, watchEffect } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import BaseModal from '../common/BaseModal.vue';
 import TagSelector from '../tag/TagSelector.vue';
+import { format } from 'path';
 
 const props = defineProps({
   appointment: Object,
@@ -204,7 +205,6 @@ const emit = defineEmits(['close', 'save']);
 
 const RECCURRENCE_VALUES = ["DAILY", "WEEKLY", "MONTHLY", "YEARLY"];
 
-
 // Initialise le form
 const form = ref({
   title: '',
@@ -218,34 +218,100 @@ const form = ref({
   tags: []
 });
 
-// Charge les valeurs quand on édite un RDV
-watchEffect(() => {
-  if (!props.appointment) return;
+// Fonction pour charger les données du RDV
+const loadAppointment = (appointment) => {
+  if (! appointment) return;
 
-  form.value.title = props.appointment.title;
-  form.value.description = props.appointment.description;
-  form.value.calendarId = props.appointment.calendarId;
-  form.value.startDate = props.appointment.startDate?.slice(0, 16);
-  form.value.endDate = props.appointment.endDate?.slice(0, 16);
-  form.value.tags = props.appointment.tags || [];
+  form.value.title = appointment.title;
+  form.value.description = appointment.description;
+  form.value.calendarId = appointment.calendarId;
+  form.value.startDate = appointment.startDate?.slice(0, 16);
+  form.value.endDate = appointment.endDate?.slice(0, 16);
+  form.value.tags = appointment.tags || [];
 
-  // SI récursif, on coche la case et on met la bonne règle de recurrence
-  if (props.appointment.recursionRule !== null && props.appointment.recursionRule !== undefined) {
-    form.value.isRecurring = true;
-    form.value.recursionRule = RECCURRENCE_VALUES[props.appointment.recursionRule];
-    console.log("date fin recu " + props.appointment.recursionEndDate);
-    form.value.recursionEndDate = props.appointment.recursionEndDate?.slice(0, 16);
+  // Validation initiale des dates
+  validateEndDate();
+
+  if (appointment.recursionRule !== null && appointment.recursionRule !== undefined) {
+    form. value.isRecurring = true;
+    form.value.recursionRule = RECCURRENCE_VALUES[appointment.recursionRule];
+    form.value.recursionEndDate = appointment.recursionEndDate?.slice(0, 16);
   } else {
     form.value.isRecurring = false;
     form.value.recursionRule = null;
     form.value.recursionEndDate = null;
   }
+};
+
+// Fonction de validation des dates
+const validateEndDate = () => {
+  if (!form.value.startDate || !form.value.endDate) return;
+  
+  const start = new Date(form.value.startDate);
+  const end = new Date(form.value.endDate);
+  
+  if (end <= start) {
+    const newEnd = new Date(start);
+    newEnd.setHours(newEnd. getHours() + 1);
+    form.value.endDate = newEnd. toISOString().slice(0, 16);
+  }
+};
+
+onMounted(() => {
+  if (props.appointment) {
+    loadAppointment(props.appointment);
+  }
 });
 
-// Si on coche "récurrent", on assigne une valeur par défaut
+watch(
+  () => props.appointment,
+  (newAppointment) => {
+    loadAppointment(newAppointment);
+  }
+);
+
+// Watcher sur startDate pour ajuster endDate si nécessaire
+watch(
+  () => form.value.startDate,
+  (newStartDate) => {
+    if (!newStartDate) return;
+    
+    const start = new Date(newStartDate);
+    const end = form.value.endDate ? new Date(form.value.endDate) : null;
+    
+    // Si pas de endDate ou endDate <= startDate, on ajoute 1 heure
+    if (! end || end <= start) {
+      const newEnd = new Date(start);
+      newEnd.setHours(start.getHours() + 1);
+        form.value.endDate = formatDateLocal(newEnd);
+    }
+  }
+);
+
+// Watcher sur endDate pour empêcher une date invalide
+watch(
+  () => form.value.endDate,
+  (newEndDate, oldEndDate) => {
+    if (! form.value.startDate || !newEndDate) return;
+    
+    const start = new Date(form.value.startDate);
+    const end = new Date(newEndDate);
+    
+    if (end <= start) {
+      // Restaurer l'ancienne valeur si elle était valide, sinon +1 heure
+      if (oldEndDate && new Date(oldEndDate) > start) {
+        form.value.endDate = oldEndDate;
+      } else {
+        newEnd.setHours(start.getHours() + 1);
+        form.value.endDate = formatDateLocal(newEnd);
+      }
+    }
+  }
+);
+
 watch(() => form.value.isRecurring, (isRec) => {
-  if (isRec && !form.value.recursionRule) {
-    form.value.recursionRule = 'WEEKLY';
+  if (isRec && ! form.value.recursionRule) {
+    form.value. recursionRule = 'WEEKLY';
   }
 });
 
@@ -257,7 +323,7 @@ const handleSubmit = () => {
   };
 
   if (!form.value.isRecurring) {
-    delete payload.recursionRule; // on supprime la règle de récurrence si ce n'est pas récurrent
+    delete payload.recursionRule;
     delete payload.recursionEndDate;
   }
 
@@ -267,6 +333,16 @@ const handleSubmit = () => {
   }
 
   emit('save', payload);
+};
+
+// Helper pour formater une date pour datetime-local
+const formatDateLocal = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date. getDate()).padStart(2, '0');
+  const hours = String(date. getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 </script>
 

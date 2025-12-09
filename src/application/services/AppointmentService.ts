@@ -1,12 +1,12 @@
-import {Appointment} from "../../domain/entities/Appointment";
-import {ServiceResponse} from "../../domain/entities/ServiceResponse.ts";
-import {RecurrentAppointment} from "../../domain/entities/ReccurentAppointment";
-import {RecursionRule} from "../../domain/entities/RecursionRule";
-import {IAppointmentService} from "../../domain/interfaces/IAppointmentService";
-import {ICalendarDB} from "../../domain/interfaces/ICalendarDB";
-import {ITagDB} from "../../domain/interfaces/ITagDB";
-import {Sanitizer} from "./utils/Sanitizer";
-import {decode, encode} from "html-entities";
+import { Appointment } from "../../domain/entities/Appointment";
+import { ServiceResponse } from "../../domain/entities/ServiceResponse.ts";
+import { RecurrentAppointment } from "../../domain/entities/ReccurentAppointment";
+import { RecursionRule } from "../../domain/entities/RecursionRule";
+import { IAppointmentService } from "../../domain/interfaces/IAppointmentService";
+import { ICalendarDB } from "../../domain/interfaces/ICalendarDB";
+import { ITagDB } from "../../domain/interfaces/ITagDB";
+import { Sanitizer } from "./utils/Sanitizer";
+import { decode, encode } from "html-entities";
 
 export class AppointmentService implements IAppointmentService {
     constructor(
@@ -22,7 +22,7 @@ export class AppointmentService implements IAppointmentService {
         description: string,
         startDate: Date,
         endDate: Date,
-        tags: string[] = []
+        tags: string[]
     ): Promise<Appointment> {
         return new Promise<Appointment>(async (resolve, reject) => {
             if (Object.prototype.toString.call(startDate) !== '[object Date]' || isNaN(startDate.getTime())) {
@@ -57,8 +57,8 @@ export class AppointmentService implements IAppointmentService {
                 return;
             }
 
-            title = encode(title, {mode: 'extensive'});
-            description = encode(description, {mode: 'extensive'});
+            title = encode(title, { mode: 'extensive' });
+            description = encode(description, { mode: 'extensive' });
 
             if (endDate < startDate) {
                 let temp = endDate;
@@ -66,24 +66,12 @@ export class AppointmentService implements IAppointmentService {
                 startDate = temp;
             }
 
-            const appointment = Appointment.create(calendarId, title, description, startDate, endDate, ownerId);
+            const appointment = Appointment.create(calendarId, title, description, startDate, endDate, ownerId, tags);
 
             this.calendarDB.createAppointment(appointment)
                 .then(async (createdAppointment: Appointment) => {
                     createdAppointment.title = decode(createdAppointment.title);
                     createdAppointment.description = decode(createdAppointment.description);
-
-                    // Synchroniser les tags
-                    if (createdAppointment.id) {
-                        const normalizedTags = this.normalizeTagIds(tags);
-                        await Promise.all(
-                            normalizedTags.map(tagId =>
-                                this.tagDB.addTagToAppointment(createdAppointment.id!, tagId)
-                            )
-                        );
-                        createdAppointment.tags = normalizedTags;
-                    }
-
                     resolve(createdAppointment);
                 })
                 .catch((reason: any) => {
@@ -101,7 +89,7 @@ export class AppointmentService implements IAppointmentService {
         endDate: Date,
         recursionRule: RecursionRule,
         recursionEndDate: Date,
-        tags: string[] = []
+        tags: string[]
     ): Promise<RecurrentAppointment> {
         return new Promise<RecurrentAppointment>(async (resolve, reject) => {
             if (Object.prototype.toString.call(startDate) !== '[object Date]' || isNaN(startDate.getTime())) {
@@ -143,8 +131,8 @@ export class AppointmentService implements IAppointmentService {
                 return;
             }
 
-            title = encode(title, {mode: 'extensive'});
-            description = encode(description, {mode: 'extensive'});
+            title = encode(title, { mode: 'extensive' });
+            description = encode(description, { mode: 'extensive' });
 
             if (endDate < startDate) {
                 let temp = endDate;
@@ -159,7 +147,7 @@ export class AppointmentService implements IAppointmentService {
                 startDate,
                 endDate,
                 ownerId,
-                [],
+                tags,
                 recursionRule,
                 recursionEndDate
             );
@@ -168,18 +156,6 @@ export class AppointmentService implements IAppointmentService {
                 .then(async (createdAppointment: RecurrentAppointment) => {
                     createdAppointment.title = decode(createdAppointment.title);
                     createdAppointment.description = decode(createdAppointment.description);
-
-                    // Synchroniser les tags
-                    if (createdAppointment.id) {
-                        const normalizedTags = this.normalizeTagIds(tags);
-                        await Promise.all(
-                            normalizedTags.map(tagId =>
-                                this.tagDB.addTagToRecurrentAppointment(createdAppointment.id!, tagId)
-                            )
-                        );
-                        createdAppointment.tags = normalizedTags;
-                    }
-
                     resolve(createdAppointment);
                 })
                 .catch((reason: any) => {
@@ -337,11 +313,14 @@ export class AppointmentService implements IAppointmentService {
             }
 
             const cleanedAppointment: Partial<Appointment> = {
-                ...(partialAppointment.title && {title: encode(partialAppointment.title, {mode: 'extensive'})}),
-                ...(partialAppointment.description && {description: encode(partialAppointment.description, {mode: 'extensive'})}),
-                ...(partialAppointment.calendarId && {calendarId: partialAppointment.calendarId}),
-                ...(partialAppointment.startDate && {startDate: partialAppointment.startDate}),
-                ...(partialAppointment.endDate && {endDate: partialAppointment.endDate}),
+                ...(partialAppointment.title && { title: encode(partialAppointment.title, { mode: 'extensive' }) }),
+                ...(partialAppointment.description && { description: encode(partialAppointment.description, { mode: 'extensive' }) }),
+                ...(partialAppointment.calendarId && { calendarId: partialAppointment.calendarId }),
+                ...(partialAppointment.startDate && { startDate: partialAppointment.startDate }),
+                ...(partialAppointment.endDate && { endDate: partialAppointment.endDate }),
+                ...(partialAppointment.updatedBy && { updatedBy: partialAppointment.updatedBy }),
+                ...(partialAppointment.ownerId && { ownerId: partialAppointment.ownerId }),
+                ...(partialAppointment.tags && { tags: partialAppointment.tags }),
             };
 
             if ((cleanedAppointment.endDate as Date) < (cleanedAppointment.startDate as Date)) {
@@ -442,10 +421,6 @@ export class AppointmentService implements IAppointmentService {
             appointment.title = decode(appointment.title);
             appointment.description = decode(appointment.description);
 
-            if (appointment.id) {
-                await this.attachTagsToAppointment(appointment);
-            }
-
             resolve(appointment);
         });
     }
@@ -468,8 +443,6 @@ export class AppointmentService implements IAppointmentService {
                 appointment.title = decode(appointment.title);
                 appointment.description = decode(appointment.description);
             });
-
-            await this.attachTagsToAppointments(appointments);
 
             resolve(appointments);
         });
@@ -494,8 +467,6 @@ export class AppointmentService implements IAppointmentService {
                 appointment.description = decode(appointment.description);
             });
 
-            await this.attachTagsToRecurrentAppointments(appointments);
-
             resolve(appointments);
         });
     }
@@ -506,7 +477,7 @@ export class AppointmentService implements IAppointmentService {
     }> {
         const appointments = await this.getAppointmentsByCalendarId(calendarId);
         const recurrentAppointments = await this.getRecurrentAppointmentByCalendarId(calendarId);
-        return {appointments, recurrentAppointments};
+        return { appointments, recurrentAppointments };
     }
 
     getConflictsOfUser(
@@ -529,49 +500,58 @@ export class AppointmentService implements IAppointmentService {
 
     private async syncTagsForAppointment(appointmentId: string, tagIds?: string[]): Promise<string[]> {
         const normalized = this.normalizeTagIds(tagIds);
-        const current = await this.tagDB.findTagsByAppointment(appointmentId);
-        const currentIds = current.map(tag => tag.id as string);
+        const currentTagIds = await this.getAppointmentTagIds(appointmentId);
 
-        const toAdd = normalized.filter(id => !currentIds.includes(id));
-        const toRemove = currentIds.filter(id => !normalized.includes(id));
-
-        await Promise.all(toAdd.map(id => this.tagDB.addTagToAppointment(appointmentId, id)));
-        await Promise.all(toRemove.map(id => this.tagDB.removeTagFromAppointment(appointmentId, id)));
+        await this.applyTagChanges(
+            normalized,
+            currentTagIds,
+            (tags) => this.tagDB.addAllTagsToAppointment(appointmentId, tags),
+            (tagId) => this.tagDB.removeTagFromAppointment(appointmentId, tagId)
+        );
 
         return normalized;
     }
 
     private async syncTagsForRecurrentAppointment(appointmentId: string, tagIds?: string[]): Promise<string[]> {
         const normalized = this.normalizeTagIds(tagIds);
-        const current = await this.tagDB.findTagsByRecurrentAppointment(appointmentId);
-        const currentIds = current.map(tag => tag.id as string);
+        const currentTagIds = await this.getRecurrentAppointmentTagIds(appointmentId);
 
-        const toAdd = normalized.filter(id => !currentIds.includes(id));
-        const toRemove = currentIds.filter(id => !normalized.includes(id));
-
-        await Promise.all(toAdd.map(id => this.tagDB.addTagToRecurrentAppointment(appointmentId, id)));
-        await Promise.all(toRemove.map(id => this.tagDB.removeTagFromRecurrentAppointment(appointmentId, id)));
+        await this.applyTagChanges(
+            normalized,
+            currentTagIds,
+            (tags) => this.tagDB.addAllTagsToRecurrentAppointment(appointmentId, tags),
+            (tagId) => this.tagDB.removeTagFromRecurrentAppointment(appointmentId, tagId)
+        );
 
         return normalized;
     }
 
-    private async attachTagsToAppointment(appointment: Appointment): Promise<void> {
-        if (!appointment.id) return;
-        const tags = await this.tagDB.findTagsByAppointment(appointment.id);
-        appointment.tags = tags.map(tag => tag.id as string);
+    private async getAppointmentTagIds(appointmentId: string): Promise<string[]> {
+        const tags = await this.tagDB.findTagsByAppointment(appointmentId);
+        return tags.map(tag => tag.id as string);
     }
 
-    private async attachTagsToAppointments(appointments: Appointment[]): Promise<void> {
-        await Promise.all(appointments.map(appt => this.attachTagsToAppointment(appt)));
+    private async getRecurrentAppointmentTagIds(appointmentId: string): Promise<string[]> {
+        const tags = await this.tagDB.findTagsByRecurrentAppointment(appointmentId);
+        return tags.map(tag => tag.id as string);
     }
 
-    private async attachTagsToRecurrentAppointment(appointment: RecurrentAppointment): Promise<void> {
-        if (!appointment.id) return;
-        const tags = await this.tagDB.findTagsByRecurrentAppointment(appointment.id);
-        appointment.tags = tags.map(tag => tag.id as string);
+    private async applyTagChanges(
+        newTagIds: string[],
+        currentTagIds: string[],
+        addFn: (tags: string[]) => Promise<void>,
+        removeFn: (tagId: string) => Promise<boolean>
+    ): Promise<void> {
+        const tagsToAdd = newTagIds.filter(id => !currentTagIds.includes(id));
+        const tagsToRemove = currentTagIds.filter(id => !newTagIds.includes(id));
+
+        if (tagsToAdd.length > 0) {
+            await addFn(tagsToAdd);
+        }
+
+        if (tagsToRemove.length > 0) {
+            await Promise.all(tagsToRemove.map(removeFn));
+        }
     }
 
-    private async attachTagsToRecurrentAppointments(appointments: RecurrentAppointment[]): Promise<void> {
-        await Promise.all(appointments.map(appt => this.attachTagsToRecurrentAppointment(appt)));
-    }
 }

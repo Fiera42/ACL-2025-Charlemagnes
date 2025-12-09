@@ -104,6 +104,22 @@ export class SQLiteTagDB implements ITagDB {
         stmt.run(id, appointmentId, tagId, new Date().toISOString());
     }
 
+    async addAllTagsToAppointment(appointmentId: string, tagIds: string[]): Promise<void> {
+        const insertStmt = this.db.prepare(`
+            INSERT INTO appointment_tags (id, appointment_id, tag_id, created_at)
+            VALUES (?, ?, ?, ?)
+        `);
+
+        const insertMany = this.db.transaction((tags: string[]) => {
+            for (const tagId of tags) {
+                const id = uuidv4();
+                insertStmt.run(id, appointmentId, tagId, new Date().toISOString());
+            }
+        });
+        
+        insertMany(tagIds);
+    }
+
     async removeTagFromAppointment(appointmentId: string, tagId: string): Promise<boolean> {
         const stmt = this.db.prepare(`
             DELETE FROM appointment_tags 
@@ -111,6 +127,14 @@ export class SQLiteTagDB implements ITagDB {
         `);
         const result = stmt.run(appointmentId, tagId);
         return result.changes > 0;
+    }
+
+    async removeAllTagsFromAppointment(appointmentId: string): Promise<void> {
+        const stmt = this.db.prepare(`
+            DELETE FROM appointment_tags 
+            WHERE appointment_id = ?
+        `);
+        stmt.run(appointmentId);
     }
 
     async findTagsByAppointment(appointmentId: string): Promise<Tag[]> {
@@ -141,6 +165,21 @@ export class SQLiteTagDB implements ITagDB {
         stmt.run(id, recurrentAppointmentId, tagId, new Date().toISOString());
     }
 
+    async addAllTagsToRecurrentAppointment(recurrentAppointmentId: string, tagIds: string[]): Promise<void> {
+        const insertStmt = this.db.prepare(`
+            INSERT INTO recurrent_appointment_tags (id, recurrent_appointment_id, tag_id, created_at)
+            VALUES (?, ?, ?, ?)
+        `);
+        
+        const insertMany = this.db.transaction((tags: string[]) => {
+            for (const tagId of tags) {
+                const id = uuidv4();
+                insertStmt.run(id, recurrentAppointmentId, tagId, new Date().toISOString());
+            }
+        });   
+        insertMany(tagIds);
+    }
+
     async removeTagFromRecurrentAppointment(recurrentAppointmentId: string, tagId: string): Promise<boolean> {
         const stmt = this.db.prepare(`
             DELETE FROM recurrent_appointment_tags 
@@ -148,6 +187,14 @@ export class SQLiteTagDB implements ITagDB {
         `);
         const result = stmt.run(recurrentAppointmentId, tagId);
         return result.changes > 0;
+    }
+
+    async removeAllTagsFromRecurrentAppointment(recurrentAppointmentId: string): Promise<void> {
+        const stmt = this.db.prepare(`
+            DELETE FROM recurrent_appointment_tags 
+            WHERE recurrent_appointment_id = ?
+        `);
+        stmt.run(recurrentAppointmentId);
     }
 
     async findTagsByRecurrentAppointment(recurrentAppointmentId: string): Promise<Tag[]> {

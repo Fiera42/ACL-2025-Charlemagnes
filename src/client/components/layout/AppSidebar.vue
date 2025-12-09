@@ -601,4 +601,8 @@ const handleEditTagClick = (tag: any) => {
   dispatchTagFormEvent(tag);
   emit('editTag', tag);
 };
+
+const getTagById = (id: string) => props.tags.find((t: any) => t.id === id);
+const getTagColor = (id: string) => getTagById(id)?.color || '#ccc';
+const getTagName = (id: string) => getTagById(id)?.name || 'Inconnu';
 </script>

@@ -64,6 +64,7 @@
     <AppointmentDetail
         v-if="showDetail"
         :appointment="selectedAppointment"
+        :tags="tags"
         @close="closeDetail"
         @edit="editAppointment"
         @delete="deleteAppointment"
