@@ -1,14 +1,14 @@
 <template>
-  <div class="min-h-screen bg-stone-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-8">
-      <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Connexion</h1>
-        <p class="text-gray-600 mt-2">Accédez à votre calendrier</p>
+  <div class="page-container">
+    <div class="card-container">
+      <div class="page-header-center">
+        <h1 class="page-title">Connexion</h1>
+        <p class="page-subtitle">Accédez à votre calendrier</p>
       </div>
 
-      <form @submit.prevent="handleLogin" class="space-y-6">
+      <form @submit.prevent="handleLogin" class="form-container">
         <div>
-          <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+          <label for="username" class="form-label">
             Nom d'utilisateur
           </label>
           <input
@@ -16,13 +16,13 @@
               v-model="credentials.username"
               type="text"
               required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="form-input"
               placeholder="Votre nom d'utilisateur"
           />
         </div>
 
         <div>
-          <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+          <label for="password" class="form-label">
             Mot de passe
           </label>
           <input
@@ -30,28 +30,28 @@
               v-model="credentials.password"
               type="password"
               required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="form-input"
               placeholder="Votre mot de passe"
           />
         </div>
 
-        <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+        <div v-if="error" class="error-message">
           {{ error }}
         </div>
 
         <button
             type="submit"
             :disabled="loading"
-            class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            class="btn-primary"
         >
           {{ loading ? 'Connexion...' : 'Se connecter' }}
         </button>
       </form>
 
       <div class="mt-6 text-center">
-        <p class="text-sm text-gray-600">
+        <p class="link-text">
           Pas encore de compte ?
-          <a href="/register" class="text-blue-600 hover:text-blue-700 font-medium">
+          <a href="/register" class="link-primary">
             S'inscrire
           </a>
         </p>

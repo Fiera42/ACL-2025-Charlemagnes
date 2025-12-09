@@ -1,0 +1,118 @@
+/* 
+ * Fichier CSS général pour les classes communes utilisées dans toutes les vues
+ * Ce fichier contient uniquement les patterns CSS très fréquemment utilisés ensemble
+ */
+
+/* === Conteneurs de pages === */
+.page-container {
+  @apply min-h-screen bg-stone-50 flex items-center justify-center p-4;
+}
+
+/* === Cartes et modaux === */
+.card-container {
+  @apply bg-white rounded-lg shadow-lg w-full max-w-md p-8;
+}
+
+.card-section {
+  @apply bg-white rounded-lg shadow-sm p-6;
+}
+
+/* === Titres de page === */
+.page-title {
+  @apply text-3xl font-bold text-gray-900;
+}
+
+.page-subtitle {
+  @apply text-gray-600 mt-2;
+}
+
+.section-title {
+  @apply text-2xl font-bold text-gray-900;
+}
+
+.page-header-center {
+  @apply text-center mb-8;
+}
+
+/* === Formulaires === */
+.form-container {
+  @apply space-y-6;
+}
+
+.form-label {
+  @apply block text-sm font-medium text-gray-700 mb-2;
+}
+
+.form-input {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+
+.form-input-enhanced {
+  @apply w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all;
+}
+
+/* === Boutons === */
+.btn-primary {
+  @apply w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors font-medium;
+}
+
+.btn-primary:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.btn-secondary {
+  @apply w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors font-medium;
+}
+
+/* === Messages d'erreur === */
+.error-message {
+  @apply bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm;
+}
+
+/* === Layout flex communs === */
+.flex-center {
+  @apply flex items-center justify-center;
+}
+
+.flex-between {
+  @apply flex items-center justify-between;
+}
+
+.flex-gap {
+  @apply flex items-center gap-2;
+}
+
+/* === États de chargement === */
+.loading-container {
+  @apply text-center py-8;
+}
+
+.loading-text {
+  @apply text-center text-gray-500 py-8;
+}
+
+.spinner {
+  @apply animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto;
+}
+
+/* === Liens === */
+.link-primary {
+  @apply text-blue-600 hover:text-blue-700 font-medium;
+}
+
+.link-text {
+  @apply text-sm text-gray-600;
+}
+
+/* === Messages de statut === */
+.success-icon-container {
+  @apply bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4;
+}
+
+.error-icon-container {
+  @apply bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4;
+}
+
+.status-container {
+  @apply text-center py-6;
+}

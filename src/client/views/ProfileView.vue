@@ -3,11 +3,11 @@
     <!-- Header -->
     <div class="bg-white border-b border-gray-200 shadow-sm">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
+        <div class="flex-between h-16">
           <h1 class="text-2xl font-bold text-indigo-600">Mon Profil</h1>
           <button
               @click="goToHome"
-              class="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+              class="flex-gap px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -23,11 +23,11 @@
     <!-- Contenu Principal -->
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Section Profil -->
-      <div class="bg-white rounded-lg shadow-sm p-8 mb-6">
-        <div class="flex items-center gap-6">
+      <div class="card-section mb-6">
+        <div class="flex-gap gap-6">
           <!-- Icône Utilisateur -->
           <div class="flex-shrink-0">
-            <div class="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center">
+            <div class="w-20 h-20 rounded-full bg-indigo-100 flex-center">
               <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="48"
@@ -48,7 +48,7 @@
 
           <!-- Informations Utilisateur -->
           <div class="flex-1">
-            <h2 class="text-3xl font-bold text-gray-900 mb-2">{{ userName }}</h2>
+            <h2 class="page-title mb-2">{{ userName }}</h2>
             <div class="space-y-1 text-sm text-gray-600">
               <p>
                 <span class="font-medium">Membre depuis :</span>
@@ -66,8 +66,8 @@
       <!-- Statistiques -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <!-- Nombre de Calendriers -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-          <div class="flex items-center justify-between mb-2">
+        <div class="card-section">
+          <div class="flex-between mb-2">
             <h3 class="text-sm font-medium text-gray-600">Calendriers</h3>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -82,8 +82,8 @@
         </div>
 
         <!-- Nombre de Rendez-vous -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-          <div class="flex items-center justify-between mb-2">
+        <div class="card-section">
+          <div class="flex-between mb-2">
             <h3 class="text-sm font-medium text-gray-600">Rendez-vous</h3>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -96,8 +96,8 @@
         </div>
 
         <!-- Nombre de Rendez-vous Récurrents -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-          <div class="flex items-center justify-between mb-2">
+        <div class="card-section">
+          <div class="flex-between mb-2">
             <h3 class="text-sm font-medium text-gray-600">RDV Récurrents</h3>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -113,14 +113,14 @@
       </div>
 
       <!-- Prochains Rendez-vous -->
-      <div class="bg-white rounded-lg shadow-sm p-6">
+      <div class="card-section">
         <h3 class="text-xl font-bold text-gray-900 mb-4">Prochains Rendez-vous</h3>
 
-        <div v-if="loading" class="text-center text-gray-500 py-8">
+        <div v-if="loading" class="loading-text">
           Chargement...
         </div>
 
-        <div v-else-if="upcomingAppointments.length === 0" class="text-center text-gray-500 py-8">
+        <div v-else-if="upcomingAppointments.length === 0" class="loading-text">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
                class="mx-auto mb-3 text-gray-400">
@@ -138,14 +138,14 @@
               :key="appointment.id"
               class="p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all"
           >
-            <div class="flex items-start justify-between mb-2">
+            <div class="flex-between mb-2">
               <h4 class="font-medium text-gray-900">{{ appointment.title }}</h4>
               <span class="text-sm font-semibold text-indigo-600">{{ appointment.hour }}</span>
             </div>
             <p v-if="appointment.description" class="text-sm text-gray-600 mb-2">
               {{ appointment.description }}
             </p>
-            <div class="flex items-center gap-2 text-sm text-gray-500">
+            <div class="flex-gap gap-2 text-sm text-gray-500">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>

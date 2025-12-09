@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-stone-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-8">
-      <div class="text-center mb-8">
+  <div class="page-container">
+    <div class="card-container">
+      <div class="page-header-center">
         <svg
             xmlns="http://www.w3.org/2000/svg"
             width="64"
@@ -19,18 +19,18 @@
           <line x1="8" y1="2" x2="8" y2="6"></line>
           <line x1="3" y1="10" x2="21" y2="10"></line>
         </svg>
-        <h1 class="text-2xl font-bold text-gray-900">Calendrier partagé</h1>
+        <h1 class="section-title">Calendrier partagé</h1>
       </div>
 
       <!-- État de chargement -->
-      <div v-if="loading" class="text-center py-8">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+      <div v-if="loading" class="loading-container">
+        <div class="spinner"></div>
         <p class="mt-4 text-gray-600">Traitement en cours...</p>
       </div>
 
       <!-- Succès -->
-      <div v-else-if="success" class="text-center py-6">
-        <div class="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+      <div v-else-if="success" class="status-container">
+        <div class="success-icon-container">
           <svg
               xmlns="http://www.w3.org/2000/svg"
               width="32"
@@ -49,15 +49,15 @@
         <p class="text-gray-600 mb-6">Le calendrier a été ajouté à votre liste.</p>
         <button
             @click="goToHome"
-            class="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+            class="btn-primary"
         >
           Accéder à mes calendriers
         </button>
       </div>
 
       <!-- Erreur -->
-      <div v-else-if="error" class="text-center py-6">
-        <div class="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+      <div v-else-if="error" class="status-container">
+        <div class="error-icon-container">
           <svg
               xmlns="http://www.w3.org/2000/svg"
               width="32"
@@ -79,13 +79,13 @@
         <div class="space-y-3">
           <button
               @click="retry"
-              class="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+              class="btn-primary"
           >
             Réessayer
           </button>
           <button
               @click="goToHome"
-              class="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              class="btn-secondary"
           >
             Retour à l'accueil
           </button>
@@ -93,20 +93,20 @@
       </div>
 
       <!-- Confirmation initiale -->
-      <div v-else class="text-center py-6">
+      <div v-else class="status-container">
         <p class="text-gray-600 mb-6">
           Voulez-vous ajouter ce calendrier partagé à votre liste ?
         </p>
         <div class="space-y-3">
           <button
               @click="acceptShare"
-              class="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+              class="btn-primary"
           >
             Accepter le partage
           </button>
           <button
               @click="goToHome"
-              class="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              class="btn-secondary"
           >
             Annuler
           </button>
