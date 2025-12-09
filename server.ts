@@ -32,12 +32,14 @@ async function bootstrap() {
                 count: number
             };
             const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+            const sharesCount = db.prepare('SELECT COUNT(*) as count FROM shares').get() as { count: number };
 
             console.log('\n📊 Test base de données :');
             console.log(`- Utilisateurs : ${userCount.count}`);
             console.log(`- Calendriers : ${calendarCount.count}`);
             console.log(`- Rendez-vous : ${appointmentCount.count}`);
             console.log(`- Tables présentes :`, tables);
+            console.log(`- Partages : ${sharesCount.count}`);
 
             res.json({
                 success: true,

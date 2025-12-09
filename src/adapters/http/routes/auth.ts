@@ -143,4 +143,17 @@ router.delete('/logout/:id', authenticateToken, async (req: AuthenticatedRequest
     }
 });
 
+router.get('/user/id/:id', async (req: Request, res: Response) => {
+    try {
+        const user = await authService.findUserById(req.params.id);
+        if (user === null) {
+            return res.status(404).json({ error: 'Utilisateur inconnu' });
+        }
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: "Erreur lors de la récupération de l'utilisateur" });
+    }
+});
+
+
 export default router;

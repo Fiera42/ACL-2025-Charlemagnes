@@ -62,7 +62,15 @@
         <div>
           <h3 class="text-sm font-medium text-gray-700 mb-2">Utilisateurs ayant accès</h3>
           <div class="border border-gray-200 rounded-lg min-h-[120px] max-h-[200px] overflow-y-auto">
-            <div v-if="sharedUsers.length === 0" class="flex flex-col items-center justify-center py-8 text-gray-400">
+            <div v-if="loading" class="flex items-center justify-center py-8 text-gray-400">
+              <svg class="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+            <div v-else-if="sharedUsers.length === 0"
+                 class="flex flex-col items-center justify-center py-8 text-gray-400">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
                    class="mb-2">
@@ -81,11 +89,11 @@
               >
                 <div class="flex items-center gap-3">
                   <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <span class="text-sm font-medium text-indigo-600">
-                      {{ user.name?.charAt(0)?.toUpperCase() || '?' }}
-                    </span>
+                            <span class="text-sm font-medium text-indigo-600">
+                              {{ user.username?.charAt(0)?.toUpperCase() || '?' }}
+                            </span>
                   </div>
-                  <span class="text-sm text-gray-900">{{ user.name }}</span>
+                  <span class="text-sm text-gray-900">{{ user.username }}</span>
                 </div>
                 <button
                     @click="removeAccess(user.id)"
@@ -118,7 +126,8 @@
 </template>
 
 <script setup>
-import {ref, computed} from 'vue';
+import {ref, computed, watch, onMounted} from 'vue';
+import axios from 'axios';
 
 const props = defineProps({
   calendar: {
@@ -131,11 +140,62 @@ const emit = defineEmits(['close', 'removeAccess']);
 
 const copied = ref(false);
 const sharedUsers = ref([]);
+const loading = ref(false);
 
 const shareLink = computed(() => {
   if (!props.calendar?.id) return '';
   return `${window.location.origin}/shared/calendar/${props.calendar.id}`;
 });
+
+const getAuthToken = () => {
+  return localStorage.getItem('token');
+};
+
+const fetchSharedUsers = async () => {
+  if (!props.calendar?.id) return;
+
+  loading.value = true;
+  try {
+    const token = getAuthToken();
+    const response = await axios.get(`/api/share/calendar/${props.calendar.id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    const shares = response.data.shares || [];
+
+    // Récupérer les informations de chaque utilisateur par ID
+    const usersPromises = shares.map(async (share) => {
+      try {
+        const userResponse = await axios.get(`/api/auth/user/id/${share.userShareId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        return {
+          id: share.userShareId,
+          shareId: share.id,
+          username: userResponse.data.username || 'Utilisateur inconnu'
+        };
+      } catch (error) {
+        console.error(`Erreur lors de la récupération de l'utilisateur ${share.userShareId}:`, error);
+        return {
+          id: share.userShareId,
+          shareId: share.id,
+          username: 'Utilisateur inconnu'
+        };
+      }
+    });
+
+    sharedUsers.value = await Promise.all(usersPromises);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des partages:', error);
+    sharedUsers.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
 
 const copyLink = async () => {
   try {
@@ -156,4 +216,12 @@ const removeAccess = (userId) => {
 const close = () => {
   emit('close');
 };
+
+onMounted(() => {
+  fetchSharedUsers();
+});
+
+watch(() => props.calendar?.id, () => {
+  fetchSharedUsers();
+});
 </script>
