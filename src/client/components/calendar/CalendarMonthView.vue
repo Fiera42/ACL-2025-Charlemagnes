@@ -51,14 +51,15 @@
           <div
               v-for="event in getDayEvents(day.date).slice(0, 3)"
               :key="event.id"
-              :class="[
-                      'rounded p-1.5 border-l-2 cursor-pointer'
-                    ]"
+              class="rounded p-1.5 border-l-2 cursor-pointer relative"
+              :class="{
+                  'opacity-30 grayscale pointer-events-none': event.isDimmed
+                }"
               :style="{
                   borderColor: event.color,
                   backgroundColor: addAlpha(event.color, 0.3),
                 }"
-              @click.stop="$emit('showEvent', event)" class="relative"
+              @click.stop="$emit('showEvent', event)"
           >
             <p class="text-xs font-semibold text-gray-900 truncate">{{ event.title }}</p>
             <p :class="['text-xs font-semibold']">{{ event.timeDisplay }}</p>
