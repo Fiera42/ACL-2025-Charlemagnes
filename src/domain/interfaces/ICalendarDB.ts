@@ -8,7 +8,12 @@ export interface ICalendarDB {
   findCalendarById(id: string): Promise<Calendar | null>;
   findCalendarsByOwnerId(ownerId: string): Promise<Calendar[]>;
   updateCalendar(id: string, calendar: Partial<Calendar>): Promise<Calendar>;
+  findCalendarsToUpdate(): Promise<Calendar[]>;
   deleteCalendar(id: string): Promise<boolean>;
+
+  // export and import
+  updatePublicToken(id: string, token: string | null): Promise<void>;
+  findCalendarByPublicToken(token: string): Promise<Calendar | null>;
 
   // Appointments
   createAppointment(appointment: Appointment): Promise<Appointment>;
@@ -16,6 +21,8 @@ export interface ICalendarDB {
   findAppointmentsByCalendarId(calendarId: string): Promise<Appointment[]>;
   updateAppointment(id: string, appointment: Partial<Appointment>): Promise<Appointment>;
   deleteAppointment(id: string): Promise<boolean>;
+
+  deleteAllAppointmentsByCalendarId(calendarId: string): Promise<void>;
 
   // Recurrent Appointments
   createRecurrentAppointment(appointment: RecurrentAppointment): Promise<RecurrentAppointment>;

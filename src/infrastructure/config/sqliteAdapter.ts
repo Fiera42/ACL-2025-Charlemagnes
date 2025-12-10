@@ -70,6 +70,9 @@ export async function initDatabase(): Promise<void> {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_by TEXT,
+      url TEXT,
+      update_rule INTEGER,
+      public_token TEXT UNIQUE,
       FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
     );

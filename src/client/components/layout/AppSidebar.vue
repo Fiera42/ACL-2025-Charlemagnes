@@ -17,7 +17,7 @@
     'editTag',
     'deleteTag',
     'exportCalendar',
-    'ImportCalendar',
+    'importCalendar',
     'calendarToggled',
     'removeSharedCalendar'
   ]);
@@ -462,7 +462,7 @@
                   Nouveau
                 </button>
                 <button
-                    @click="$emit('ImportCalendar')"
+                    @click="$emit('importCalendar')"
                     class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"

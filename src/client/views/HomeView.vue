@@ -26,6 +26,14 @@
         </div>
       </main>
     </div>
+    <CalendarICSForm
+      :is-open="showICSForm"
+      :mode="icsFormMode"
+      :calendar="selectedCalendarForICS"
+      :appointments="appointmentsForExport"
+      @close="closeICSForm"
+      @submit="handleICSSubmit"
+    />
   </div>
 </template>
 
@@ -36,9 +44,8 @@ import { useRouter } from 'vue-router';
 import AppHeader from '../components/layout/AppHeader.vue';
 import AppSidebar from '../components/layout/AppSidebar.vue';
 import CalendarView from './CalendarView.vue';
+import CalendarICSForm from '../components/calendar/CalendarICSForm.vue';
 import { calendarService } from '../assets/calendar.js';
-import { calendarToICS, ICSToCalendar } from "../components/import_export/ICSCalendarConverter.js";
-import { downloadTextFile, promptForFile } from "../components/import_export/FileHandler.js";
 
 const router = useRouter();
 const sidebarOpen = ref(true);
@@ -314,31 +321,11 @@ const deleteCalendar = async (calendarId) => {
 };
 
 const exportCalendar = async (calendar, appointments) => {
-  appointments = await calendarService.getAppointmentsByCalendarId(calendar);
-  let icsFile = calendarToICS(calendar, appointments);
-  downloadTextFile(`${calendar.name}.ics`, icsFile);
+  openExportForm(calendar);
 }
 
 const importCalendar = async () => {
-  try {
-    let file = await (await promptForFile(".ics, .ical, .icalendar"))[0].text();
-
-    const res = ICSToCalendar(file);
-    res.calendar = await calendarService.createCalendar(res.calendar);
-
-    res.appointments.forEach((appointment) => {
-      appointment.calendarId = res.calendar.id;
-      if (appointment.recursionRule) {
-        calendarService.createRecurrentAppointment(appointment);
-      } else {
-        calendarService.createAppointment(appointment);
-      }
-    });
-
-    await calendarToggled(res.calendar.id, true);
-  } catch (error) {
-    console.error('Erreur lors de l\'import du calendrier:', error);
-  }
+  openImportForm();
 }
 
 const loadCalendars = async () => {
@@ -404,5 +391,102 @@ const handleRemoveSharedCalendar = async (calendarId) => {
 
   // Recharger les rendez-vous pour exclure ceux du calendrier supprimé
   await loadAppointments();
+};
+
+const showICSForm = ref(false);
+const icsFormMode = ref('import');
+const selectedCalendarForICS = ref(null);
+const appointmentsForExport = ref([]);
+
+const openImportForm = () => {
+  icsFormMode.value = 'import';
+  selectedCalendarForICS.value = null;
+  appointmentsForExport.value = [];
+  showICSForm.value = true;
+};
+
+const openExportForm = async (calendar) => {
+  icsFormMode.value = 'export';
+  selectedCalendarForICS.value = calendar;
+  appointmentsForExport.value = appointments.value; 
+  showICSForm.value = true;
+};
+
+const closeICSForm = () => {
+  showICSForm.value = false;
+  selectedCalendarForICS.value = null;
+  appointmentsForExport.value = [];
+};
+
+const handleICSSubmit = async (data) => {
+  loading.value = true;
+  try {
+    if (data.mode === 'import') {
+      await handleImport(data);
+    } else {
+      await handleExport(data);
+    }
+    closeICSForm();
+  } catch (error) {
+    console.error('Erreur ICS:', error);
+    alert('Une erreur est survenue lors de l\'opération.');
+  } finally {
+    loading.value = false;
+  }
+};
+
+const handleImport = async (data) => {
+  if (data.type === 'file' && data.file) {
+    const content = await data.file.text();
+    const calendarName = data.file.name.replace(/\.ics$/i, '');
+    
+    await calendarService.importCalendarFromContent(content, calendarName);
+    alert('Calendrier importé avec succès depuis le fichier.');
+
+  } else if (data.type === 'url' && data.url) {
+    await calendarService.importCalendarFromUrl(
+      data.url, 
+      data.autoUpdate, 
+      data.updateRule
+    );
+    alert('Calendrier importé et synchronisé depuis l\'URL.');
+  }
+
+  await loadCalendars();
+  await loadAppointments();
+  await loadTags();
+};
+
+const handleExport = async (data) => {
+  if (!data.calendar) return;
+
+  if (data.type === 'file') {
+    try {
+      const response = await calendarService.downloadExport(data.calendar.id);
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${data.calendar.name}.ics`);
+      document.body.appendChild(link);
+      link.click();
+
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Erreur téléchargement export", e);
+      alert("Impossible de télécharger le fichier.");
+    }
+
+  } else if (data.type === 'url') {
+    try {
+      const publicLink = await calendarService.getPublicLink(data.calendar.id);
+      await navigator.clipboard.writeText(publicLink);
+      alert("Lien d'abonnement copié ! \nVous pouvez le coller dans Google Agenda (Ajouter > À partir de l'URL).");
+    } catch (e) {
+      console.error("Erreur lien public", e);
+      alert("Impossible de générer le lien de partage.");
+    }
+  }
 };
 </script>

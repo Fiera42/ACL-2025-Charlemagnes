@@ -95,6 +95,54 @@
               </div>
             </div>
           </div>
+
+          <!-- Section Synchronisation (si URL présente) -->
+          <div v-if="form.url" class="space-y-4 pt-4 border-t border-gray-100">
+            <h3 class="text-sm font-semibold text-gray-900">Synchronisation</h3>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                URL source
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                       class="text-gray-400">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                  </svg>
+                </div>
+                <input
+                  v-model="form.url"
+                  type="text"
+                  disabled
+                  class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            <div v-if="form.updateRule !== null" class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <div class="flex items-center gap-3">
+                  <label class="text-sm text-gray-700 whitespace-nowrap font-medium">
+                    Mettre à jour : 
+                  </label>
+                  <select
+                    v-model="form.updateRule"
+                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm transition-all cursor-pointer"
+                  >
+                    <option 
+                      v-for="option in updateRuleOptions" 
+                      :key="option.value" 
+                      :value="option.value"
+                    >
+                      {{ option.label }}
+                    </option>
+                  </select>
+                </div>
+            </div>
+          </div>
+
         </form>
       </div>
 
@@ -137,8 +185,17 @@ const form = ref({
   id: null,
   name: '',
   description: '',
-  color: '#4F46E5'
+  color: '#4F46E5',
+  url: null,
+  updateRule: null
 });
+
+const updateRuleOptions = [
+  { value: 1, label: 'Toutes les heures' },
+  { value: 2, label: 'Tous les jours' },
+  { value: 3, label: 'Toutes les semaines' },
+  { value: 4, label: 'Tous les mois' }
+];
 
 watchEffect(() => {
   if (props.calendar) {
@@ -146,7 +203,9 @@ watchEffect(() => {
       id: props.calendar.id || null,
       name: props.calendar.name || '',
       description: props.calendar.description || '',
-      color: props.calendar.color || '#4F46E5'
+      color: props.calendar.color || '#4F46E5',
+      url: props.calendar.url || null,
+      updateRule: props.calendar.updateRule !== undefined ? props.calendar.updateRule : null
     };
   }
 });

@@ -18,9 +18,10 @@ export class SQLiteCalendarDB implements ICalendarDB {
     // Calendars
     async createCalendar(calendar: Calendar): Promise<Calendar> {
         const id = uuidv4();
+        // On n'insère pas public_token ici, il est null par défaut
         const stmt = this.db.prepare(`
-            INSERT INTO calendars (id, name, description, color, owner_id, created_at, updated_at, updated_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO calendars (id, name, description, color, owner_id, created_at, updated_at, updated_by, url, update_rule)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         stmt.run(
@@ -31,7 +32,9 @@ export class SQLiteCalendarDB implements ICalendarDB {
             calendar.ownerId,
             calendar.createdAt.toISOString(),
             calendar.updatedAt.toISOString(),
-            calendar.updatedBy
+            calendar.updatedBy,
+            calendar.url,
+            calendar.updateRule
         );
 
         return new Calendar(
@@ -42,7 +45,10 @@ export class SQLiteCalendarDB implements ICalendarDB {
             calendar.ownerId,
             calendar.createdAt,
             calendar.updatedAt,
-            calendar.updatedBy
+            calendar.updatedBy,
+            calendar.url,
+            calendar.updateRule,
+            null
         );
     }
 
@@ -52,32 +58,14 @@ export class SQLiteCalendarDB implements ICalendarDB {
 
         if (!row) return null;
 
-        return new Calendar(
-            row.id,
-            row.name,
-            row.description,
-            row.color,
-            row.owner_id,
-            new Date(row.created_at),
-            new Date(row.updated_at),
-            row.updated_by
-        );
+        return this.mapRowToCalendar(row);
     }
 
     async findCalendarsByOwnerId(ownerId: string): Promise<Calendar[]> {
         const stmt = this.db.prepare('SELECT * FROM calendars WHERE owner_id = ?');
         const rows = stmt.all(ownerId) as any[];
 
-        return rows.map(row => new Calendar(
-            row.id,
-            row.name,
-            row.description,
-            row.color,
-            row.owner_id,
-            new Date(row.created_at),
-            new Date(row.updated_at),
-            row.updated_by
-        ));
+        return rows.map(row => this.mapRowToCalendar(row));
     }
 
     async updateCalendar(id: string, calendar: Partial<Calendar>): Promise<Calendar> {
@@ -100,7 +88,10 @@ export class SQLiteCalendarDB implements ICalendarDB {
             updates.push('updated_by = ?');
             values.push(calendar.updatedBy);
         }
-
+        if (calendar.updateRule !== undefined) {
+            updates.push('update_rule = ?');
+            values.push(calendar.updateRule);
+        }
         updates.push('updated_at = ?');
         values.push(new Date().toISOString());
         values.push(id);
@@ -139,6 +130,25 @@ export class SQLiteCalendarDB implements ICalendarDB {
         const result = stmt.run(id);
         return result.changes > 0;
     }
+
+    async findCalendarsToUpdate(): Promise<Calendar[]> {
+        const stmt = this.db.prepare('SELECT * FROM calendars WHERE update_rule IS NOT NULL AND url IS NOT NULL');
+        const rows = stmt.all() as any[];
+
+        return rows.map(row => new Calendar(
+            row.id,
+            row.name,
+            row.description,
+            row.color,
+            row.owner_id,
+            new Date(row.created_at),
+            new Date(row.updated_at),
+            row.updated_by,
+            row.url,
+            row.update_rule
+        ));
+    }
+
 
     // Appointments
     // Appointments
@@ -467,4 +477,43 @@ export class SQLiteCalendarDB implements ICalendarDB {
         const result = stmt.run(id);
         return result.changes > 0;
     }
+
+    async updatePublicToken(id: string, token: string | null): Promise<void> {
+        const stmt = this.db.prepare('UPDATE calendars SET public_token = ? WHERE id = ?');
+        stmt.run(token, id);
+    }
+
+    async findCalendarByPublicToken(token: string): Promise<Calendar | null> {
+        const stmt = this.db.prepare('SELECT * FROM calendars WHERE public_token = ?');
+        const row = stmt.get(token) as any;
+
+        if (!row) return null;
+        return this.mapRowToCalendar(row);
+    }
+
+    private mapRowToCalendar(row: any): Calendar {
+        return new Calendar(
+            row.id,
+            row.name,
+            row.description,
+            row.color,
+            row.owner_id,
+            new Date(row.created_at),
+            new Date(row.updated_at),
+            row.updated_by,
+            row.url,
+            row.update_rule,
+            row.public_token // MAPPING
+        );
+    }
+
+    async deleteAllAppointmentsByCalendarId(calendarId: string): Promise<void> {
+    const deleteAppts = this.db.prepare('DELETE FROM appointments WHERE calendar_id = ?');
+    const deleteRecurrent = this.db.prepare('DELETE FROM recurrent_appointments WHERE calendar_id = ?');
+
+    this.db.transaction(() => {
+        deleteAppts.run(calendarId);
+        deleteRecurrent.run(calendarId);
+    })();
+}
 }
