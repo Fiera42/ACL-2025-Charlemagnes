@@ -197,7 +197,9 @@ export const calendarService = {
             const jsonCalendar = await axios.post('/api/calendar', {
                 name: calendar.name,
                 description: calendar.description,
-                color: calendar.color
+                color: calendar.color,
+                url: calendar.url || null,
+                updateRule: calendar.updateRule || null
             });
             return jsonCalendar.data;
         } catch (error) {
@@ -234,7 +236,10 @@ export const calendarService = {
             await axios.put(`/api/calendar/${calendar.id}`, {
                 name: calendar.name,
                 description: calendar.description,
-                color: calendar.color
+                color: calendar.color,
+                url: calendar.url || null,
+                updateRule: calendar.updateRule || null
+                
             });
         } catch (error) {
             console.error('Erreur lors de l update de l agenda 1 :', error.response.data || error);
@@ -290,5 +295,58 @@ export const calendarService = {
     async isDateInPause(recurrentAppointmentId, date) {
         const data = await axios.get(`/api/pause/isInPause/${recurrentAppointmentId}/${date.toISOString()}`);
         return data.data.isInPause;
-    }
+    },
+
+    // Importer via contenu de fichier
+    async importCalendarFromContent(icsContent, calendarName) {
+        try {
+            const { data } = await axios.post('/api/calendar/import-content', { 
+                icsContent, 
+                calendarName 
+            });
+            return data;
+        } catch (error) {
+            console.error('Erreur lors de l\'import par contenu:', error.response?.data || error);
+            throw error;
+        }
+    },
+
+    // Importer via URL
+    async importCalendarFromUrl(url, autoUpdate, updateRule) {
+        try {
+            const { data } = await axios.post('/api/calendar/import-url', { 
+                url, 
+                autoUpdate, 
+                updateRule 
+            });
+            return data;
+        } catch (error) {
+            console.error('Erreur lors de l\'import par URL:', error.response?.data || error);
+            throw error;
+        }
+    },
+
+    // Obtenir le lien public (Partage Google/Outlook)
+    async getPublicLink(calendarId) {
+        try {
+            const { data } = await axios.post(`/api/calendar/${calendarId}/public-link`);
+            return data.url;
+        } catch (error) {
+            console.error('Erreur lors de la récupération du lien public:', error.response?.data || error);
+            throw error;
+        }
+    },
+
+    // Télécharger le fichier ICS (Export direct)
+    // Retourne la réponse Axios brute pour permettre le traitement blob dans le composant
+    async downloadExport(calendarId) {
+        try {
+            return await axios.get(`/api/calendar/${calendarId}/export.ics`, { 
+                responseType: 'blob' 
+            });
+        } catch (error) {
+            console.error('Erreur lors du téléchargement de l\'export:', error.response?.data || error);
+            throw error;
+        }
+    },
 };
