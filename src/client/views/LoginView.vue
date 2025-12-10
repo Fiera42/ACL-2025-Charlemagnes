@@ -93,7 +93,14 @@ const handleLogin = async () => {
 
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-      await router.push('/');
+      // Vérifier s'il y a une redirection en attente
+      const redirectUrl = localStorage.getItem('redirectAfterLogin');
+      if (redirectUrl) {
+        localStorage.removeItem('redirectAfterLogin');
+        await router.push(redirectUrl);
+      } else {
+        await router.push('/');
+      }
     }
   } catch (err) {
     if (err.response?.status === 404) {
@@ -107,6 +114,4 @@ const handleLogin = async () => {
     loading.value = false;
   }
 };
-
-
 </script>

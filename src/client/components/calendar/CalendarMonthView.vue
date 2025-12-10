@@ -51,14 +51,15 @@
           <div
               v-for="event in getDayEvents(day.date).slice(0, 3)"
               :key="event.id"
-              :class="[
-                      'rounded p-1.5 border-l-2 cursor-pointer'
-                    ]"
+              class="rounded p-1.5 border-l-2 cursor-pointer relative"
+              :class="{
+                  'opacity-30 grayscale pointer-events-none': event.isDimmed
+                }"
               :style="{
                   borderColor: event.color,
                   backgroundColor: addAlpha(event.color, 0.3),
                 }"
-              @click.stop="$emit('showEvent', event)" class="relative"
+              @click.stop="$emit('showEvent', event)"
           >
             <p class="text-xs font-semibold text-gray-900 truncate">{{ event.title }}</p>
             <p :class="['text-xs font-semibold']">{{ event.timeDisplay }}</p>
@@ -239,7 +240,10 @@ const expandedEvents = computed(() => {
       }
     }
 
-    while (cursor <= viewEnd) {
+    let recurrenceEnd = event.recursionEndDate ? new Date(event.recursionEndDate) : viewEnd;
+    recurrenceEnd = recurrenceEnd < viewEnd ? recurrenceEnd : viewEnd;
+
+    while (cursor < recurrenceEnd) {
       const newStart = new Date(cursor);
       newStart.setHours(
         new Date(event.startDate).getHours(),
@@ -248,6 +252,34 @@ const expandedEvents = computed(() => {
       );
 
       const newEnd = new Date(newStart.getTime() + duration);
+
+      let skip = false;
+
+      // Si pauses n’est pas vide
+      if (event.pauses.length > 0) {
+        for (const pause of event.pauses) {
+          const pauseStart = new Date(pause.pauseStartDate);
+          const pauseEnd = new Date(pause.pauseEndDate);
+
+          if (newEnd < pauseEnd && newStart >= pauseStart) {
+            skip = true;
+            break;
+          }
+        }
+      }
+
+      if (skip) {
+        switch(rule) {
+          case 0: cursor.setDate(cursor.getDate() + 1); break;
+          case 1: cursor.setDate(cursor.getDate() + 7); break;
+          case 2: cursor.setMonth(cursor.getMonth() + 1); break;
+          case 3: cursor.setFullYear(cursor.getFullYear() + 1); break;
+        }
+        continue;
+      }
+
+      // Si la fin de récurrence est définie et que le nouvel événement la dépasse, on arrête
+      if (newEnd > recurrenceEnd) break;
 
       result.push({
         ...event,

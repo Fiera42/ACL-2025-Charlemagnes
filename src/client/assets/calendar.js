@@ -9,6 +9,31 @@ export const calendarService = {
     // ID du calendrier par défaut (à adapter selon ton besoin)
     visibleCalendars: new Set(),
 
+    normalize(appt, calendar) {
+        return {
+            id: appt.id,
+            title: appt.title,
+            description: appt.description,
+            startDate: new Date(appt.startDate),
+            endDate: new Date(appt.endDate),
+            date: new Date(appt.startDate).toDateString(),
+            hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+            time: `${new Date(appt.startDate).toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            })} - ${new Date(appt.endDate).toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            })}`,
+            color: calendar.color,
+            calendarId: appt.calendarId,
+            recursionRule: appt.recursionRule ?? null,
+            recursionEndDate: appt.recursionEndDate ? new Date(appt.recursionEndDate) : null,
+            pauses: appt.pauses ? appt.pauses : [],
+            tags: appt.tags || []
+        };
+    },
+
     // Récupérer tous les rendez-vous d'un calendrier
     async fetchAppointments(calendar) {
         if(!calendar.id) {
@@ -35,44 +60,34 @@ export const calendarService = {
                 console.log('🏷️ First recurrent appointment tags:', recurrentAppointments[0]?.tags);
             }
 
-            const normalize = (appt) => {
-                console.log('🔄 Normalizing appointment:', appt.id, 'with tags:', appt.tags);
-                return {
-                    id: appt.id,
-                    title: appt.title,
-                    description: appt.description,
-                    startDate: new Date(appt.startDate),
-                    endDate: new Date(appt.endDate),
-                    date: new Date(appt.startDate).toDateString(),
-                    hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-                    time: `${new Date(appt.startDate).toLocaleTimeString('fr-FR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })} - ${new Date(appt.endDate).toLocaleTimeString('fr-FR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })}`,
-                    color: calendar.color,
-                    calendarId: appt.calendarId,
-                    recursionRule: appt.recursionRule ?? null,
-                    tags: appt.tags || []
-                };
-            };
-
             const allEvents = [
-                ...appointments.map(normalize),
-                ...recurrentAppointments.map(normalize)
+                ...appointments.map((apt) => this.normalize(apt, calendar)),
+                ...recurrentAppointments.map((apt) => this.normalize(apt, calendar))
             ];
 
-            console.log('✅ Total normalized events:', allEvents.length);
+            // Charger les pauses pour chaque rendez-vous récurrent
+            for (const event of allEvents) {
+                if (event.recursionRule !== null && event.recursionRule !== undefined) {
+                    try {
+                        const pauses = await this.getPauses(event.id);
+                        event.pauses = pauses;
+                    } catch (e) {
+                        console.error("Erreur de récupération des pauses pour", event.id, e);
+                        event.pauses = [];
+                    }
+                }
+            }
+
+
+            console.log('Total normalized events:', allEvents.length);
             if (allEvents.length > 0) {
-                console.log('🏷️ First normalized event tags:', allEvents[0].tags);
+                console.log('First normalized event tags:', allEvents[0].tags);
             }
 
             return allEvents;
 
         } catch (error) {
-            console.error('❌ Error fetching appointments:', {
+            console.error('Error fetching appointments:', {
                 message: error.message,
                 response: error.response?.data,
                 status: error.response?.status
@@ -107,7 +122,8 @@ export const calendarService = {
                 title: appointment.title,
                 description: appointment.description,
                 startDate: appointment.startDate.toISOString(),
-                endDate: appointment.endDate.toISOString()
+                endDate: appointment.endDate.toISOString(),
+                tags: appointment.tags || []
             });
         } catch (error) {
             console.error('Erreur lors de la création:', error.response?.data || error);
@@ -125,7 +141,9 @@ export const calendarService = {
                 description: appointment.description,
                 startDate: appointment.startDate.toISOString(),
                 endDate: appointment.endDate.toISOString(),
-                recursionRule: appointment.recursionRule
+                recursionRule: appointment.recursionRule,
+                recursionEndDate: appointment.recursionEndDate.toISOString(),
+                tags: appointment.tags || []
             });
         } catch (error) {
             console.error('Erreur lors de la création récurrente:', error.response?.data || error);
@@ -136,12 +154,15 @@ export const calendarService = {
     // Modifier un rendez-vous
     async updateAppointment(appointment) {
         try {
+            console.log('Updating appointment:', appointment);
             await axios.put(`/api/calendar/appointments/${appointment.id}`, {
                 title: appointment.title,
                 description: appointment.description,
                 startDate: appointment.startDate.toISOString(),
                 endDate: appointment.endDate.toISOString(),
-                recursionRule: appointment.recursionRule ?? null
+                recursionRule: appointment.recursionRule ?? null,
+                recursionEndDate: appointment.recursionEndDate ? appointment.recursionEndDate.toISOString() : null,
+                tags: appointment.tags || []
             });
         } catch (error) {
             console.error('Erreur lors de la modification:', error.response?.data || error);
@@ -163,8 +184,7 @@ export const calendarService = {
     async getCalendarsByOwnerId() {
         try {
             const jsonCalendars = await axios.get('/api/calendar');
-            const extractedCalendars = jsonCalendars.data.calendars;
-            return extractedCalendars;
+            return jsonCalendars.data.calendars;
         } catch (error) {
             console.error('Erreur lors de la recuperation des agendas 1 :', error.response.data || error);
             throw error;
@@ -174,11 +194,14 @@ export const calendarService = {
     //creer un nouveau calendrier
     async createCalendar(calendar) {
         try {
-            await axios.post('/api/calendar', {
+            const jsonCalendar = await axios.post('/api/calendar', {
                 name: calendar.name,
                 description: calendar.description,
-                color: calendar.color
+                color: calendar.color,
+                url: calendar.url || null,
+                updateRule: calendar.updateRule || null
             });
+            return jsonCalendar.data;
         } catch (error) {
             console.error('Erreur lors de la creation de l agenda :', error.response.data || error);
             throw error;
@@ -195,8 +218,16 @@ export const calendarService = {
         }
     },
 
-    //obtenir les paramètres d'un seul calendrier
-    async getCalendarById() {
+    //obtenir les rdv d'un calendrier
+    async getAppointmentsByCalendarId(calendar) {
+        try {
+            const jsonCalendars = await axios.get(`/api/calendar/${calendar.id}/appointments`);
+            jsonCalendars.data.appointments.push(...jsonCalendars.data.recurrentAppointments);
+            return jsonCalendars.data.appointments.map((apt) => this.normalize(apt, calendar));
+        } catch (error) {
+            console.error('Erreur lors de la recuperation des rendez-vous d\'agenda :', error.response.data || error);
+            throw error;
+        }
     },
 
     //modifier les paramètres d'un seul calendrier
@@ -205,12 +236,20 @@ export const calendarService = {
             await axios.put(`/api/calendar/${calendar.id}`, {
                 name: calendar.name,
                 description: calendar.description,
-                color: calendar.color
+                color: calendar.color,
+                url: calendar.url || null,
+                updateRule: calendar.updateRule || null
+                
             });
         } catch (error) {
             console.error('Erreur lors de l update de l agenda 1 :', error.response.data || error);
             throw error;
         }
+    },
+
+    async getRecurrentAppointmentById(recurrentAppointmentId) {
+        const { data } = await axios.get(`/api/calendar/appointmentsRecurrent/${recurrentAppointmentId}`);
+        return data;
     },
 
     async getTags() {
@@ -230,5 +269,84 @@ export const calendarService = {
 
     async deleteTag(tagId) {
         await axios.delete(`/api/tag/${tagId}`);
-    }
+    },
+
+    async getPauses(recurrentAppointmentId) {
+        const { data } = await axios.get(`api/pause/recurrent/${recurrentAppointmentId}`);
+        console.log('Fetched pauses:', data);
+        return data.pauses ?? [];
+    },
+
+    async createPause(pause) {
+        const { data } = await axios.post('/api/pause', pause);
+        return data;
+    },
+
+    async deletePause(pauseId) {
+        await axios.delete(`/api/pause/${pauseId}`);
+    },
+
+    async updatePause(pauseId, pause) {
+        const { data } = await axios.put(`/api/pause/${pauseId}`, pause);
+        return data;
+    },
+
+    // Méthode pour check si une date est comprise dans une pause
+    async isDateInPause(recurrentAppointmentId, date) {
+        const data = await axios.get(`/api/pause/isInPause/${recurrentAppointmentId}/${date.toISOString()}`);
+        return data.data.isInPause;
+    },
+
+    // Importer via contenu de fichier
+    async importCalendarFromContent(icsContent, calendarName) {
+        try {
+            const { data } = await axios.post('/api/calendar/import-content', { 
+                icsContent, 
+                calendarName 
+            });
+            return data;
+        } catch (error) {
+            console.error('Erreur lors de l\'import par contenu:', error.response?.data || error);
+            throw error;
+        }
+    },
+
+    // Importer via URL
+    async importCalendarFromUrl(url, autoUpdate, updateRule) {
+        try {
+            const { data } = await axios.post('/api/calendar/import-url', { 
+                url, 
+                autoUpdate, 
+                updateRule 
+            });
+            return data;
+        } catch (error) {
+            console.error('Erreur lors de l\'import par URL:', error.response?.data || error);
+            throw error;
+        }
+    },
+
+    // Obtenir le lien public (Partage Google/Outlook)
+    async getPublicLink(calendarId) {
+        try {
+            const { data } = await axios.post(`/api/calendar/${calendarId}/public-link`);
+            return data.url;
+        } catch (error) {
+            console.error('Erreur lors de la récupération du lien public:', error.response?.data || error);
+            throw error;
+        }
+    },
+
+    // Télécharger le fichier ICS (Export direct)
+    // Retourne la réponse Axios brute pour permettre le traitement blob dans le composant
+    async downloadExport(calendarId) {
+        try {
+            return await axios.get(`/api/calendar/${calendarId}/export.ics`, { 
+                responseType: 'blob' 
+            });
+        } catch (error) {
+            console.error('Erreur lors du téléchargement de l\'export:', error.response?.data || error);
+            throw error;
+        }
+    },
 };

@@ -2,7 +2,8 @@ import {createRouter, createWebHistory} from 'vue-router';
 import HomeView from './views/HomeView.vue';
 import LoginView from './views/LoginView.vue';
 import RegisterView from './views/RegisterView.vue';
-import ProfileView from './views/ProfileView.vue'; // <- ajout
+import ProfileView from './views/ProfileView.vue';
+import SharedCalendarView from './views/SharedCalendarView.vue';
 
 const routes = [
     {
@@ -28,6 +29,12 @@ const routes = [
         name: 'profile',
         component: ProfileView,
         meta: {requiresAuth: true}
+    },
+    {
+        path: '/shared/calendar/:calendarId',
+        name: 'sharedCalendar',
+        component: SharedCalendarView,
+        meta: {requiresAuth: true}
     }
 ];
 
@@ -41,6 +48,10 @@ router.beforeEach((to, from, next) => {
     console.log('Guard:', {to: to.path, hasToken: !!token});
 
     if (to.meta.requiresAuth && !token) {
+        // Sauvegarder la destination pour redirection après login
+        if (to.name === 'sharedCalendar') {
+            localStorage.setItem('redirectAfterLogin', to.fullPath);
+        }
         next('/login');
     } else if (to.meta.hideForAuth && token) {
         next('/');

@@ -1,3 +1,338 @@
+<script setup lang="ts">
+import {computed, ref, watch, onMounted, onBeforeUnmount} from 'vue';
+import {calendarService} from "../../assets/calendar.js";
+import CalendarShareModal from "../calendar/CalendarShareModal.vue";
+import axios from 'axios';
+
+interface Calendar {
+  id: string;
+  name: string;
+  description?: string;
+  color: string;
+}
+
+interface Tag {
+  id: string;
+  name: string;
+  color: string;
+}
+
+interface Appointment {
+  id: string;
+  title: string;
+  startDate: string | Date;
+  endDate: string | Date;
+  location?: string;
+  calendarId: string;
+  recursionRule?: number;
+  recursionEndDate?: string;
+}
+
+const emit = defineEmits<{
+  (e: 'close'): void;
+  (e: 'selectAppointment', appointment: any): void;
+  (e: 'toggleappointmentsdisplay'): void;
+  (e: 'togglecalendarsdisplay'): void;
+  (e: 'toggletagsdisplay'): void;
+  (e: 'CalendarForm'): void;
+  (e: 'TagForm'): void;
+  (e: 'editCalendar', id: string, name: string, description: string, color: string): void;
+  (e: 'deleteCalendar', id: string): void;
+  (e: 'editTag', tag: Tag): void;
+  (e: 'deleteTag', id: string): void;
+  (e: 'exportCalendar', calendar: Calendar, appointments: Appointment[]): void;
+  (e: 'ImportCalendar'): void;
+  (e: 'calendarToggled', id: string, visible: boolean): void;
+  (e: 'removeSharedCalendar', id: string): void;
+  (e: 'calendarsUpdated'): void;
+}>();
+
+const props = defineProps<{
+  isOpen: boolean;
+  appointmentsdisplayed: boolean;
+  calendarsdisplayed: boolean;
+  tagsdisplayed: boolean;
+  appointments: Appointment[];
+  calendars: Calendar[];
+  sharedCalendars: Calendar[];
+  tags: Tag[];
+  loading: boolean;
+  loadingCalendars: boolean;
+  loadingTags: boolean;
+}>();
+
+const openDropdownId = ref<string | null>(null);
+const dropdownPosition = ref({top: 0, left: 0});
+const dropdownButtonRefs = ref<Record<string, HTMLElement | null>>({});
+const isSharedDropdown = ref(false);
+
+const setDropdownButtonRef = (calendarId: string, el: HTMLElement | null) => {
+  dropdownButtonRefs.value[calendarId] = el;
+};
+
+const dropdownStyle = computed(() => ({
+  top: `${dropdownPosition.value.top}px`,
+  left: `${dropdownPosition.value.left}px`
+}));
+
+const getCalendarById = (id: string | null): Calendar | null => {
+  if (!id) return null;
+  return props.calendars.find((c) => c.id === id) || null;
+};
+
+const getSharedCalendarById = (id: string | null): Calendar | null => {
+  if (!id) return null;
+  return props.sharedCalendars.find((c) => c.id === id) || null;
+};
+
+const toggleDropdown = (calendarId: string, event: Event, isShared: boolean = false) => {
+  if (openDropdownId.value === calendarId) {
+    openDropdownId.value = null;
+    isSharedDropdown.value = false;
+  } else {
+    const button = event.currentTarget as HTMLElement;
+    const rect = button.getBoundingClientRect();
+
+    dropdownPosition.value = {
+      top: rect.bottom + 4,
+      left: rect.right - 160
+    };
+
+    openDropdownId.value = calendarId;
+    isSharedDropdown.value = isShared;
+  }
+};
+
+const closeDropdown = () => {
+  openDropdownId.value = null;
+  isSharedDropdown.value = false;
+};
+
+const handleEdit = (calendar: Calendar | null) => {
+  if (!calendar) return;
+  emit('editCalendar', calendar.id, calendar.name, calendar.description || '', calendar.color);
+  closeDropdown();
+};
+
+const handleExport = (calendar: Calendar | null) => {
+  if (!calendar) return;
+  emit('exportCalendar', calendar, props.appointments);
+  closeDropdown();
+};
+
+const handleDelete = (calendarId: string) => {
+  emit('deleteCalendar', calendarId);
+  closeDropdown();
+};
+
+const handleRemoveSharedCalendar = async (calendarId: string) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('Token non trouvé');
+      return;
+    }
+
+    const calendar = props.sharedCalendars.find((c) => c.id === calendarId);
+    if (calendar) {
+      await axios.delete(`/api/share/leave/${calendarId}`, {
+        headers: {Authorization: `Bearer ${token}`}
+      });
+      emit('removeSharedCalendar', calendarId);
+    }
+  } catch (error) {
+    console.error('Erreur lors de la suppression du partage:', error);
+  }
+  closeDropdown();
+};
+
+const handleClickOutside = (event: Event) => {
+  if (openDropdownId.value !== null) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.fixed.w-40') && !target.closest('button[title="Options"]')) {
+      closeDropdown();
+    }
+  }
+};
+
+onMounted(() => {
+  if (typeof document !== 'undefined') {
+    document.addEventListener('click', handleClickOutside);
+  }
+});
+
+onBeforeUnmount(() => {
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('click', handleClickOutside);
+  }
+});
+
+const isSharedAppointment = (appointment: any): boolean => {
+  if (!appointment?.calendarId) return false;
+  return props.sharedCalendars.some((c) => c.id === appointment.calendarId);
+};
+
+const getAppointmentCalendarColor = (appointment: any): string => {
+  if (!appointment?.calendarId) return '#6366f1';
+
+  const personalCalendar = props.calendars.find((c) => c.id === appointment.calendarId);
+  if (personalCalendar) return personalCalendar.color || '#6366f1';
+
+  const sharedCalendar = props.sharedCalendars.find((c) => c.id === appointment.calendarId);
+  if (sharedCalendar) return sharedCalendar.color || '#6366f1';
+
+  return '#6366f1';
+};
+
+const upcomingAppointments = computed(() => {
+  const now = new Date();
+  const limitDate = new Date();
+  limitDate.setMonth(limitDate.getMonth() + 1);
+
+  const result: any[] = [];
+
+  props.appointments.forEach((appt) => {
+    const start = new Date(appt.startDate);
+    const end = new Date(appt.endDate);
+    const duration = end.getTime() - start.getTime();
+    const rule = appt.recursionRule;
+
+    if (rule === undefined || rule === null) {
+      if (start > now && start <= limitDate) result.push(appt);
+      return;
+    }
+
+    let recurrenceEnd = appt.recursionEndDate ? new Date(appt.recursionEndDate) : limitDate;
+    recurrenceEnd = recurrenceEnd < limitDate ? recurrenceEnd : limitDate;
+
+    let cursor = new Date(start);
+
+    switch (rule) {
+      case 0:
+        while (cursor < now) cursor.setDate(cursor.getDate() + 1);
+        break;
+      case 1:
+        while (cursor < now) cursor.setDate(cursor.getDate() + 7);
+        break;
+      case 2:
+        while (cursor < now) cursor.setMonth(cursor.getMonth() + 1);
+        break;
+      case 3:
+        while (cursor < now) cursor.setFullYear(cursor.getFullYear() + 1);
+        break;
+    }
+
+    while (cursor <= recurrenceEnd) {
+      result.push({
+        ...appt,
+        startDate: new Date(cursor),
+        endDate: new Date(cursor.getTime() + duration),
+        isOccurrence: true
+      });
+
+      switch (rule) {
+        case 0:
+          cursor.setDate(cursor.getDate() + 1);
+          break;
+        case 1:
+          cursor.setDate(cursor.getDate() + 7);
+          break;
+        case 2:
+          cursor.setMonth(cursor.getMonth() + 1);
+          break;
+        case 3:
+          cursor.setFullYear(cursor.getFullYear() + 1);
+          break;
+      }
+    }
+  });
+
+  return result
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+      .map(appt => ({
+        ...appt,
+        dateLabel: new Date(appt.startDate).toLocaleDateString('fr-FR', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short'
+        }),
+        hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})
+      }));
+});
+
+const tabOrder = ['appointments', 'calendars', 'tags'] as const;
+const forcedView = computed(() => {
+  if (props.tagsdisplayed) return 'tags';
+  if (props.calendarsdisplayed) return 'calendars';
+  if (props.appointmentsdisplayed) return 'appointments';
+  return null;
+});
+const internalView = ref<typeof tabOrder[number]>('appointments');
+watch(forcedView, (val) => {
+  if (val) internalView.value = val;
+}, {immediate: true});
+
+const isAppointmentsView = computed(() => internalView.value === 'appointments');
+const isCalendarsView = computed(() => internalView.value === 'calendars');
+const isTagsView = computed(() => internalView.value === 'tags');
+
+const activeTabIndex = computed(() => tabOrder.indexOf(internalView.value));
+const indicatorWidth = computed(() => `${100 / tabOrder.length}%`);
+const indicatorTransform = computed(() => `translateX(${activeTabIndex.value * 100}%)`);
+
+const selectTab = (view: typeof tabOrder[number], emitName: 'toggleappointmentsdisplay' | 'togglecalendarsdisplay' | 'toggletagsdisplay') => {
+  internalView.value = view;
+  emit(emitName);
+};
+
+const dispatchTagFormEvent = (payload: Tag | null = null) => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('open-tag-form', {detail: payload}));
+  }
+};
+
+const handleNewTagClick = () => {
+  dispatchTagFormEvent(null);
+  emit('TagForm');
+};
+
+const handleEditTagClick = (tag: Tag) => {
+  dispatchTagFormEvent(tag);
+  emit('editTag', tag);
+};
+
+const handleRemoveAccess = async (calendarId: string, userId: string) => {
+  try {
+    await axios.delete(`/api/share/calendar/${calendarId}/user/${userId}`);
+    emit('calendarsUpdated');
+  } catch (error) {
+    console.error('Erreur lors de la suppression du partage:', error);
+  }
+};
+
+const getTagById = (id: string): Tag | undefined => props.tags.find((t) => t.id === id);
+const getTagColor = (id: string): string => getTagById(id)?.color || '#ccc';
+const getTagName = (id: string): string => getTagById(id)?.name || 'Inconnu';
+
+const shareModalCalendar = ref<Calendar | null>(null);
+const isShareModalOpen = computed(() => shareModalCalendar.value !== null);
+
+const handleShare = (calendar: Calendar | null) => {
+  if (!calendar) return;
+  shareModalCalendar.value = calendar;
+  closeDropdown();
+};
+
+const closeShareModal = () => {
+  shareModalCalendar.value = null;
+};
+
+const handleCalendarToggle = (calendarId: string, event: Event) => {
+  const target = event.target as HTMLInputElement;
+  emit('calendarToggled', calendarId, target.checked);
+};
+</script>
+
 <template>
   <!-- Overlay -->
   <div
@@ -8,9 +343,9 @@
   <!-- Sidebar -->
   <aside
       :class="[
-        'fixed top-16 left-0 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ease-in-out w-80 flex flex-col',
-        isOpen ? 'translate-x-0' : '-translate-x-full'
-      ]"
+            'fixed top-16 left-0 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ease-in-out w-80 flex flex-col shadow-lg',
+            isOpen ? 'translate-x-0' : '-translate-x-full'
+          ]"
       :style="{ overflow: 'hidden' }"
   >
     <div class="flex flex-col h-full">
@@ -46,16 +381,16 @@
           ></span>
         </div>
       </div>
-      <!-- Contenu scrollable -->
-      <div class="flex-1 overflow-y-auto p-4">
-        <!-- Liste des rendez-vous -->
-        <div v-if="isAppointmentsView">
 
-          <div class="flex items-center justify-between p-4 border-b border-gray-200">
+      <!-- Contenu scrollable -->
+      <div class="flex-1 overflow-y-auto">
+        <!-- Liste des rendez-vous -->
+        <div v-if="isAppointmentsView" class="h-full flex flex-col">
+          <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
             <h2 class="text-lg font-semibold text-gray-900">Rendez-vous à venir</h2>
             <button
                 @click="$emit('close')"
-                class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                class="p-2 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -67,12 +402,18 @@
 
           <div class="flex-1 overflow-y-auto p-4">
             <div v-if="loading" class="text-center text-gray-500 py-8">
-              Chargement...
+              <svg class="animate-spin h-8 w-8 mx-auto text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none"
+                   viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p class="mt-2">Chargement...</p>
             </div>
             <div v-else-if="upcomingAppointments.length === 0" class="text-center text-gray-500 py-8">
               <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
-                   class="mx-auto mb-3 text-gray-400">
+                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                   class="mx-auto mb-3 text-gray-300">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                 <line x1="16" y1="2" x2="16" y2="6"></line>
                 <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -83,47 +424,55 @@
             <div v-else class="space-y-3">
               <div
                   v-for="appointment in upcomingAppointments"
-                  :key="appointment.id"
-                  class="p-3 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all cursor-pointer relative"
+                  :key="appointment.id + '-' + appointment.startDate"
+                  :class="[
+                        'p-3 border rounded-xl hover:shadow-md transition-all cursor-pointer group relative',
+                        isSharedAppointment(appointment)
+                          ? 'bg-indigo-50/50 border-indigo-200 hover:border-indigo-300'
+                          : 'bg-white border-gray-200 hover:border-indigo-200'
+                      ]"
                   @click="$emit('selectAppointment', appointment)"
               >
-                <div class="flex items-start justify-between mb-2">
-                  <h3 class="font-medium text-gray-900 text-sm truncate flex-1">{{ appointment.title }}</h3>
-                  <span class="text-xs font-semibold text-indigo-600 ml-2">{{ appointment.hour }}</span>
+                <!-- Badge partagé -->
+                <div v-if="isSharedAppointment(appointment)" class="absolute -top-2 -right-2">
+                      <span class="inline-flex items-center justify-center w-5 h-5 bg-indigo-500 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none"
+                             stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="9" cy="7" r="4"></circle>
+                        </svg>
+                      </span>
                 </div>
-                <p v-if="appointment.description" class="text-xs text-gray-600 mb-2 line-clamp-2">
-                  {{ appointment.description }}
-                </p>
-                <div class="flex items-center gap-2 text-xs text-gray-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  <span>{{ appointment.dateLabel }}</span>
-                </div>
-                <div v-if="appointment.recursionRule !== undefined && appointment.recursionRule !== null" class="absolute bottom-1 right-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="17 1 21 5 17 9"></polyline>
-                    <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-                    <polyline points="7 23 3 19 7 15"></polyline>
-                    <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-                  </svg>
+
+                <div class="flex items-start gap-3">
+                  <div
+                      class="w-1 h-12 rounded-full flex-shrink-0"
+                      :style="{ backgroundColor: getAppointmentCalendarColor(appointment) }"
+                  ></div>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="font-medium text-gray-900 truncate group-hover:text-indigo-600 transition-colors">
+                      {{ appointment.title }}
+                    </h3>
+                    <p class="text-sm text-gray-500 mt-1">
+                      {{ appointment.dateLabel }} · {{ appointment.hour }}
+                    </p>
+                    <p v-if="appointment.location" class="text-xs text-gray-400 mt-1 truncate">
+                      📍 {{ appointment.location }}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div v-else-if="isCalendarsView">
 
-          <div class="flex items-center justify-between p-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Liste des calendriers</h2>
+        <!-- Liste des calendriers -->
+        <div v-else-if="isCalendarsView" class="h-full flex flex-col">
+          <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+            <h2 class="text-lg font-semibold text-gray-900">Mes calendriers</h2>
             <button
                 @click="$emit('close')"
-                class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                class="p-2 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -134,26 +483,47 @@
           </div>
 
           <div class="flex-1 overflow-y-auto p-4">
-            <div class="flex justify-center mb-6">
+            <!-- Boutons d'action -->
+            <div class="flex justify-center gap-2 mb-6">
               <button
-                  class="py-2.5 px-6 bg-indigo-600 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
                   @click="$emit('CalendarForm')"
+                  class="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M10 5V15M15 10H5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
-                Nouveau calendrier
+                Nouveau
+              </button>
+              <button
+                  @click="$emit('ImportCalendar')"
+                  class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                Importer
               </button>
             </div>
 
             <div v-if="loadingCalendars" class="text-center text-gray-500 py-8">
-              Chargement...
+              <svg class="animate-spin h-8 w-8 mx-auto text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none"
+                   viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p class="mt-2">Chargement...</p>
             </div>
 
             <div v-else-if="calendars.length === 0" class="text-center text-gray-500 py-8">
               <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
-                   class="mx-auto mb-3 text-gray-400">
+                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                   class="mx-auto mb-3 text-gray-300">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                 <line x1="16" y1="2" x2="16" y2="6"></line>
                 <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -162,75 +532,135 @@
               <p class="text-sm">Aucun calendrier</p>
             </div>
 
-            <div v-else class="space-y-3">
+            <!-- Liste des calendriers personnels -->
+            <div v-else class="space-y-2">
               <div
-                  v-for="calendar in props.calendars"
+                  v-for="calendar in calendars"
                   :key="calendar.id"
-                  class="p-3 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all cursor-pointer"
-                  @click="$emit('selectCalendar', calendar)"
+                  class="p-3 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-gray-300 transition-all group"
               >
-                <div class="flex items-center justify-between gap-3 mb-2">
-                  <label class="flex items-center gap-2 min-w-0 cursor-pointer" @click.stop>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3 flex-1 min-w-0">
                     <input
                         type="checkbox"
-                        class="w-4 h-4 rounded border-gray-300"
-                        :style="{ accentColor: calendar.color }"
                         :checked="calendarService.visibleCalendars.has(calendar.id)"
-                        @change="$emit('calendarToggled', calendar.id, $event.target.checked)"
+                        @change="handleCalendarToggle(calendar.id, $event)"
+                        class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                     />
-                    <span class="text-sm font-medium text-gray-900 truncate" :title="calendar.name">
-                      {{ calendar.name }}
-                    </span>
-                  </label>
+                    <div
+                        class="w-4 h-4 rounded-full flex-shrink-0 ring-2 ring-offset-1"
+                        :style="{ backgroundColor: calendar.color, '--tw-ring-color': calendar.color + '40' } as any"
+                    ></div>
+                    <span class="font-medium text-gray-900 truncate">{{ calendar.name }}</span>
+                  </div>
+                  <button
+                      title="Options"
+                      @click.stop="toggleDropdown(calendar.id, $event, false)"
+                      class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="1"></circle>
+                      <circle cx="12" cy="5" r="1"></circle>
+                      <circle cx="12" cy="19" r="1"></circle>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
 
-                  <div class="flex items-center gap-1.5 flex-shrink-0">
-                    <button
-                        class="p-2 bg-indigo-600 rounded-xl flex items-center justify-center text-white transition-all duration-300 hover:bg-indigo-700"
-                        @click.stop="$emit('editCalendar',calendar.id,calendar.name,calendar.description,calendar.color)"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">
-                        <path d="M22,7.24a1,1,0,0,0-.29-.71L17.47,2.29A1,1,0,0,0,16.76,2a1,1,0,0,0-.71.29L13.22,5.12h0L2.29,16.05a1,1,0,0,0-.29.71V21a1,1,0,0,0,1,1H7.24A1,1,0,0,0,8,21.71L18.87,10.78h0L21.71,8a1.19,1.19,0,0,0,.22-.33,1,1,0,0,0,0-.24.7.7,0,0,0,0-.14ZM6.83,20H4V17.17l9.93-9.93,2.83,2.83ZM18.17,8.66,15.34,5.83l1.42-1.41,2.82,2.82Z"/>
-                      </svg>
-                      <span class="sr-only">Modifier</span>
-                    </button>
+            <!-- Séparateur et liste des calendriers partagés -->
+            <div v-if="sharedCalendars && sharedCalendars.length > 0" class="mt-8">
+              <div class="flex items-center gap-2 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     class="text-indigo-500">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Partagés avec moi</h3>
+              </div>
 
+              <div class="space-y-2">
+                <div
+                    v-for="calendar in sharedCalendars"
+                    :key="'shared-' + calendar.id"
+                    class="p-3 bg-indigo-50/50 border border-indigo-200 rounded-xl hover:shadow-md hover:border-indigo-300 transition-all group relative"
+                >
+                  <!-- Badge partagé -->
+                  <div class="absolute -top-2 -right-2">
+                        <span class="inline-flex items-center justify-center w-5 h-5 bg-indigo-500 rounded-full">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none"
+                               stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                          </svg>
+                        </span>
+                  </div>
+
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                      <input
+                          type="checkbox"
+                          :checked="calendarService.visibleCalendars.has(calendar.id)"
+                          @change="handleCalendarToggle(calendar.id, $event)"
+                          class="w-4 h-4 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      />
+                      <div
+                          class="w-4 h-4 rounded-full flex-shrink-0 ring-2 ring-offset-1"
+                          :style="{ backgroundColor: calendar.color, '--tw-ring-color': calendar.color + '40' } as any"
+                      ></div>
+                      <div class="flex flex-col min-w-0">
+                        <span class="font-medium text-gray-900 truncate">{{ calendar.name }}</span>
+                        <span class="text-xs text-indigo-500">Calendrier partagé</span>
+                      </div>
+                    </div>
                     <button
-                        class="p-2 bg-red-500 rounded-xl flex items-center justify-center text-white transition-all duration-300 hover:bg-red-600"
-                        @click.stop="$emit('deleteCalendar',calendar.id)"
+                        title="Options"
+                        @click.stop="toggleDropdown(calendar.id, $event, true)"
+                        class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-indigo-100 transition-colors opacity-0 group-hover:opacity-100"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">
-                        <path d="M20,6H16V5a3,3,0,0,0-3-3H11A3,3,0,0,0,8,5V6H4A1,1,0,0,0,4,8H5V19a3,3,0,0,0,3,3h8a3,3,0,0,0,3-3V8h1a1,1,0,0,0,0-2ZM10,5a1,1,0,0,1,1-1h2a1,1,0,0,1,1,1V6H10Zm7,14a1,1,0,0,1-1,1H8a1,1,0,0,1-1-1V8H17Z"/>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
                       </svg>
-                      <span class="sr-only">Supprimer</span>
                     </button>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                <p v-if="calendar.description" class="text-xs text-gray-600 mb-2 line-clamp-2">
-                  {{ calendar.description }}
-                </p>
-
-
-            <!-- <div class="flex items-center gap-2 text-xs text-gray-500">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-              <span>{{ appointment.dateLabel }}</span>
-            </div> -->
+            <!-- Message si aucun calendrier partagé -->
+            <div v-else-if="!loadingCalendars && calendars.length > 0" class="mt-8">
+              <div class="flex items-center gap-2 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     class="text-gray-400">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Partagés avec moi</h3>
+              </div>
+              <div class="text-center text-gray-400 py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                <p class="text-sm">Aucun calendrier partagé</p>
               </div>
             </div>
           </div>
         </div>
-        <div v-else-if="isTagsView">
-          <div class="flex items-center justify-between p-4 border-b border-gray-200">
+
+        <!-- Liste des tags -->
+        <div v-else-if="isTagsView" class="h-full flex flex-col">
+          <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
             <h2 class="text-lg font-semibold text-gray-900">Liste des tags</h2>
             <button
                 @click="$emit('close')"
-                class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                class="p-2 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -243,56 +673,75 @@
           <div class="flex-1 overflow-y-auto p-4">
             <div class="flex justify-center mb-6">
               <button
-                  class="py-2.5 px-6 bg-indigo-600 rounded-xl flex items-center gap-2 text-base font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
                   @click="handleNewTagClick"
+                  class="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M10 5V15M15 10H5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
                 Nouveau tag
               </button>
             </div>
 
             <div v-if="loadingTags" class="text-center text-gray-500 py-8">
-              Chargement...
+              <svg class="animate-spin h-8 w-8 mx-auto text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none"
+                   viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p class="mt-2">Chargement...</p>
             </div>
 
             <div v-else-if="tags.length === 0" class="text-center text-gray-500 py-8">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                   class="mx-auto mb-3 text-gray-300">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                <line x1="7" y1="7" x2="7.01" y2="7"></line>
+              </svg>
               <p class="text-sm">Aucun tag</p>
             </div>
 
-            <div v-else class="space-y-3">
+            <div v-else class="space-y-2">
               <div
                   v-for="tag in tags"
                   :key="tag.id"
-                  class="p-3 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all"
+                  class="p-3 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-gray-300 transition-all group"
               >
                 <div class="flex items-center justify-between gap-2">
-                  <div class="flex items-center gap-2 min-w-0 flex-1">
-                    <span
-                        :style="{ backgroundColor: tag.color }"
-                        class="w-4 h-4 rounded-full border border-gray-300 flex-shrink-0"
-                    ></span>
-                    <h3 class="font-medium text-gray-900 text-sm truncate" :title="tag.name">{{ tag.name }}</h3>
+                  <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <div
+                        class="w-4 h-4 rounded-full flex-shrink-0 ring-2 ring-offset-1"
+                        :style="{ backgroundColor: tag.color, '--tw-ring-color': tag.color + '40' } as any"
+                    ></div>
+                    <span class="font-medium text-gray-900 truncate">{{ tag.name }}</span>
                   </div>
-                  <div class="flex items-center justify-end gap-1.5 flex-shrink-0">
+                  <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                        class="p-2 bg-indigo-600 rounded-xl flex items-center justify-center text-white transition-all duration-300 hover:bg-indigo-700"
                         @click="handleEditTagClick(tag)"
+                        class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                        title="Modifier"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">
-                        <path d="M22,7.24a1,1,0,0,0-.29-.71L17.47,2.29A1,1,0,0,0,16.76,2a1,1,0,0,0-.71.29L13.22,5.12h0L2.29,16.05a1,1,0,0,0-.29.71V21a1,1,0,0,0,1,1H7.24A1,1,0,0,0,8,21.71L18.87,10.78h0L21.71,8a1.19,1.19,0,0,0,.22-.33,1,1,0,0,0,0-.24.7.7,0,0,0,0-.14ZM6.83,20H4V17.17l9.93-9.93,2.83,2.83ZM18.17,8.66,15.34,5.83l1.42-1.41,2.82,2.82Z"/>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                       </svg>
-                      <span class="sr-only">Modifier</span>
                     </button>
                     <button
-                        class="p-2 bg-red-500 rounded-xl flex items-center justify-center text-white transition-all duration-300 hover:bg-red-600"
                         @click="$emit('deleteTag', tag.id)"
+                        class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                        title="Supprimer"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 fill-white">
-                        <path d="M20,6H16V5a3,3,0,0,0-3-3H11A3,3,0,0,0,8,5V6H4A1,1,0,0,0,4,8H5V19a3,3,0,0,0,3,3h8a3,3,0,0,0,3-3V8h1a1,1,0,0,0,0-2ZM10,5a1,1,0,0,1,1-1h2a1,1,0,0,1,1,1V6H10Zm7,14a1,1,0,0,1-1,1H8a1,1,0,0,1-1-1V8H17Z"/>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path
+                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                       </svg>
-                      <span class="sr-only">Supprimer</span>
                     </button>
                   </div>
                 </div>
@@ -301,176 +750,109 @@
           </div>
         </div>
       </div>
-
     </div>
   </aside>
+
+  <!-- Dropdown Menu pour calendriers personnels -->
+  <Teleport to="body">
+    <div
+        v-if="openDropdownId !== null && !isSharedDropdown"
+        class="fixed w-40 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[9999]"
+        :style="dropdownStyle"
+        @click.stop
+    >
+      <button
+          class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition-colors"
+          @click="handleEdit(getCalendarById(openDropdownId))"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+        Modifier
+      </button>
+      <button
+          class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition-colors"
+          @click="handleExport(getCalendarById(openDropdownId))"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Exporter .ics
+      </button>
+      <button
+          class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition-colors"
+          @click="handleShare(getCalendarById(openDropdownId))"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="18" cy="5" r="3"></circle>
+          <circle cx="6" cy="12" r="3"></circle>
+          <circle cx="18" cy="19" r="3"></circle>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+        </svg>
+        Partager
+      </button>
+      <hr class="my-1 border-gray-200"/>
+      <button
+          class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+          @click="handleDelete(openDropdownId!)"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        Supprimer
+      </button>
+    </div>
+  </Teleport>
+
+  <!-- Dropdown Menu pour calendriers partagés (options limitées) -->
+  <Teleport to="body">
+    <div
+        v-if="openDropdownId !== null && isSharedDropdown"
+        class="fixed w-44 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[9999]"
+        :style="dropdownStyle"
+        @click.stop
+    >
+      <button
+          class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition-colors"
+          @click="handleExport(getSharedCalendarById(openDropdownId))"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Exporter .ics
+      </button>
+      <hr class="my-1 border-gray-200"/>
+      <button
+          class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+          @click="handleRemoveSharedCalendar(openDropdownId!)"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6L6 18"></path>
+          <path d="M6 6l12 12"></path>
+        </svg>
+        Retirer le partage
+      </button>
+    </div>
+  </Teleport>
+
+  <!-- Modal de partage du calendrier -->
+  <CalendarShareModal
+      v-if="isShareModalOpen"
+      :calendar="shareModalCalendar"
+      @close="closeShareModal"
+      @removeAccess="handleRemoveAccess"
+  />
 </template>
-
-<script setup lang="ts">
-import {computed, ref, watch} from 'vue';
-import {calendarService} from "../../assets/calendar.js";
-
-const emit = defineEmits([
-  'close',
-  'selectAppointment',
-  'toggleappointmentsdisplay',
-  'togglecalendarsdisplay',
-  'toggletagsdisplay',
-  'CalendarForm',
-  'TagForm',
-  'editCalendar',
-  'deleteCalendar',
-  'editTag',
-  'deleteTag'
-]);
-
-const props = defineProps({
-  isOpen: {
-    type: Boolean,
-    default: false
-  },
-  appointmentsdisplayed: {
-    type: Boolean,
-    default: false
-  },
-  calendarsdisplayed: {
-    type: Boolean,
-    default: false
-  },
-  tagsdisplayed: {
-    type: Boolean,
-    default: false
-  },
-  appointments: {
-    type: Array,
-    default: () => []
-  },
-  calendars: {
-    type: Array,
-    default: () => []
-  },
-  tags: {
-    type: Array,
-    default: () => []
-  },
-  loading: {
-    type: Boolean,
-    default: false
-  },
-  loadingCalendars: {
-    type: Boolean,
-    default: false
-  },
-  loadingTags: {
-    type: Boolean,
-    default: false
-  }
-});
-
-const upcomingAppointments = computed(() => {
-  const now = new Date();
-  const limitDate = new Date();
-  limitDate.setMonth(limitDate.getMonth() + 1);
-
-  const result = [];
-
-  props.appointments.forEach(appt => {
-    const start = new Date(appt.startDate);
-    const end = new Date(appt.endDate);
-    const duration = end - start;
-    const rule = appt.recursionRule;
-
-    // Pas de récurrence
-    if (rule === undefined || rule === null) {
-      if (start > now && start <= limitDate) result.push(appt);
-      return;
-    }
-
-    // Calculer la première occurrence après maintenant
-    let cursor = new Date(start);
-
-    switch (rule) {
-      case 0: // quotidien
-        while (cursor < now) cursor.setDate(cursor.getDate() + 1);
-        break;
-      case 1: // hebdomadaire
-        while (cursor < now) cursor.setDate(cursor.getDate() + 7);
-        break;
-      case 2: // mensuel
-        while (cursor < now) cursor.setMonth(cursor.getMonth() + 1);
-        break;
-      case 3: // annuel
-        while (cursor < now) cursor.setFullYear(cursor.getFullYear() + 1);
-        break;
-    }
-
-    // Ajouter toutes les occurrences jusqu'à la limite
-    while (cursor <= limitDate) {
-      result.push({
-        ...appt,
-        startDate: new Date(cursor),
-        endDate: new Date(cursor.getTime() + duration),
-        isOccurrence: true
-      });
-
-      switch (rule) {
-        case 0: cursor.setDate(cursor.getDate() + 1); break;
-        case 1: cursor.setDate(cursor.getDate() + 7); break;
-        case 2: cursor.setMonth(cursor.getMonth() + 1); break;
-        case 3: cursor.setFullYear(cursor.getFullYear() + 1); break;
-      }
-    }
-  });
-
-  return result
-      .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
-      .map(appt => ({
-        ...appt,
-        dateLabel: new Date(appt.startDate).toLocaleDateString('fr-FR', {
-          weekday: 'short',
-          day: 'numeric',
-          month: 'short'
-        }),
-        hour: new Date(appt.startDate).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})
-      }));
-});
-
-const tabOrder = ['appointments','calendars','tags'] as const;
-const forcedView = computed(() => {
-  if (props.tagsdisplayed) return 'tags';
-  if (props.calendarsdisplayed) return 'calendars';
-  if (props.appointmentsdisplayed) return 'appointments';
-  return null;
-});
-const internalView = ref<typeof tabOrder[number]>('appointments');
-watch(forcedView, (val) => { if (val) internalView.value = val; }, { immediate: true });
-
-const isAppointmentsView = computed(() => internalView.value === 'appointments');
-const isCalendarsView = computed(() => internalView.value === 'calendars');
-const isTagsView = computed(() => internalView.value === 'tags');
-
-const activeTabIndex = computed(() => tabOrder.indexOf(internalView.value));
-const indicatorWidth = computed(() => `${100 / tabOrder.length}%`);
-const indicatorTransform = computed(() => `translateX(${activeTabIndex.value * 100}%)`);
-
-const selectTab = (view: typeof tabOrder[number], emitName: string) => {
-  internalView.value = view;
-  emit(emitName);
-};
-
-const dispatchTagFormEvent = (payload: any = null) => {
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('open-tag-form', { detail: payload }));
-  }
-};
-
-const handleNewTagClick = () => {
-  dispatchTagFormEvent(null);
-  emit('TagForm');
-};
-
-const handleEditTagClick = (tag: any) => {
-  dispatchTagFormEvent(tag);
-  emit('editTag', tag);
-};
-</script>

@@ -1,12 +1,13 @@
-import express, {Request, Response} from 'express';
+import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import apiRoutes from './src/adapters/http/routes/api.js';
-import {connectDatabase, closeDatabase} from './src/infrastructure/database/connection.js';
-import {db} from './src/infrastructure/config/sqliteAdapter.js';
-import {v4 as uuidv4} from 'uuid';
+import { connectDatabase, closeDatabase } from './src/infrastructure/database/connection.js';
+import { db } from './src/infrastructure/config/sqliteAdapter.js';
+import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
+import { ServiceFactory } from './src/adapters/factories/ServiceFactory.ts';
 
 dotenv.config();
 
@@ -18,7 +19,7 @@ async function bootstrap() {
     const PORT: number = parseInt(process.env.PORT || '3000', 10);
 
     app.use(express.json());
-    app.use(express.urlencoded({extended: true}));
+    app.use(express.urlencoded({ extended: true }));
 
     // Monter toutes les routes API sous /api
     app.use('/api', apiRoutes);
@@ -32,12 +33,14 @@ async function bootstrap() {
                 count: number
             };
             const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+            const sharesCount = db.prepare('SELECT COUNT(*) as count FROM shares').get() as { count: number };
 
             console.log('\n📊 Test base de données :');
             console.log(`- Utilisateurs : ${userCount.count}`);
             console.log(`- Calendriers : ${calendarCount.count}`);
             console.log(`- Rendez-vous : ${appointmentCount.count}`);
             console.log(`- Tables présentes :`, tables);
+            console.log(`- Partages : ${sharesCount.count}`);
 
             res.json({
                 success: true,
@@ -161,6 +164,20 @@ async function bootstrap() {
     });
 
     await connectDatabase();
+
+    const calendarService = ServiceFactory.getCalendarService();
+    const UPDATE_INTERVAL = 60 * 60 * 1000; // 1 heure en ms
+
+    const runUpdateJob = async () => {
+        try {
+            await calendarService.updateExternalCalendars();
+        } catch (error) {
+        } finally {
+            setTimeout(runUpdateJob, UPDATE_INTERVAL);
+        }
+    };
+
+    runUpdateJob();
 
     const server = app.listen(PORT, '0.0.0.0', () => {
         console.log(`\n✓ Serveur démarré sur le port ${PORT}`);

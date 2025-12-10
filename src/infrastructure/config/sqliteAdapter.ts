@@ -70,6 +70,9 @@ export async function initDatabase(): Promise<void> {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_by TEXT,
+      url TEXT,
+      update_rule INTEGER,
+      public_token TEXT UNIQUE,
       FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
     );
@@ -99,12 +102,22 @@ export async function initDatabase(): Promise<void> {
       end_date DATETIME NOT NULL,
       owner_id TEXT NOT NULL,
       recursion_rule INTEGER NOT NULL,
+      recursion_end_date DATETIME NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_by TEXT,
       FOREIGN KEY (calendar_id) REFERENCES calendars(id) ON DELETE CASCADE,
       FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS pauses (
+        id TEXT PRIMARY KEY,
+        recurrent_appointment_id TEXT NOT NULL,
+        pause_start_date DATETIME NOT NULL,
+        pause_end_date DATETIME NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (recurrent_appointment_id) REFERENCES recurrent_appointments(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS shares (

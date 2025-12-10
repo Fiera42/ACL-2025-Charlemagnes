@@ -23,7 +23,7 @@
             v-for="hour in hours"
             :key="hour"
             :ref="hour === '07:00' ? 'workStartRef' : undefined"
-            class="flex border-t border-gray-200"
+            class="flex border-t border-gray-200 h-[80px] box-border"
         >
           <div class="w-20 p-3.5 flex items-start text-xs font-semibold text-gray-400">
             {{ hour }}
@@ -49,9 +49,10 @@
               class="absolute px-1 pointer-events-auto"
           >
             <div
-                :class="[
-                        'rounded p-2 border-l-4 cursor-pointer h-full overflow-hidden relative'
-                      ]"
+                class="rounded p-2 border-l-4 cursor-pointer h-full overflow-hidden relative'"
+                :class="{
+                  'opacity-30 grayscale pointer-events-none': event.isDimmed
+                }"
                 :style="{
                   borderColor: event.color,
                   backgroundColor: addAlpha(event.color, 0.3),
@@ -91,6 +92,7 @@
 
 <script setup>
 import {ref, computed, onMounted, nextTick} from 'vue';
+import {calendarService} from "../../assets/calendar.js";
 
 const props = defineProps({
   events: {
@@ -257,7 +259,10 @@ const expandedEvents = computed(() => {
       }
     }
 
-    while (cursor < viewEnd) {
+    let recurrenceEnd = event.recursionEndDate ? new Date(event.recursionEndDate) : viewEnd;
+    recurrenceEnd = recurrenceEnd < viewEnd ? recurrenceEnd : viewEnd;
+
+    while (cursor < recurrenceEnd) {
       const newStart = new Date(cursor);
       newStart.setHours(
         new Date(event.startDate).getHours(),
@@ -267,6 +272,21 @@ const expandedEvents = computed(() => {
       );
 
       const newEnd = new Date(newStart.getTime() + duration);
+
+      // Si pauses n’est pas vide
+      if (event.pauses.length > 0) {
+        for (const pause of event.pauses) {
+          const pauseStart = new Date(pause.pauseStartDate);
+          const pauseEnd = new Date(pause.pauseEndDate);
+
+          if (newEnd < pauseEnd && newStart >= pauseStart) {
+            return; // on masque l’occurrence
+          }
+        }
+      }
+
+      // Si la fin de récurrence est définie et que le nouvel événement la dépasse, on arrête
+      if (newEnd > recurrenceEnd) break;
 
       result.push({
         ...event,

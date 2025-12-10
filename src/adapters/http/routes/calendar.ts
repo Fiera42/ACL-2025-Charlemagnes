@@ -1,4 +1,4 @@
-import express, { Response, Router } from 'express';
+import express, { Response, Router, Request } from 'express'; // Ajout de Request
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { ServiceFactory } from '../../factories/ServiceFactory';
 
@@ -6,7 +6,10 @@ const router: Router = express.Router();
 const calendarService = ServiceFactory.getCalendarService();
 const appointmentService = ServiceFactory.getAppointmentService();
 
-// Routes pour les calendriers
+// ==========================================
+// ROUTES CALENDRIERS
+// ==========================================
+
 router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const calendars = await calendarService.getCalendarsByOwnerId(req.user!.userId);
@@ -18,13 +21,98 @@ router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Respon
 
 router.post('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const { name, description, color } = req.body;
-        const calendar = await calendarService.createCalendar(req.user!.userId, name, description, color);
+        const { name, description, color, url, updateRule } = req.body;
+        const calendar = await calendarService.createCalendar(req.user!.userId, name, description, color, url, updateRule);
         res.status(201).json(calendar);
     } catch (error) {
         res.status(500).json({ error: 'Erreur lors de la création du calendrier' });
     }
 });
+
+// --- IMPORT / EXPORT ---
+router.post('/import-content', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const { icsContent, calendarName } = req.body;
+
+        if (!icsContent) {
+            return res.status(400).json({ error: 'Le contenu ICS est requis' });
+        }
+        
+        // On appelle la méthode du service avec le contenu brut
+        const result = await calendarService.importCalendarFromICS(
+            req.user!.userId, 
+            icsContent,
+            null,
+            null,
+        );
+        
+        res.status(201).json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur lors de l\'import du fichier ICS' });
+    }
+});
+
+router.post('/import-url', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const { url, autoUpdate, updateRule } = req.body;
+        
+        const result = await calendarService.importCalendarFromUrl(
+            req.user!.userId, 
+            url, 
+            autoUpdate,
+            updateRule
+        );
+        
+        res.status(201).json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur lors de l\'import du calendrier depuis l\'URL' });
+    }
+});
+
+router.get('/:id/export.ics', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const icsContent = await calendarService.exportICSCalendar(req.params.id);
+        const calendar = await calendarService.getCalendarById(req.params.id);
+        
+        res.setHeader('Content-Type', 'text/calendar');
+        res.setHeader('Content-Disposition', `attachment; filename="${calendar?.name || 'calendar'}.ics"`);
+        res.send(icsContent);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur lors de l\'export du calendrier' });
+    }
+});
+
+// --- PARTAGE PUBLIC (iCal Subscription) ---
+
+router.post('/:id/public-link', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const relativeUrl = await calendarService.getPublicLink(req.user!.userId, req.params.id);
+
+        const fullUrl = `${req.protocol}://${req.get('host')}${relativeUrl}`;
+        
+        res.json({ url: fullUrl });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur lors de la génération du lien public' });
+    }
+});
+
+router.get('/public/:token.ics', async (req: Request, res: Response) => {
+    try {
+        const icsContent = await calendarService.exportPublicICSCalendar(req.params.token);
+        
+        res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+        res.setHeader('Content-Disposition', 'inline; filename="calendar.ics"');
+        res.status(200).send(icsContent);
+    } catch (error) {
+        res.status(404).send('Calendrier introuvable ou lien invalide');
+    }
+});
+
+// --- OPERTATIONS CRUD CLASSIQUES ---
 
 router.get('/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -75,7 +163,10 @@ router.delete('/:id/share/:sharedToId', authenticateToken, async (req: Authentic
     }
 });
 
-// Routes pour les rendez-vous d'un calendrier
+// ==========================================
+// ROUTES RENDEZ-VOUS
+// ==========================================
+
 router.get('/:calendarId/appointments', async (req, res) => {
     try {
         const data = await appointmentService.getAllAppointmentsByCalendarId(req.params.calendarId);
@@ -87,7 +178,7 @@ router.get('/:calendarId/appointments', async (req, res) => {
 
 router.post('/:calendarId/appointments', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const { title, description, startDate, endDate, recursionRule, tags = [] } = req.body;
+        const { title, description, startDate, endDate, recursionRule, recursionEndDate, tags = [] } = req.body;
         let appointment;
 
         if (recursionRule !== undefined && recursionRule !== null) {
@@ -99,6 +190,7 @@ router.post('/:calendarId/appointments', authenticateToken, async (req: Authenti
                 new Date(startDate),
                 new Date(endDate),
                 recursionRule,
+                new Date(recursionEndDate),
                 tags
             );
         } else {
@@ -115,11 +207,11 @@ router.post('/:calendarId/appointments', authenticateToken, async (req: Authenti
 
         res.status(201).json(appointment);
     } catch (error) {
+        console.log(error);
         res.status(500).json({ error: 'Erreur lors de la création du rendez-vous' });
     }
 });
 
-// Routes pour les rendez-vous individuels
 router.get('/appointments/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const appointment = await appointmentService.getAppointmentById(req.params.id);
@@ -132,44 +224,41 @@ router.get('/appointments/:id', authenticateToken, async (req: AuthenticatedRequ
     }
 });
 
+router.get('/appointmentsRecurrent/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const appointment = await appointmentService.getRecurrentAppointmentById(req.params.id);
+        if (!appointment) {
+            return res.status(404).json({ error: 'Rendez-vous récurrent non trouvé' });
+        }
+        res.json(appointment);
+    } catch (error) {
+        res.status(500).json({ error: 'Erreur lors de la récupération du rendez-vous récurrent' });
+    }
+});
+
 router.put('/appointments/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const { title, description, startDate, endDate, recursionRule, tags } = req.body;
+        const { title, description, startDate, endDate, recursionRule, recursionEndDate, tags } = req.body;
         const appointmentId = req.params.id;
 
         const start = startDate ? new Date(startDate) : undefined;
         const end = endDate ? new Date(endDate) : undefined;
 
-        let updatedAppointment;
+        const updateResult = await appointmentService.updateAppointmentType(
+            req.user!.userId,
+            appointmentId,
+            {
+                title,
+                description,
+                startDate: start,
+                endDate: end,
+                recursionRule,
+                recursionEndDate: recursionEndDate ? new Date(recursionEndDate) : null,
+                tags
+            }
+        );
+        res.json(updateResult);
 
-        if (recursionRule !== undefined && recursionRule !== null) {
-            updatedAppointment = await appointmentService.updateRecurrentAppointment(
-                req.user!.userId,
-                appointmentId,
-                {
-                    title,
-                    description,
-                    ...(start && { startDate: start }),
-                    ...(end && { endDate: end }),
-                    recursionRule,
-                    ...(tags !== undefined && { tags })
-                }
-            );
-        } else {
-            updatedAppointment = await appointmentService.updateAppointment(
-                req.user!.userId,
-                appointmentId,
-                {
-                    title,
-                    description,
-                    ...(start && { startDate: start }),
-                    ...(end && { endDate: end }),
-                    ...(tags !== undefined && { tags })
-                }
-            );
-        }
-
-        res.json(updatedAppointment);
 
     } catch (error) {
         console.error("Erreur PUT /appointments/:id :", error);
