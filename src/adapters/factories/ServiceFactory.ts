@@ -1,32 +1,39 @@
-import {IAuthDB} from '../../domain/interfaces/IAuthDB';
-import {ICalendarDB} from '../../domain/interfaces/ICalendarDB';
-import {IShareDB} from '../../domain/interfaces/IShareDB';
-import {IAppointmentService} from '../../domain/interfaces/IAppointmentService';
-import {ICalendarService} from '../../domain/interfaces/ICalendarService';
+import { IAuthDB } from '../../domain/interfaces/IAuthDB';
+import { ICalendarDB } from '../../domain/interfaces/ICalendarDB';
+import { IShareDB } from '../../domain/interfaces/IShareDB';
+import { ITagDB } from '../../domain/interfaces/ITagDB';
+import { IPauseDB } from "../../domain/interfaces/IPauseDB";
+import { IAppointmentService } from '../../domain/interfaces/IAppointmentService';
+import { ICalendarService } from '../../domain/interfaces/ICalendarService';
+import { IAuthService } from "../../domain/interfaces/IAuthService.ts";
+import { ITagService } from '../../domain/interfaces/ITagService';
+import { IPauseService } from "../../domain/interfaces/IPauseService";
 import {IShareService} from '../../domain/interfaces/IShareService';
-import {AppointmentService} from '../../application/services/AppointmentService';
-import {CalendarService} from '../../application/services/CalendarService';
+import { AppointmentService } from '../../application/services/AppointmentService';
+import { CalendarService } from '../../application/services/CalendarService';
+import {AuthService} from "../../application/services/AuthService.ts";
+import { TagService } from '../../application/services/TagService';
+import { PauseService } from "../../application/services/PauseService";
 import {ShareService} from '../../application/services/ShareService';
-import {SQLiteAuthDB} from '../../infrastructure/database/SQLiteAuthDB';
-import {SQLiteCalendarDB} from '../../infrastructure/database/SQLiteCalendarDB';
-import {SQLiteShareDB} from '../../infrastructure/database/SQLiteShareDB';
-import {SQLiteTagDB} from '../../infrastructure/database/SQLiteTagDB';
-import {db} from '../../infrastructure/config/sqliteAdapter';
-import {AuthService} from "../../application/services/AuthService";
-import {IAuthService} from "../../domain/interfaces/IAuthService";
-import {ITagDB} from '../../domain/interfaces/ITagDB';
-import {ITagService} from '../../domain/interfaces/ITagService';
-import {TagService} from '../../application/services/TagService';
+import { SQLiteAuthDB } from '../../infrastructure/database/SQLiteAuthDB';
+import { SQLiteCalendarDB } from '../../infrastructure/database/SQLiteCalendarDB';
+import { SQLiteShareDB } from '../../infrastructure/database/SQLiteShareDB';
+import { SQLiteTagDB } from '../../infrastructure/database/SQLiteTagDB';
+import { SQLitePauseDB } from '../../infrastructure/database/SQLitePauseDB';
+import { db } from '../../infrastructure/config/sqliteAdapter';
+
 
 export class ServiceFactory {
     private static authDB: IAuthDB;
     private static calendarDB: ICalendarDB;
     private static shareDB: IShareDB;
     private static tagDB: ITagDB;
+    private static pauseDB: IPauseDB;
     private static authService: AuthService;
     private static calendarService: ICalendarService;
     private static appointmentService: IAppointmentService;
     private static tagService: ITagService;
+    private static pauseService: IPauseService;
     private static shareService: IShareService;
 
     private static initializeDatabases(): void {
@@ -41,6 +48,9 @@ export class ServiceFactory {
         }
         if (!this.tagDB) {
             this.tagDB = new SQLiteTagDB(db);
+        }
+        if (!this.pauseDB) {
+            this.pauseDB = new SQLitePauseDB(db);
         }
     }
 
@@ -72,6 +82,13 @@ export class ServiceFactory {
         }
     }
 
+    private static initializePauseService(): void {
+        if (!this.pauseService) {
+            this.initializeDatabases();
+            this.pauseService = new PauseService(this.pauseDB);
+        }
+    }
+
     private static initializeShareService(): void {
         if (!this.shareService) {
             this.initializeDatabases();
@@ -92,6 +109,16 @@ export class ServiceFactory {
     static getShareDB(): IShareDB {
         this.initializeDatabases();
         return this.shareDB;
+    }
+
+    static getTagDB(): ITagDB {
+        this.initializeDatabases();
+        return this.tagDB;
+    }
+
+    static getPauseDB(): IPauseDB {
+        this.initializeDatabases();
+        return this.pauseDB;
     }
 
     static getCalendarService(): ICalendarService {
@@ -117,5 +144,10 @@ export class ServiceFactory {
     static getShareService(): IShareService {
         this.initializeShareService();
         return this.shareService;
+    }
+
+    static getPauseService(): IPauseService {
+        this.initializePauseService();
+        return this.pauseService;
     }
 }

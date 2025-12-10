@@ -250,6 +250,65 @@ export class AppointmentService implements IAppointmentService {
         });
     }
 
+    /**
+     * Met à jour un rendez-vous en changeant son type (simple <-> récurrent) si nécessaire.
+     * @param ownerId L'ID du propriétaire du rendez-vous.
+     * @param appointmentId L'ID du rendez-vous à mettre à jour.
+     * @param partial Les champs à mettre à jour. Si `recursionRule` est défini, le rendez-vous sera converti en récurrent.
+     */
+    async updateAppointmentType(
+        ownerId: string,
+        appointmentId: string,
+        partial: Partial<Appointment & RecurrentAppointment>
+    ): Promise<ServiceResponse> {
+
+        // Récupérer l'événement actuel
+        const apptSimple = await this.calendarDB.findAppointmentById(appointmentId);
+        const apptRecurrent = await this.calendarDB.findRecurrentAppointmentById(appointmentId);
+
+        if (!apptSimple && !apptRecurrent) return ServiceResponse.RESOURCE_NOT_EXIST;
+        if ((apptSimple && apptSimple.ownerId !== ownerId) || (apptRecurrent && apptRecurrent.ownerId !== ownerId))
+            return ServiceResponse.FORBIDDEN;
+
+        // Cas 1 : Simple -> récurrent
+        if (!apptRecurrent && partial.recursionRule !== undefined && partial.recursionRule !== null) {
+            // Supprimer simple
+            if (apptSimple) await this.calendarDB.deleteAppointment(appointmentId);
+
+            // Créer récurrent
+            const newRecurrent: RecurrentAppointment = {
+                ...apptSimple!,
+                ...partial,
+                recursionRule: partial.recursionRule,
+                recursionEndDate: partial.recursionEndDate || null,
+            };
+            await this.calendarDB.createRecurrentAppointment(newRecurrent);
+            return ServiceResponse.SUCCESS;
+        }
+
+        // Cas 2 : Récurrent -> simple
+        if (apptRecurrent && (partial.recursionRule === undefined || partial.recursionRule === null)) {
+            // Supprimer récurrent
+            await this.calendarDB.deleteRecurrentAppointment(appointmentId);
+
+            // Créer simple
+            const newSimple: Appointment = {
+                ...apptRecurrent,
+                ...partial,
+                recursionRule: undefined,
+                recursionEndDate: null,
+            };
+            await this.calendarDB.createAppointment(newSimple);
+            return ServiceResponse.SUCCESS;
+        }
+
+        // Sinon, juste une mise à jour normale
+        if (apptSimple) return this.updateAppointment(ownerId, appointmentId, partial);
+        if (apptRecurrent) return this.updateRecurrentAppointment(ownerId, appointmentId, partial);
+
+        return ServiceResponse.FAILED;
+    }
+
     updateAppointment(
         ownerId: string,
         appointmentId: string,
@@ -408,6 +467,31 @@ export class AppointmentService implements IAppointmentService {
             }
 
             const appointment = await this.calendarDB.findAppointmentById(appointmentId)
+                .catch((reason) => {
+                    reject(reason);
+                });
+
+            if (appointment === undefined) return;
+            if (appointment === null) {
+                resolve(null);
+                return;
+            }
+
+            appointment.title = decode(appointment.title);
+            appointment.description = decode(appointment.description);
+
+            resolve(appointment);
+        });
+    }
+
+    getRecurrentAppointmentById(appointmentId: string): Promise<RecurrentAppointment | null> {
+        return new Promise<RecurrentAppointment | null>(async (resolve, reject) => {
+            if (Sanitizer.doesStringContainSpecialChar(appointmentId)) {
+                reject(new Error(`AppointmentId (${appointmentId}) contains special char`));
+                return;
+            }
+
+            const appointment = await this.calendarDB.findRecurrentAppointmentById(appointmentId)
                 .catch((reason) => {
                     reject(reason);
                 });

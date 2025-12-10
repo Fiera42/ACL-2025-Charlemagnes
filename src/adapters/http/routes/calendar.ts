@@ -134,6 +134,18 @@ router.get('/appointments/:id', authenticateToken, async (req: AuthenticatedRequ
     }
 });
 
+router.get('/appointmentsRecurrent/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const appointment = await appointmentService.getRecurrentAppointmentById(req.params.id);
+        if (!appointment) {
+            return res.status(404).json({ error: 'Rendez-vous récurrent non trouvé' });
+        }
+        res.json(appointment);
+    } catch (error) {
+        res.status(500).json({ error: 'Erreur lors de la récupération du rendez-vous récurrent' });
+    }
+});
+
 router.put('/appointments/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const { title, description, startDate, endDate, recursionRule, recursionEndDate, tags } = req.body;
@@ -142,37 +154,21 @@ router.put('/appointments/:id', authenticateToken, async (req: AuthenticatedRequ
         const start = startDate ? new Date(startDate) : undefined;
         const end = endDate ? new Date(endDate) : undefined;
 
-        let updatedAppointment;
+        const updateResult = await appointmentService.updateAppointmentType(
+            req.user!.userId,
+            appointmentId,
+            {
+                title,
+                description,
+                startDate: start,
+                endDate: end,
+                recursionRule,
+                recursionEndDate: recursionEndDate ? new Date(recursionEndDate) : null,
+                tags
+            }
+        );
+        res.json(updateResult);
 
-        if (recursionRule !== undefined && recursionRule !== null) {
-            updatedAppointment = await appointmentService.updateRecurrentAppointment(
-                req.user!.userId,
-                appointmentId,
-                {
-                    title,
-                    description,
-                    ...(start && { startDate: start }),
-                    ...(end && { endDate: end }),
-                    recursionRule,
-                    ...(recursionEndDate && { recursionEndDate: new Date(recursionEndDate) }),
-                    ...(tags !== undefined && { tags })
-                }
-            );
-        } else {
-            updatedAppointment = await appointmentService.updateAppointment(
-                req.user!.userId,
-                appointmentId,
-                {
-                    title,
-                    description,
-                    ...(start && { startDate: start }),
-                    ...(end && { endDate: end }),
-                    ...(tags !== undefined && { tags })
-                }
-            );
-        }
-
-        res.json(updatedAppointment);
 
     } catch (error) {
         console.error("Erreur PUT /appointments/:id :", error);

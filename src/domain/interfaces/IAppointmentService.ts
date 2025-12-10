@@ -36,6 +36,11 @@ export interface IAppointmentService {
     appointmentId: string
   ): Promise<ServiceResponse>;
 
+  updateAppointmentType(
+    ownerId: string,
+    appointmentId: string,
+    partial: Partial<Appointment & RecurrentAppointment>
+  ): Promise<ServiceResponse>;
   updateAppointment(
     ownerId: string,
     appointmentId: string,
@@ -61,7 +66,7 @@ export interface IAppointmentService {
   ): Promise<ServiceResponse>;
 
   getAppointmentById(id: string): Promise<Appointment | null>;
-
+  getRecurrentAppointmentById(id: string): Promise<RecurrentAppointment | null>;
   getAppointmentsByCalendarId(calendarId: string): Promise<Appointment[]>;
 
   getRecurrentAppointmentByCalendarId(calendarId: string): Promise<RecurrentAppointment[]>;

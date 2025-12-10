@@ -93,4 +93,16 @@ router.delete('/calendar/:calendarId/user/:userShareId', authenticateToken, asyn
     }
 });
 
+router.delete('/leave/:calendarId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        await shareService.removeMyAccess(req.user!.userId, req.params.calendarId);
+        res.json({success: true});
+    } catch (error: any) {
+        if (error.message.includes('not found')) {
+            return res.status(404).json({error: error.message});
+        }
+        res.status(500).json({error: 'Erreur lors de la suppression du partage'});
+    }
+});
+
 export default router;

@@ -108,6 +108,15 @@ export async function initDatabase(): Promise<void> {
       FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
     );
 
+    CREATE TABLE IF NOT EXISTS pauses (
+        id TEXT PRIMARY KEY,
+        recurrent_appointment_id TEXT NOT NULL,
+        pause_start_date DATETIME NOT NULL,
+        pause_end_date DATETIME NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (recurrent_appointment_id) REFERENCES recurrent_appointments(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS shares (
       id TEXT PRIMARY KEY,
       owner_id TEXT NOT NULL,

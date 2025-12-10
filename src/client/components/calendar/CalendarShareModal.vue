@@ -209,8 +209,15 @@ const copyLink = async () => {
   }
 };
 
-const removeAccess = (userId) => {
-  emit('removeAccess', props.calendar?.id, userId);
+const removeAccess = async (userId) => {
+  try {
+    await axios.delete(`/api/share/calendar/${props.calendar?.id}/user/${userId}`);
+    // Retirer l'utilisateur de la liste locale
+    sharedUsers.value = sharedUsers.value.filter(u => u.id !== userId);
+  } catch (error) {
+    console.error('Erreur lors de la suppression du partage:', error);
+    alert('Erreur lors de la suppression du partage');
+  }
 };
 
 const close = () => {
