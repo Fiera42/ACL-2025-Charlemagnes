@@ -8,7 +8,7 @@
 
 ### CU2 : Partage de calendriers
 - **Partager un calendrier via un lien** : Ajouter le partage de calendriers via un lien avec uniquement des permissions de lecture. ✅
-- **Annuler le partage** : Permettre d'annuler le partage d'un calendrier.
+- **Annuler le partage** : Permettre d'annuler le partage d'un calendrier. ✅
 - **Affichage dans le profil des partages** : Afficher dans le profil utilisateur les utilisateurs avec qui un calendrier est partagé.
 
 ### CU3 : Import/Export de calendriers
