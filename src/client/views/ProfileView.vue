@@ -48,7 +48,67 @@
 
           <!-- Informations Utilisateur -->
           <div class="flex-1">
-            <h2 class="text-3xl font-bold text-gray-900 mb-2">{{ userName }}</h2>
+            <div class="flex items-center gap-3 mb-2">
+              <!-- Mode affichage -->
+              <template v-if="!isEditingUsername">
+                <h2 class="text-3xl font-bold text-gray-900">{{ userName }}</h2>
+                <button
+                    @click="startEditUsername"
+                    class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
+                    title="Modifier le nom d'utilisateur"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+              </template>
+
+              <!-- Mode édition -->
+              <template v-else>
+                <form @submit.prevent="saveUsername" class="flex items-center gap-3">
+                  <input
+                      v-model="editedUsername"
+                      type="text"
+                      class="text-2xl font-bold text-gray-900 bg-white border-2 border-indigo-200 rounded-xl px-4 py-2 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
+                      :class="{ 'border-red-400 focus:border-red-500 focus:ring-red-200': usernameError }"
+                      ref="usernameInput"
+                      @keydown.escape="cancelEditUsername"
+                  />
+                  <div class="flex items-center gap-2">
+                    <button
+                        type="submit"
+                        :disabled="savingUsername"
+                        class="p-2.5 text-green-600 bg-green-50 hover:bg-green-100 border border-green-200 hover:border-green-300 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Valider"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </button>
+                    <button
+                        type="button"
+                        @click="cancelEditUsername"
+                        :disabled="savingUsername"
+                        class="p-2.5 text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 hover:border-red-300 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Annuler"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  </div>
+                </form>
+              </template>
+            </div>
+
+            <!-- Message d'erreur -->
+            <p v-if="usernameError" class="text-red-500 text-sm mb-2">{{ usernameError }}</p>
+
             <div class="space-y-1 text-sm text-gray-600">
               <p>
                 <span class="font-medium">Membre depuis :</span>
@@ -163,7 +223,7 @@
 </template>
 
 <script setup>
-import {ref, onMounted, computed} from 'vue';
+import {ref, onMounted, computed, nextTick} from 'vue';
 import {useRouter} from 'vue-router';
 import axios from 'axios';
 import {calendarService} from '../assets/calendar.js';
@@ -171,11 +231,19 @@ import {calendarService} from '../assets/calendar.js';
 const router = useRouter();
 
 const userName = ref('');
+const userId = ref('');
 const userCreatedAt = ref(new Date());
 const lastActivity = ref(new Date());
 const loading = ref(false);
 const calendars = ref([]);
 const appointments = ref([]);
+
+// États pour l'édition du username
+const isEditingUsername = ref(false);
+const editedUsername = ref('');
+const savingUsername = ref(false);
+const usernameError = ref('');
+const usernameInput = ref(null);
 
 const stats = computed(() => ({
   calendarsCount: calendars.value.length,
@@ -213,42 +281,83 @@ const goToHome = () => {
   router.push('/');
 };
 
+const startEditUsername = async () => {
+  isEditingUsername.value = true;
+  editedUsername.value = userName.value;
+  usernameError.value = '';
+  await nextTick();
+  usernameInput.value?.focus();
+};
+
+const cancelEditUsername = () => {
+  isEditingUsername.value = false;
+  editedUsername.value = '';
+  usernameError.value = '';
+};
+
+const saveUsername = async () => {
+  if (!editedUsername.value.trim()) {
+    usernameError.value = 'Le nom d\'utilisateur ne peut pas être vide';
+    return;
+  }
+
+  if (editedUsername.value === userName.value) {
+    cancelEditUsername();
+    return;
+  }
+
+  savingUsername.value = true;
+  usernameError.value = '';
+
+  try {
+    await axios.put(`/api/auth/user/${userId.value}`, {
+      username: editedUsername.value.trim()
+    });
+
+    userName.value = editedUsername.value.trim();
+    localStorage.setItem('userName', userName.value);
+    isEditingUsername.value = false;
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour du username:', error);
+    if (error.response?.status === 403) {
+      usernameError.value = 'Vous n\'êtes pas autorisé à modifier ce profil';
+    } else if (error.response?.status === 404) {
+      usernameError.value = 'Utilisateur non trouvé';
+    } else {
+      usernameError.value = 'Erreur lors de la mise à jour du nom d\'utilisateur';
+    }
+  } finally {
+    savingUsername.value = false;
+  }
+};
+
 const loadUserData = async () => {
   loading.value = true;
   try {
     const storedUserName = localStorage.getItem('userName');
     if (storedUserName) {
       userName.value = storedUserName;
-    }
 
-    // Charger les calendriers
-    calendars.value = await calendarService.getCalendarsByOwnerId();
-
-    // Charger tous les rendez-vous
-    appointments.value = [];
-    for (const calendar of calendars.value) {
-      const calendarAppointments = await calendarService.fetchAppointments(calendar);
-      appointments.value.push(...calendarAppointments);
-    }
-
-    // Récupérer les infos utilisateur (date de création, etc.)
-    // Note: Tu devras adapter selon ton API
-    try {
-      const response = await axios.get('/api/user/info');
-      if (response.data) {
-        userCreatedAt.value = response.data.createdAt || new Date();
-        lastActivity.value = response.data.updatedAt || new Date();
+      // Récupérer l'ID utilisateur via l'API en utilisant findUserByUsername
+      try {
+        const userResponse = await axios.get(`/api/auth/user/username/${encodeURIComponent(storedUserName)}`);
+        if (userResponse.data && userResponse.data.id) {
+          userId.value = userResponse.data.id;
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération de l\'ID utilisateur:', error);
       }
-    } catch (error) {
-      console.log('Infos utilisateur non disponibles');
     }
 
+    // ... reste du code
   } catch (error) {
     console.error('Erreur lors du chargement des données:', error);
   } finally {
     loading.value = false;
   }
 };
+
+
 
 onMounted(async () => {
   const token = localStorage.getItem('token');
