@@ -3,9 +3,22 @@
     <div class="flex flex-col max-h-[85vh]">
       <!-- Header fixe -->
       <div class="flex-shrink-0 pb-4 border-b border-gray-200">
-        <h2 class="text-2xl font-bold text-gray-900">
-          {{ form.title ? 'Modifier le' : 'Nouveau' }} rendez-vous
-        </h2>
+        <div class="flex items-start justify-between">
+          <h2 class="text-2xl font-bold text-gray-900">
+            {{ form.title ? 'Modifier le' : 'Nouveau' }} rendez-vous
+          </h2>
+
+          <button
+              @click="$emit('close')"
+              class="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- Contenu scrollable -->
@@ -15,16 +28,17 @@
           <div class="group">
             <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
               <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
               </svg>
               Titre
             </label>
-            <input 
-              v-model="form.title" 
-              type="text" 
-              required 
-              placeholder="Réunion d'équipe..."
-              class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
+            <input
+                v-model="form.title"
+                type="text"
+                required
+                placeholder="Réunion d'équipe..."
+                class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
             />
           </div>
 
@@ -32,15 +46,15 @@
           <div class="group">
             <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
               <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
               </svg>
               Description
             </label>
-            <textarea 
-              v-model="form.description" 
-              rows="3" 
-              placeholder="Ajouter des détails..."
-              class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all resize-none"
+            <textarea
+                v-model="form.description"
+                rows="3"
+                placeholder="Ajouter des détails..."
+                class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all resize-none"
             ></textarea>
           </div>
 
@@ -48,14 +62,15 @@
           <div class="group">
             <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
               <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
               </svg>
               Calendrier
             </label>
-            <select 
-              v-model="form.calendarId" 
-              required 
-              class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all appearance-none bg-white cursor-pointer"
+            <select
+                v-model="form.calendarId"
+                required
+                class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all appearance-none bg-white cursor-pointer"
             >
               <option v-for="calendar in calendars" :key="calendar.id" :value="calendar.id">
                 {{ calendar.name }}
@@ -69,15 +84,16 @@
             <div class="group">
               <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                 <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 Début
               </label>
-              <input 
-                v-model="form.startDate" 
-                type="datetime-local" 
-                required 
-                class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
+              <input
+                  v-model="form.startDate"
+                  type="datetime-local"
+                  required
+                  class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
               />
             </div>
 
@@ -85,15 +101,16 @@
             <div class="group">
               <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                 <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 Fin
               </label>
-              <input 
-                v-model="form.endDate" 
-                type="datetime-local" 
-                required 
-                class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
+              <input
+                  v-model="form.endDate"
+                  type="datetime-local"
+                  required
+                  class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
               />
             </div>
           </div>
@@ -108,13 +125,14 @@
             <label class="flex items-center justify-between cursor-pointer group">
               <div class="flex items-center gap-3">
                 <div class="relative">
-                  <input 
-                    type="checkbox" 
-                    v-model="form.isRecurring" 
-                    class="sr-only peer"
+                  <input
+                      type="checkbox"
+                      v-model="form.isRecurring"
+                      class="sr-only peer"
                   />
                   <div class="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-indigo-600 transition-colors"></div>
-                  <div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+                  <div
+                      class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
                 </div>
                 <div>
                   <span class="text-sm font-semibold text-gray-800">Rendez-vous récurrent</span>
@@ -122,15 +140,16 @@
                 </div>
               </div>
               <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
               </svg>
             </label>
 
             <!-- Sélecteur de récurrence -->
             <div v-if="form.isRecurring" class="mt-4 animate-fadeIn">
-              <select 
-                v-model="form.recursionRule" 
-                class="w-full px-4 py-2.5 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all bg-white"
+              <select
+                  v-model="form.recursionRule"
+                  class="w-full px-4 py-2.5 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all bg-white"
               >
                 <option value="DAILY">Quotidien</option>
                 <option value="WEEKLY">Hebdomadaire</option>
@@ -164,16 +183,16 @@
       <div class="flex-shrink-0 pt-4 border-t border-gray-200">
         <div class="flex gap-3">
           <button
-            type="button"
-            @click="$emit('close')"
-            class="flex-1 px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all"
+              type="button"
+              @click="$emit('close')"
+              class="flex-1 px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all"
           >
             Annuler
           </button>
           <button
-            type="submit"
-            @click="handleSubmit"
-            class="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]"
+              type="submit"
+              @click="handleSubmit"
+              class="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]"
           >
             {{ form.title ? '✓ Enregistrer' : '+ Créer' }}
           </button>
@@ -184,7 +203,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import {onMounted, ref, watch} from 'vue';
 import BaseModal from '../common/BaseModal.vue';
 import TagSelector from '../tag/TagSelector.vue';
 
@@ -245,10 +264,10 @@ const loadAppointment = (appointment) => {
 // Fonction de validation des dates
 const validateEndDate = () => {
   if (!form.value.startDate || !form.value.endDate) return;
-  
+
   const start = new Date(form.value.startDate);
   const end = new Date(form.value.endDate);
-  
+
   if (end <= start) {
     const newEnd = new Date(start);
     newEnd.setHours(newEnd.getHours() + 1);
@@ -263,50 +282,50 @@ onMounted(() => {
 });
 
 watch(
-  () => props.appointment,
-  (newAppointment) => {
-    loadAppointment(newAppointment);
-  }
+    () => props.appointment,
+    (newAppointment) => {
+      loadAppointment(newAppointment);
+    }
 );
 
 // Watcher sur startDate pour ajuster endDate si nécessaire
 watch(
-  () => form.value.startDate,
-  (newStartDate) => {
-    if (!newStartDate) return;
-    
-    const start = new Date(newStartDate);
-    const end = form.value.endDate ? new Date(form.value.endDate) : null;
-    
-    // Si pas de endDate ou endDate <= startDate, on ajoute 1 heure
-    if (!end || end <= start) {
-      const newEnd = new Date(start);
-      newEnd.setHours(start.getHours() + 1);
-      form.value.endDate = formatDateLocal(newEnd);
-    }
-  }
-);
+    () => form.value.startDate,
+    (newStartDate) => {
+      if (!newStartDate) return;
 
-// Watcher sur endDate pour empêcher une date invalide
-watch(
-  () => form.value.endDate,
-  (newEndDate, oldEndDate) => {
-    if (!form.value.startDate || !newEndDate) return;
-    
-    const start = new Date(form.value.startDate);
-    const end = new Date(newEndDate);
-    
-    if (end <= start) {
-      // Restaurer l'ancienne valeur si elle était valide, sinon +1 heure
-      if (oldEndDate && new Date(oldEndDate) > start) {
-        form.value.endDate = oldEndDate;
-      } else {
+      const start = new Date(newStartDate);
+      const end = form.value.endDate ? new Date(form.value.endDate) : null;
+
+      // Si pas de endDate ou endDate <= startDate, on ajoute 1 heure
+      if (!end || end <= start) {
         const newEnd = new Date(start);
         newEnd.setHours(start.getHours() + 1);
         form.value.endDate = formatDateLocal(newEnd);
       }
     }
-  }
+);
+
+// Watcher sur endDate pour empêcher une date invalide
+watch(
+    () => form.value.endDate,
+    (newEndDate, oldEndDate) => {
+      if (!form.value.startDate || !newEndDate) return;
+
+      const start = new Date(form.value.startDate);
+      const end = new Date(newEndDate);
+
+      if (end <= start) {
+        // Restaurer l'ancienne valeur si elle était valide, sinon +1 heure
+        if (oldEndDate && new Date(oldEndDate) > start) {
+          form.value.endDate = oldEndDate;
+        } else {
+          const newEnd = new Date(start);
+          newEnd.setHours(start.getHours() + 1);
+          form.value.endDate = formatDateLocal(newEnd);
+        }
+      }
+    }
 );
 
 watch(() => form.value.isRecurring, (isRec) => {
@@ -337,7 +356,7 @@ const handleSubmit = () => {
 
 const handleCreateTag = () => {
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('open-tag-form', { detail: null }));
+    window.dispatchEvent(new CustomEvent('open-tag-form', {detail: null}));
   }
 };
 
