@@ -140,23 +140,30 @@
 
             <div v-if="form.updateRule !== null" class="bg-gray-50 rounded-xl p-4 border border-gray-200">
                 <div class="flex items-center gap-3">
-                  <label class="text-sm text-gray-700 whitespace-nowrap font-medium">
-                    Mettre à jour : 
-                  </label>
-                  <select
-                    v-model="form.updateRule"
-                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm transition-all cursor-pointer"
-                  >
-                    <option 
-                      v-for="option in updateRuleOptions" 
-                      :key="option.value" 
-                      :value="option.value"
-                    >
-                      {{ option.label }}
-                    </option>
-                  </select>
-                </div>
-            </div>
+                  <div class="flex items-center gap-2">
+                    <!-- Recurrence / refresh icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-indigo-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 12a9 9 0 11-2.64-6.12" />
+                      <polyline points="23 4 23 10 17 10" />
+                    </svg>
+                    <label class="text-sm text-gray-700 whitespace-nowrap font-medium">
+                      Mettre à jour :
+                    </label>
+                  </div>
+                   <select
+                     v-model="form.updateRule"
+                     class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm transition-all cursor-pointer"
+                   >
+                     <option 
+                       v-for="option in updateRuleOptions" 
+                       :key="option.value" 
+                       :value="option.value"
+                     >
+                       {{ option.label }}
+                     </option>
+                   </select>
+                 </div>
+             </div>
           </div>
 
         </form>

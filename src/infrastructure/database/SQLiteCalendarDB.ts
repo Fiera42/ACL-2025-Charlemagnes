@@ -88,6 +88,10 @@ export class SQLiteCalendarDB implements ICalendarDB {
             updates.push('updated_by = ?');
             values.push(calendar.updatedBy);
         }
+        if (calendar.url !== undefined) {
+            updates.push('url = ?');
+            values.push(calendar.url);
+        }
         if (calendar.updateRule !== undefined) {
             updates.push('update_rule = ?');
             values.push(calendar.updateRule);

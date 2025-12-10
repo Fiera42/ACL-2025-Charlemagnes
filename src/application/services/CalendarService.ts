@@ -144,6 +144,8 @@ export class CalendarService implements ICalendarService {
                 ...(partialCalendar.name && { name: encode(partialCalendar.name, { mode: 'extensive' }) }),
                 ...(partialCalendar.description && { description: encode(partialCalendar.description, { mode: 'extensive' }) }),
                 ...(partialCalendar.color && { color: encode(partialCalendar.color, { mode: 'extensive' }) }),
+                ...(partialCalendar.url && { url: encode(partialCalendar.url, { mode: 'extensive' }) }),
+                ...(partialCalendar.updateRule !== undefined && { updateRule: partialCalendar.updateRule }),
             };
 
             const updateResult = await this.calendarDB.updateCalendar(calendarId, cleanedCalendar)
@@ -207,6 +209,8 @@ export class CalendarService implements ICalendarService {
                 calendar.name = decode(calendar.name);
                 calendar.description = decode(calendar.description);
                 calendar.color = decode(calendar.color);
+                calendar.url = calendar.url ? decode(calendar.url) : null;
+                calendar.updateRule = calendar.updateRule !== null ? calendar.updateRule : null;
             })
 
             resolve(calendars);

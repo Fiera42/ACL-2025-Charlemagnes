@@ -9,6 +9,8 @@ interface Calendar {
   name: string;
   description?: string;
   color: string;
+  url?: string;
+  updateRule?: number;
 }
 
 interface Tag {
@@ -110,7 +112,7 @@ const closeDropdown = () => {
 
 const handleEdit = (calendar: Calendar | null) => {
   if (!calendar) return;
-  emit('editCalendar', calendar.id, calendar.name, calendar.description || '', calendar.color);
+  emit('editCalendar', calendar.id, calendar.name, calendar.description || '', calendar.color, calendar.url || '', calendar.updateRule || null);
   closeDropdown();
 };
 

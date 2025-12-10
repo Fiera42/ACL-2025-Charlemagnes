@@ -17,12 +17,12 @@
           <div class="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none">
               <path
-                  d="M8 2V5M16 2V5M3.5 9.09H20.5M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z"
-                  stroke="#4F46E5" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round"
-                  stroke-linejoin="round"/>
+                d="M8 2V5M16 2V5M3.5 9.09H20.5M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z"
+                stroke="#4F46E5" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round"
+                stroke-linejoin="round" />
               <path
-                  d="M15.6947 13.7H15.7037M15.6947 16.7H15.7037M11.9955 13.7H12.0045M11.9955 16.7H12.0045M8.29431 13.7H8.30329M8.29431 16.7H8.30329"
-                  stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                d="M15.6947 13.7H15.7037M15.6947 16.7H15.7037M11.9955 13.7H12.0045M11.9955 16.7H12.0045M8.29431 13.7H8.30329M8.29431 16.7H8.30329"
+                stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             <h1 class="text-xl font-bold text-gray-900">Charl'endar</h1>
           </div>
@@ -155,7 +155,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-purple-500" fill="none"
                       viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M7 7h. 01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1. 994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                     </svg>
                     Tags
                     <span v-if="selectedTags.length > 0" class="text-xs text-indigo-600 font-normal">
@@ -167,7 +167,7 @@
                   <div v-if="selectedTags.length > 0"
                     class="flex flex-wrap gap-2 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-100">
                     <div v-for="tagId in selectedTags" :key="tagId"
-                      class="inline-flex items-center gap-1. 5 px-3 py-1.5 rounded-full text-xs font-medium shadow-sm transition-all hover:scale-105"
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium shadow-sm transition-all hover:scale-105"
                       :style="{
                         backgroundColor: getTagById(tagId)?.color,
                         color: getContrastColor(getTagById(tagId)?.color || '#000000')
@@ -192,15 +192,15 @@
                         ? 'ring-2 ring-offset-1 shadow-md scale-[1.02]'
                         : 'hover:scale-[1.02] hover:shadow-sm border'
                     ]" :style="{
-                        backgroundColor: isTagSelected(tag.id) ? tag.color : 'transparent',
-                        color: isTagSelected(tag.id) ? getContrastColor(tag.color) : tag.color,
-                        borderColor: isTagSelected(tag.id) ? 'transparent' : tag.color + '40',
-                        ringColor: tag.color
-                      }">
-                      <span v-if="!isTagSelected(tag.id)" class="w-2. 5 h-2.5 rounded-full flex-shrink-0"
+                      backgroundColor: isTagSelected(tag.id) ? tag.color : 'transparent',
+                      color: isTagSelected(tag.id) ? getContrastColor(tag.color) : tag.color,
+                      borderColor: isTagSelected(tag.id) ? 'transparent' : tag.color + '40',
+                      ringColor: tag.color
+                    }">
+                      <span v-if="!isTagSelected(tag.id)" class="w-2.5 h-2.5 rounded-full flex-shrink-0"
                         :style="{ backgroundColor: tag.color }"></span>
                       <span class="flex-1 truncate">{{ tag.name }}</span>
-                      <svg v-if="isTagSelected(tag.id)" class="w-3. 5 h-3.5 flex-shrink-0" fill="currentColor"
+                      <svg v-if="isTagSelected(tag.id)" class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor"
                         viewBox="0 0 20 20">
                         <path fill-rule="evenodd"
                           d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -212,7 +212,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none"
                       viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                        d="M7 7h. 01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                     </svg>
                     <p class="text-xs text-gray-500">Aucun tag disponible</p>
                   </div>
@@ -238,8 +238,9 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-purple-500" fill="none"
                       viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 4v5h. 582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
+
                   </label>
                 </div>
 

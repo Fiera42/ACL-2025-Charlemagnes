@@ -304,8 +304,8 @@ const handleClose = () => {
                   <p class="font-medium text-gray-900">{{ fileName }}</p>
                   <p class="text-sm text-gray-500">Fichier sélectionné</p>
                 </div>
-                <button @click. stop="clearFile"
-                  class="ml-2 p-1. 5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                <button @click.stop="clearFile"
+                  class="ml-2 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -328,14 +328,14 @@ const handleClose = () => {
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     class="text-gray-400">
                     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                    <path d="M14 11a5 5 0 0 0-7.54-. 54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                   </svg>
                 </div>
                 <input v-model="icsUrl" type="url" placeholder="https://example.com/calendar.ics"
                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   :class="icsUrl && !isValidUrl(icsUrl) ? 'border-red-300 focus:ring-red-500' : ''" />
               </div>
-              <p v-if="icsUrl && !isValidUrl(icsUrl)" class="mt-1. 5 text-sm text-red-500">
+              <p v-if="icsUrl && !isValidUrl(icsUrl)" class="mt-1.5 text-sm text-red-500">
                 Veuillez entrer une URL valide de calendrier
               </p>
             </div>
@@ -466,7 +466,7 @@ const handleClose = () => {
                   class="flex-shrink-0 mt-0.5">
                   <circle cx="12" cy="12" r="10"></circle>
                   <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12. 01" y2="16"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
                 <div>
                   <p class="text-sm font-medium text-amber-800">Lien permanent</p>

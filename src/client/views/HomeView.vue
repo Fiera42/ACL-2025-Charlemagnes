@@ -285,8 +285,8 @@ const filteredAppointments = computed(() => {
 });
 
 
-const openCalendarForm = (id, name, description, color) => {
-  editingCalendar.value = { id, name, description, color };
+const openCalendarForm = (id, name, description, color, url, updateRule) => {
+  editingCalendar.value = { id, name, description, color, url, updateRule };
   showCalendarForm.value = true;
 };
 
