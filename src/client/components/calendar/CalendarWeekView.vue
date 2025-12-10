@@ -79,9 +79,10 @@
               class="absolute px-1 pointer-events-auto"
           >
             <div
-                :class="[
-                  'rounded p-1.5 border-l-4 cursor-pointer h-full overflow-hidden relative'
-                ]"
+                class="rounded p-2 border-l-4 cursor-pointer h-full overflow-hidden relative'"
+                :class="{
+                  'opacity-30 grayscale pointer-events-none': event.isDimmed
+                }"
                 :style="{
                   borderColor: event.color,
                   backgroundColor: addAlpha(event.color, 0.3),

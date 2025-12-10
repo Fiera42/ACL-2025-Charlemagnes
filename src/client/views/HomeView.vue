@@ -190,7 +190,6 @@ const handleLogout = async () => {
 };
 
 const handleSelectAppointment = (appointment) => {
-  closeSidebar();
   if (calendarViewRef.value) {
     calendarViewRef.value.goToAppointment(appointment);
   }
@@ -233,46 +232,49 @@ const handleFilters = (newFilters) => {
 // calcule les rdv avec les filtres appliqué
 const filteredAppointments = computed(() => {
   return appointments.value
-    .filter((a) => {
-      let matches = true;
+      .map((a) => {
+        let matches = true;
 
-      // Filtre mot-clé
-      if (filters.value.keyword) {
-        const q = filters.value.keyword.toLowerCase();
-        const text = `${a.title ?? ''} ${a.description ?? ''} ${a.location ?? ''}`.toLowerCase();
-        matches = text.includes(q);
-      }
+        // Filtre mot-clé
+        if (filters.value.keyword) {
+          const q = filters.value.keyword.toLowerCase();
+          const text = `${a.title ?? ''} ${a.description ?? ''} ${a.location ?? ''}`.toLowerCase();
+          matches = text.includes(q);
+        }
 
-      // Filtre date début
-      if (matches && filters.value.startDate) {
-        const start = new Date(a.startDate);
-        const filterStart = new Date(filters.value.startDate);
-        matches = filters.value.startOperator === '>' ? start > filterStart : start < filterStart;
-      }
+        // Filtre date début
+        if (matches && filters.value.startDate) {
+          const start = new Date(a.startDate);
+          const filterStart = new Date(filters.value.startDate);
+          matches = filters.value.startOperator === '>' ? start > filterStart : start < filterStart;
+        }
 
-      // Filtre date fin
-      if (matches && filters.value.endDate) {
-        const end = new Date(a.endDate);
-        const filterEnd = new Date(filters.value.endDate);
-        matches = filters.value.endOperator === '>' ? end > filterEnd : end < filterEnd;
-      }
+        // Filtre date fin
+        if (matches && filters.value.endDate) {
+          const end = new Date(a.endDate);
+          const filterEnd = new Date(filters.value.endDate);
+          matches = filters.value.endOperator === '>' ? end > filterEnd : end < filterEnd;
+        }
 
-      if (matches && filters.value.selectedTags && filters.value.selectedTags.length > 0) {
-        const appointmentTags = a.tags || [];
-        // Vérifie si au moins un tag du RDV correspond aux tags sélectionnés
-        matches = filters.value.selectedTags.some(tagId =>
-          appointmentTags.map(String).includes(String(tagId))
-        );
-      }
+        // Filtre tags
+        if (matches && filters.value.selectedTags && filters.value.selectedTags.length > 0) {
+          const appointmentTags = a.tags || [];
+          matches = filters.value.selectedTags.some(tagId =>
+              appointmentTags.map(String).includes(String(tagId))
+          );
+        }
 
-      // Filtre récurrence
-      if (matches && filters.value.showRecurring === false) {
-        matches = !(a.recursionRule !== undefined && a.recursionRule !== null);
-      }
+        // Filtre récurrence
+        if (matches && filters.value.showRecurring === false) {
+          matches = !(a.recursionRule !== undefined && a.recursionRule !== null);
+        }
 
-      return matches;
-    })
-    .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+        return {
+          ...a,
+          isDimmed: !matches  // On ajoute une ligne pour pouvoir grisé ou non les rdv
+        };
+      })
+      .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
 });
 
 
