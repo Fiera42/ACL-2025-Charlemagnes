@@ -57,6 +57,8 @@ export class CalendarService implements ICalendarService {
                     calendar.name = decode(calendar.name);
                     calendar.description = decode(calendar.description);
                     calendar.color = decode(calendar.color);
+                    calendar.url = calendar.url ? decode(calendar.url) : null;
+                    calendar.updateRule = calendar.updateRule !== null ? calendar.updateRule : null;
                     resolve(calendar);
                 })
                 .catch((reason: any) => {
