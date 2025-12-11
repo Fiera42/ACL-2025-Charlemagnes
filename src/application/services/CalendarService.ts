@@ -1,13 +1,13 @@
 import { Calendar } from "../../domain/entities/Calendar";
-import { ServiceResponse } from "../../domain/entities/ServiceResponse.ts";
+import { ServiceResponse } from "../../domain/entities/ServiceResponse"; // .ts removed for cleaner import if configured
 import { ICalendarDB } from "../../domain/interfaces/ICalendarDB";
 import { ICalendarService } from "../../domain/interfaces/ICalendarService";
 import { Sanitizer } from "./utils/Sanitizer";
 import { decode, encode } from "html-entities";
 import { IAuthDB } from "../../domain/interfaces/IAuthDB";
 import { Appointment } from "../../domain/entities/Appointment";
-import { ICSHandler } from "./utils/ICSHandler.ts";
-import { ServiceFactory } from "../../adapters/factories/ServiceFactory.ts";
+import { ICSHandler } from "./utils/ICSHandler"; // .ts removed
+import { ServiceFactory } from "../../adapters/factories/ServiceFactory"; // .ts removed
 import { v4 as uuidv4 } from 'uuid';
 
 export class CalendarService implements ICalendarService {
@@ -18,6 +18,48 @@ export class CalendarService implements ICalendarService {
         this.calendarDB = calendarDB;
         this.authDB = authDB;
     }
+
+    // ==========================================
+    // MÉTHODES PRIVÉES (HELPERS)
+    // ==========================================
+
+    /**
+     * Encode une chaîne pour le stockage sécurisé (HTML Entities).
+     * @param str La chaîne à encoder
+     */
+    private encodeString(str: string): string {
+        return encode(str, { mode: 'extensive' });
+    }
+
+    /**
+     * Décode une chaîne venant de la DB.
+     * @param str La chaîne à décoder
+     */
+    private decodeString(str: string): string {
+        return decode(str);
+    }
+
+    /**
+     * Applique le décodage sur les propriétés d'un calendrier récupéré de la DB.
+     * NOTE: L'URL n'est PAS décodée car elle est stockée brute pour rester valide.
+     * @param calendar Le calendrier brut venant de la DB
+     */
+    private mapToDecodedCalendar(calendar: Calendar): Calendar {
+        calendar.name = this.decodeString(calendar.name);
+        calendar.description = this.decodeString(calendar.description);
+        calendar.color = this.decodeString(calendar.color);
+        if (calendar.url) {
+            calendar.url = this.decodeString(calendar.url);
+        }
+        if (calendar.publicToken) {
+            calendar.publicToken = this.decodeString(calendar.publicToken);
+        }
+        return calendar;
+    }
+
+    // ==========================================
+    // IMPLEMENTATION ICalendarService
+    // ==========================================
 
     createCalendar(
         ownerId: string,
@@ -38,28 +80,23 @@ export class CalendarService implements ICalendarService {
                     reject(reason);
                 });
 
-            if (user === undefined) return; // We already rejected in the catch
+            if (user === undefined) return;
             if (user === null) {
                 reject(new Error(`User of id (${ownerId}) does not exist`));
                 return;
             }
 
-            name = encode(name, { mode: 'extensive' });
-            description = encode(description, { mode: 'extensive' });
-            color = encode(color, { mode: 'extensive' });
-            url = url ? encode(url, { mode: 'extensive' }) : null;
-            updateRule = updateRule !== null ? updateRule : null;
+            const encodedName = this.encodeString(name);
+            const encodedDescription = this.encodeString(description);
+            const encodedColor = this.encodeString(color);
 
-            const calendar = Calendar.create(name, description, color, ownerId, url, updateRule);
+            const rawUrl = url; 
+
+            const calendar = Calendar.create(encodedName, encodedDescription, encodedColor, ownerId, rawUrl, updateRule);
 
             this.calendarDB.createCalendar(calendar)
-                .then((calendar: Calendar) => {
-                    calendar.name = decode(calendar.name);
-                    calendar.description = decode(calendar.description);
-                    calendar.color = decode(calendar.color);
-                    calendar.url = calendar.url ? decode(calendar.url) : null;
-                    calendar.updateRule = calendar.updateRule !== null ? calendar.updateRule : null;
-                    resolve(calendar);
+                .then((createdCalendar: Calendar) => {
+                    resolve(this.mapToDecodedCalendar(createdCalendar));
                 })
                 .catch((reason: any) => {
                     reject(reason);
@@ -83,7 +120,7 @@ export class CalendarService implements ICalendarService {
                     reject(reason);
                 });
 
-            if (calendar === undefined) return; // We already rejected in the catch
+            if (calendar === undefined) return;
             if (calendar === null) {
                 resolve(ServiceResponse.RESOURCE_NOT_EXIST);
                 return;
@@ -97,12 +134,12 @@ export class CalendarService implements ICalendarService {
                 .catch((reason) => {
                     reject(reason);
                 });
-            if (deleteResult === undefined) return; // We already rejected in the catch
+            if (deleteResult === undefined) return;
 
             if (deleteResult) {
-                resolve(ServiceResponse.SUCCESS)
+                resolve(ServiceResponse.SUCCESS);
             } else {
-                resolve(ServiceResponse.FAILED)
+                resolve(ServiceResponse.FAILED);
             }
         });
     }
@@ -118,7 +155,7 @@ export class CalendarService implements ICalendarService {
                 return;
             }
             if (Sanitizer.doesStringContainSpecialChar(calendarId)) {
-                reject(new Error(`AppointmentId (${calendarId}) contains special char`));
+                reject(new Error(`CalendarID (${calendarId}) contains special char`));
                 return;
             }
 
@@ -127,7 +164,7 @@ export class CalendarService implements ICalendarService {
                     reject(reason);
                 });
 
-            if (calendar === undefined) return; // We already rejected in the catch
+            if (calendar === undefined) return;
             if (calendar === null) {
                 resolve(ServiceResponse.RESOURCE_NOT_EXIST);
                 return;
@@ -139,25 +176,25 @@ export class CalendarService implements ICalendarService {
                 resolve(ServiceResponse.FORBIDDEN);
                 return;
             }
-
-            const cleanedCalendar: Partial<Appointment> = {
-                ...(partialCalendar.name && { name: encode(partialCalendar.name, { mode: 'extensive' }) }),
-                ...(partialCalendar.description && { description: encode(partialCalendar.description, { mode: 'extensive' }) }),
-                ...(partialCalendar.color && { color: encode(partialCalendar.color, { mode: 'extensive' }) }),
-                ...(partialCalendar.url && { url: encode(partialCalendar.url, { mode: 'extensive' }) }),
+            const cleanedCalendar: Partial<Calendar> = {
+                ...(partialCalendar.name && { name: this.encodeString(partialCalendar.name) }),
+                ...(partialCalendar.description && { description: this.encodeString(partialCalendar.description) }),
+                ...(partialCalendar.color && { color: this.encodeString(partialCalendar.color) }),
+                ...(partialCalendar.url && { url: partialCalendar.url }),
                 ...(partialCalendar.updateRule !== undefined && { updateRule: partialCalendar.updateRule }),
+                ...(partialCalendar.publicToken && { publicToken: this.encodeString(partialCalendar.publicToken) })
             };
 
             const updateResult = await this.calendarDB.updateCalendar(calendarId, cleanedCalendar)
                 .catch((reason) => {
                     reject(reason);
                 });
-            if (updateResult === undefined) return; // We already rejected in the catch
+            if (updateResult === undefined) return;
 
             if (updateResult) {
-                resolve(ServiceResponse.SUCCESS)
+                resolve(ServiceResponse.SUCCESS);
             } else {
-                resolve(ServiceResponse.FAILED)
+                resolve(ServiceResponse.FAILED);
             }
         });
     }
@@ -174,18 +211,12 @@ export class CalendarService implements ICalendarService {
                     reject(reason);
                 });
 
-            if (calendar === undefined) return; // We already rejected in the catch
+            if (calendar === undefined) return;
             if (calendar === null) {
                 resolve(null);
                 return;
             }
-
-            // We sanitized at creation, so we have to sanitize when getting it back
-            calendar.name = decode(calendar.name);
-            calendar.description = decode(calendar.description);
-            calendar.color = decode(calendar.color);
-
-            resolve(calendar);
+            resolve(this.mapToDecodedCalendar(calendar));
         });
     }
 
@@ -201,19 +232,12 @@ export class CalendarService implements ICalendarService {
                     reject(reason);
                 });
 
-            if (calendars === undefined) return; // We already rejected in the catch
+            if (calendars === undefined) return;
 
-            // We sanitized at creation, so we have to sanitize when getting it back
-            calendars.forEach((calendar) => {
-                // We sanitized at creation, so we have to sanitize when getting it back
-                calendar.name = decode(calendar.name);
-                calendar.description = decode(calendar.description);
-                calendar.color = decode(calendar.color);
-                calendar.url = calendar.url ? decode(calendar.url) : null;
-                calendar.updateRule = calendar.updateRule !== null ? calendar.updateRule : null;
-            })
+            // Décodage de toute la liste
+            const decodedCalendars = calendars.map(cal => this.mapToDecodedCalendar(cal));
 
-            resolve(calendars);
+            resolve(decodedCalendars);
         });
     }
 
@@ -248,7 +272,6 @@ export class CalendarService implements ICalendarService {
     async importCalendarFromICS(userId: string, icsContent: string, url: string | null = null, updateRule: number | null = null): Promise<{ calendar: Calendar; appointmentsCreated: number }> {
         const { calendar: calData, appointments } = ICSHandler.parse(icsContent);
 
-        // Création du calendrier
         const calendar = await this.createCalendar(
             userId,
             calData.name || 'Calendrier Importé',
@@ -299,13 +322,8 @@ export class CalendarService implements ICalendarService {
         if (!calendar) throw new Error('Calendrier non trouvé');
 
         const appointmentService = ServiceFactory.getAppointmentService();
-
-        // Récupère les RDV normaux
         const appointmentsData = await appointmentService.getAppointmentsByCalendarId(calendarId);
-        // Récupère les RDV récurrents
         const recurrentData = await appointmentService.getRecurrentAppointmentByCalendarId(calendarId);
-
-        // Combine tout
         const allAppointments = [...appointmentsData, ...recurrentData];
 
         return ICSHandler.generate(calendar, allAppointments);
@@ -318,19 +336,24 @@ export class CalendarService implements ICalendarService {
         if (calendar.ownerId !== userId) throw new Error("Non autorisé");
 
         let token = calendar.publicToken;
-        
-        // Si le calendrier n'a pas encore de token public, on en génère un
+
         if (!token) {
-            token = uuidv4();
-            await this.calendarDB.updatePublicToken(calendarId, token);
+            const rawToken = uuidv4();
+            const encodedToken = this.encodeString(rawToken);
+            
+            await this.calendarDB.updatePublicToken(calendarId, encodedToken);
+            token = rawToken; 
         }
 
-        // On retourne l'URI relative pour la route publique
         return `/api/public/calendar/${token}.ics`;
     }
 
     async exportPublicICSCalendar(token: string): Promise<string> {
-        const calendar = await this.calendarDB.findCalendarByPublicToken(token);
+
+        const encodedToken = this.encodeString(token);
+
+        const calendar = await this.calendarDB.findCalendarByPublicToken(encodedToken);
+        
         if (!calendar) throw new Error('Lien de calendrier invalide ou révoqué');
 
         return this.exportICSCalendar(calendar.id!);
@@ -338,19 +361,24 @@ export class CalendarService implements ICalendarService {
 
     async updateExternalCalendars(): Promise<void> {
         const candidates = await this.calendarDB.findCalendarsToUpdate();
-        for (const calendar of candidates) {
+        
+        for (let calendar of candidates) {
+            calendar = this.mapToDecodedCalendar(calendar);
+
+            console.log(`Vérification de la mise à jour pour le calendrier externe '${calendar.name}'`);
             try {
                 if (this.shouldUpdateCalendar(calendar)) {
                     await this.processCalendarUpdate(calendar);
                 }
             } catch (error) {
+                console.error(`Erreur lors de la mise à jour du calendrier ${calendar.id}:`, error);
             }
         }
     }
 
     private shouldUpdateCalendar(calendar: Calendar): boolean {
         if (!calendar.url || !calendar.updateRule) return false;
-
+        
         const lastUpdate = calendar.updatedAt 
             ? new Date(calendar.updatedAt) 
             : new Date(calendar.createdAt);
@@ -375,6 +403,8 @@ export class CalendarService implements ICalendarService {
         const icsContent = await response.text();
 
         const { appointments } = ICSHandler.parse(icsContent);
+        console.log(`Mise à jour du calendrier ${calendar.id} avec ${appointments.length} rendez-vous extraits.`);
+        
         await this.calendarDB.deleteAllAppointmentsByCalendarId(calendar.id!);
         const appointmentService = ServiceFactory.getAppointmentService();
         
@@ -414,6 +444,7 @@ export class CalendarService implements ICalendarService {
                     );
                 }
             } catch (e) {
+                console.warn(`Erreur insertion RDV mis à jour : ${e}`);
             }
         }
         await this.calendarDB.updateCalendar(calendar.id!, {
@@ -421,4 +452,3 @@ export class CalendarService implements ICalendarService {
         });
     }
 }
-

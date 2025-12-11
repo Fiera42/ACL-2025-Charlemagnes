@@ -166,9 +166,9 @@ async function bootstrap() {
     await connectDatabase();
 
     const calendarService = ServiceFactory.getCalendarService();
-    const UPDATE_INTERVAL = 60 * 60 * 1000; // 1 heure en ms
+    const UPDATE_INTERVAL =  60 * 60 * 1000; // 1 heure en ms
 
-    const runUpdateJob = async () => {
+const runUpdateJob = async () => {
         try {
             await calendarService.updateExternalCalendars();
         } catch (error) {
